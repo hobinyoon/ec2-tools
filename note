@@ -1,0 +1,54 @@
+TODO
+----
+- Admission control. Launch a new cluster when the number of nodes in each DC
+	is less than 12. InstMonitor has the info.
+
+- When a cluter is cleaned by ClusterCleaner, re-launch the job (make the same
+	job request again).
+
+
+Note
+----
+Installing boto3 on El Capitan
+  https://github.com/pypa/pip/issues/3165
+  $ sudo pip install boto3 --upgrade --ignore-installed six
+
+
+Clean up logs before making a new AMI. You may want to put something in /var/log
+	$ sudo rm -rf /var/log/acorn \
+	  && sudo rm /var/log/cloud-init*
+
+
+Done
+----
+- When a cluster doesn't start in 6 mins, kill the instances. Spot
+	requests don't need to be cancelled. They are one-time requests.
+	With the async cluster start, this is achieved for nothing.
+
+- Need a log file, mapping job_id and parameters.
+  - Job request
+	  - Received
+		- Served
+		- Failed
+	- Job completion
+		- Received
+		- Served
+		- Failed: I haven't seen it fails.
+
+- When a cluster doesn't finish within 1 hr, kill it. It happens with a 11 node
+	cluster. One example is that one of the nodes didn't clone code from
+	github.com
+    sudo: unable to resolve host ip-172-31-17-235
+		Cloning into '/home/ubuntu/work/acorn-tools'...
+		fatal: unable to access 'https://github.com/hobinyoon/acorn-tools.git/': Could not resolve host: github.com
+
+- When a job controller sees an acorn-server cluster with less than 11 nodes
+	for 6 mins, terminate the cluster. job-controller will get the job request in
+	1 hour after the visibility timeout.  This happens quite often, due to the
+	spot price increase. Setting the spot request price really high can be a good
+	idea too.
+
+- term-inst.py
+  - Kill all instances without job_id
+
+- Pick an AZ with the lowest last-day max pricing.
