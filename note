@@ -9,13 +9,14 @@ TODO
 
 Note
 ----
-Installing boto3 on El Capitan
+Installing boto3 on El Capitan, which doesn't allow modifying the OS manged six
+module.
   https://github.com/pypa/pip/issues/3165
   $ sudo pip install boto3 --upgrade --ignore-installed six
 
 
 Clean up logs before making a new AMI. You may want to put something in /var/log
-	$ sudo rm -rf /var/log/acorn \
+	$ sudo rm -rf /var/log/mutants \
 	  && sudo rm /var/log/cloud-init*
 
 
@@ -39,8 +40,8 @@ Done
 	cluster. One example is that one of the nodes didn't clone code from
 	github.com
     sudo: unable to resolve host ip-172-31-17-235
-		Cloning into '/home/ubuntu/work/acorn-tools'...
-		fatal: unable to access 'https://github.com/hobinyoon/acorn-tools.git/': Could not resolve host: github.com
+		Cloning into '/home/ubuntu/work/ec2-tools'...
+		fatal: unable to access 'https://github.com/hobinyoon/ec2-tools.git/': Could not resolve host: github.com
 
 - When a job controller sees an acorn-server cluster with less than 11 nodes
 	for 6 mins, terminate the cluster. job-controller will get the job request in

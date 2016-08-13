@@ -1,4 +1,3 @@
-import boto3
 import botocore
 import datetime
 import os
@@ -29,7 +28,6 @@ _jr_sqs_msg_receipt_handle = None
 _init_script = None
 
 
-# TODO: region_inst_type. match ReqSpotAndMonitor
 def Run(regions, inst_type, tags, jr_sqs_url, jr_sqs_msg_receipt_handle, init_script):
 	Reset()
 
@@ -100,9 +98,9 @@ class RunAndMonitor():
 			user_data = \
 """#!/bin/bash
 cd /home/ubuntu/work
-rm -rf /home/ubuntu/work/acorn-tools
-sudo -i -u ubuntu bash -c 'git clone https://github.com/hobinyoon/acorn-tools.git /home/ubuntu/work/acorn-tools'
-sudo -i -u ubuntu /home/ubuntu/work/acorn-tools/ec2/ec2-init.py {0} {1} {2} {3}
+rm -rf /home/ubuntu/work/ec2-tools
+sudo -i -u ubuntu bash -c 'git clone https://github.com/hobinyoon/ec2-tools.git /home/ubuntu/work/ec2-tools'
+sudo -i -u ubuntu /home/ubuntu/work/ec2-tools/ec2/ec2-init.py {0} {1} {2} {3}
 """
 			user_data = user_data.format(_init_script, _jr_sqs_url, _jr_sqs_msg_receipt_handle, _num_regions)
 
@@ -362,41 +360,3 @@ def _Value(dict_, key):
 		return dict_[key]
 	else:
 		return ""
-
-
-#def _RunEc2InstR3XlargeEbs():
-#	response = boto_client.run_instances(
-#			DryRun = False
-#			, ImageId = "ami-1fc7d575"
-#			, MinCount=1
-#			, MaxCount=1
-#			, SecurityGroups=["cass-server"]
-#			, EbsOptimized=True
-#			, InstanceType="r3.xlarge"
-#			, BlockDeviceMappings=[
-#				{
-#					'DeviceName': '/dev/sdc',
-#					'Ebs': {
-#						'VolumeSize': 16384,
-#						'DeleteOnTermination': True,
-#						'VolumeType': 'gp2',
-#						'Encrypted': False
-#						},
-#					},
-#				],
-#			)
-#
-#			# What's the defalt value, when not specified? Might be True. I see the
-#			# Basic CloudWatch monitoring on the web console.
-#			# Monitoring={
-#			#     'Enabled': True|False
-#			# },
-#			#
-#			# "stop" when not specified.
-#			#   InstanceInitiatedShutdownBehavior='stop'|'terminate',
-#	Cons.P("Response:")
-#	Cons.P(Util.Indent(pprint.pformat(response, indent=2, width=100), 2))
-#	if len(response["Instances"]) != 1:
-#		raise RuntimeError("len(response[\"Instances\"])=%d" % len(response["Instances"]))
-#	inst_id = response["Instances"][0]["InstanceId"]
-#	return inst_id

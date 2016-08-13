@@ -10,10 +10,12 @@ sys.path.insert(0, "%s/lib/util" % os.path.dirname(__file__))
 import Cons
 import Util
 
+sys.path.insert(0, "%s/lib" % os.path.dirname(__file__))
+import JobReq
+
 
 sqs_region = "us-east-1"
-q_name_jr = "acorn-jobs-requested"
-msg_body = "acorn-exp-req"
+
 _bc = None
 _sqs = None
 
@@ -33,11 +35,11 @@ def GetQ():
 	with Cons.MT("Getting the queue ..."):
 		try:
 			queue = _sqs.get_queue_by_name(
-					QueueName = q_name_jr,
+					QueueName = JobReq.sqs_q_name,
 					# QueueOwnerAWSAccountId='string'
 					)
 			#Cons.P(pprint.pformat(vars(queue), indent=2))
-			#{ '_url': 'https://queue.amazonaws.com/998754746880/acorn-exps',
+			#{ '_url': 'https://queue.amazonaws.com/998754746880/mutants-exps',
 			#		  'meta': ResourceMeta('sqs', identifiers=[u'url'])}
 			return queue
 		except botocore.exceptions.ClientError as e:

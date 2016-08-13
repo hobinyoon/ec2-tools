@@ -7,9 +7,6 @@ sys.path.insert(0, "%s/util" % os.path.dirname(__file__))
 import Cons
 
 
-WAIT_TIME_BEFORE_CLEAN_UNDER11 = 6 * 60
-WAIT_TIME_BEFORE_CLEAN_11 = 55 * 60
-
 # First time we've seen a cluster with under 11 nodes and with 11 nodes
 #   { job_id: datetime }
 _jobid_first_time_under11 = {}
@@ -23,19 +20,27 @@ def Queue():
 	return _q
 
 
-def Clean(jobid_inst):
+# Clean the cluster when the number of nodes in the cluster is under the
+# threshold or when the cluster takes too long. Called periodically by
+# ClusterMonitor.
+def MayClean(jobid_inst):
+	WAIT_TIME_BEFORE_CLEAN_UNDER11 = 6 * 60
+	WAIT_TIME_BEFORE_CLEAN_11 = 55 * 60
+
 	# jobid_inst: { job_id: {region: Inst} }
 
 	for job_id, v in jobid_inst.iteritems():
-		# Only clean acorn-server nodes. Dev nodes are not cleaned automatically.
-		is_acorn_server = False
+		# Only clean mutants-server nodes. Dev nodes are not cleaned automatically.
+		is_mutants_server = False
 		for region, i in v.iteritems():
 			if "init_script" in i.tags:
-				if i.tags["init_script"] == "acorn-server":
-					is_acorn_server = True
+				if i.tags["init_script"] == "mutants-server":
+					is_mutants_server = True
 					break
-		if not is_acorn_server:
+		if not is_mutants_server:
 			continue
+
+		# Note: modify below for mutants
 
 		# Count only "running" instances.
 		running_insts = []

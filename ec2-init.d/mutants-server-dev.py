@@ -94,17 +94,23 @@ def _MountAndFormatLocalSSDs():
 		Util.RunSubp("sudo chown -R ubuntu /mnt/local-%s" % ssds[i])
 
 
-def _CloneAcornSrcAndBuild():
-	Util.RunSubp("mkdir -p /mnt/local-ssd0/work")
-	Util.RunSubp("rm -rf /mnt/local-ssd0/work/acorn")
-	Util.RunSubp("git clone https://github.com/hobinyoon/apache-cassandra-3.0.5-src.git /mnt/local-ssd0/work/apache-cassandra-3.0.5-src")
-	Util.RunSubp("rm -rf /home/ubuntu/work/acorn")
-	Util.RunSubp("ln -s /mnt/local-ssd0/work/apache-cassandra-3.0.5-src /home/ubuntu/work/acorn")
-	# Note: report progress. clone done.
+def _CloneSrcAndBuild():
+	# Make parent
+	Util.RunSubp("mkdir -p /mnt/local-ssd0/work/mutants")
 
-	# http://stackoverflow.com/questions/26067350/unmappable-character-for-encoding-ascii-but-my-files-are-in-utf-8
-	Util.RunSubp("cd /home/ubuntu/work/acorn && (JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF8 ant)")
-	# Note: report progress. build done.
+	# Git clone
+	Util.RunSubp("rm -rf /mnt/local-ssd0/work/mutants/cassandra")
+	# TODO: look for all hobin, case insensitive, in all files
+	Util.RunSubp("git clone https://github.com/hobinyoon/mutants-cassandra /mnt/local-ssd0/work/mutants/cassandra")
+
+	# Symlink
+	Util.RunSubp("rm -rf /home/ubuntu/work/mutants/cassandra")
+	Util.RunSubp("ln -s /mnt/local-ssd0/work/mutants-cassandra /home/ubuntu/work/mutants/cassandra")
+
+	# Build
+	#   Note: workaround for unmappable character for encoding ASCII.
+	#   http://stackoverflow.com/questions/26067350/unmappable-character-for-encoding-ascii-but-my-files-are-in-utf-8
+	Util.RunSubp("cd /home/ubuntu/work/mutants/cassandra && (JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF8 ant)")
 
 
 def _EditCassConf():
@@ -112,7 +118,7 @@ def _EditCassConf():
 	ips = GetIPs.GetByTags(_tags)
 	_Log(ips)
 
-	fn_cass_yaml = "/home/ubuntu/work/acorn/conf/cassandra.yaml"
+	fn_cass_yaml = "/home/ubuntu/work/mutants/cassandra/conf/cassandra.yaml"
 	_Log("Editing %s ..." % fn_cass_yaml)
 
 	# Update cassandra cluster name if specified.
@@ -165,33 +171,34 @@ def _EditCassConf():
 
 	# Edit parameters requested from tags
 	for k, v in _tags.iteritems():
-		if k.startswith("acorn_options."):
-			#              01234567890123
-			k1 = k[14:]
+		if k.startswith("mutants_options."):
+			#              0123456789012345
+			k1 = k[16:]
 			Util.RunSubp("sed -i 's/" \
 					"^    %s:.*" \
 					"/    %s: %s" \
 					"/g' %s" % (k1, k1, v, fn_cass_yaml))
 
 
-_fn_acorn_youtube_yaml = "/home/ubuntu/work/acorn/acorn/clients/youtube/acorn-youtube.yaml"
-
-def _EditYoutubeClientConf():
-	_Log("Editing %s ..." % _fn_acorn_youtube_yaml)
-	for k, v in _tags.iteritems():
-		if k.startswith("acorn-youtube."):
-			#              01234567890123
-			k1 = k[14:]
-			Util.RunSubp("sed -i 's/" \
-					"^%s:.*" \
-					"/%s: %s" \
-					"/g' %s" % (k1, k1, v, _fn_acorn_youtube_yaml))
+# Note: This will be the YCSB configuration file
+#_fn_acorn_youtube_yaml = "/home/ubuntu/work/acorn/acorn/clients/youtube/acorn-youtube.yaml"
+#
+#def _EditYoutubeClientConf():
+#	_Log("Editing %s ..." % _fn_acorn_youtube_yaml)
+#	for k, v in _tags.iteritems():
+#		if k.startswith("acorn-youtube."):
+#			#              01234567890123
+#			k1 = k[14:]
+#			Util.RunSubp("sed -i 's/" \
+#					"^%s:.*" \
+#					"/%s: %s" \
+#					"/g' %s" % (k1, k1, v, _fn_acorn_youtube_yaml))
 
 
 def _RunCass():
 	_Log("Running Cassandra ...")
-	Util.RunSubp("rm -rf ~/work/acorn/data")
-	Util.RunSubp("/home/ubuntu/work/acorn/bin/cassandra")
+	Util.RunSubp("rm -rf ~/work/mutants/cassandra/data")
+	Util.RunSubp("/home/ubuntu/work/mutants/cassandra/bin/cassandra")
 
 
 def _WaitUntilYouSeeAllCassNodes():
@@ -200,7 +207,7 @@ def _WaitUntilYouSeeAllCassNodes():
 	while True:
 		# Get all IPs with the tags. Hope every node sees all other nodes by this
 		# time.
-		num_nodes = Util.RunSubp("/home/ubuntu/work/acorn/bin/nodetool status | grep \"^UN \" | wc -l", shell = True)
+		num_nodes = Util.RunSubp("/home/ubuntu/work/mutants/cassandra/bin/nodetool status | grep \"^UN \" | wc -l", shell = True)
 		num_nodes = int(num_nodes)
 
 		# The number of regions (_num_regions) needs to be explicitly passed. When
@@ -211,152 +218,7 @@ def _WaitUntilYouSeeAllCassNodes():
 		time.sleep(2)
 
 
-def _RunYoutubeClient():
-	_Log("Running Youtube client ...")
-	fn_module = "%s/work/acorn/acorn/clients/youtube/run-youtube-cluster.py" % os.path.expanduser('~')
-	mod_name,file_ext = os.path.splitext(os.path.split(fn_module)[-1])
-	if file_ext.lower() != '.py':
-		raise RuntimeError("Unexpected file_ext: %s" % file_ext)
-	py_mod = imp.load_source(mod_name, fn_module)
-	getattr(py_mod, "main")([fn_module])
-
-
-s3_bucket_name = "acorn-youtube"
-
-
-def _UploadResult():
-	prev_dir = os.getcwd()
-	os.chdir("%s/work/acorn/acorn/clients/youtube/.run" % os.path.expanduser('~'))
-
-	# Zip .run
-	# http://stackoverflow.com/questions/1855095/how-to-create-a-zip-archive-of-a-directory
-	dn_in = "."
-	fn_out = "../acorn-youtube-result-%s.zip" % _job_id
-	with zipfile.ZipFile(fn_out, "w", zipfile.ZIP_DEFLATED) as zf:
-		for root, dirs, files in os.walk(dn_in):
-			for f in files:
-				_ZfWrite(zf, os.path.join(root, f))
-		_ZfWrite(zf, "/var/log/cloud-init-output.log")
-		_ZfWrite(zf, "/var/log/cloud-init.log")
-		_ZfWrite(zf, "/home/ubuntu/work/acorn/logs/debug.log")
-		_ZfWrite(zf, "/home/ubuntu/work/acorn/logs/system.log")
-
-	_Log("Created %s %d" % (os.path.abspath(fn_out), os.path.getsize(fn_out)))
-
-	# Upload to S3
-	_Log("Uploading data to S3 ...")
-	s3 = boto3.resource("s3", region_name = _s3_region)
-	# If you don't specify a region, the bucket will be created in US Standard.
-	#  http://boto3.readthedocs.io/en/latest/reference/services/s3.html#S3.Client.create_bucket
-	r = s3.create_bucket(Bucket=s3_bucket_name)
-	_Log(pprint.pformat(r))
-	r = s3.Object(s3_bucket_name, "%s.zip" % _job_id).put(Body=open(fn_out, "rb"))
-	_Log(pprint.pformat(r))
-
-	os.chdir(prev_dir)
-
-
-# Ignore non-existent files
-def _ZfWrite(zf, fn):
-	try:
-		zf.write(fn)
-	except OSError as e:
-		if e.errno == errno.ENOENT:
-			pass
-		else:
-			raise e
-
-
-def _PostJobDoneMsg():
-	# Post a "job done" message, so that the controller node can delete the job
-	# req msg and shutdown the cluster.
-	_Log("Posting a job completion message ...")
-	q = _GetJcQ()
-	_EnqJcMsg(q)
-
-
-_sqs_region = "us-east-1"
-_s3_region  = "us-east-1"
-_bc = None
-
-
-q_name_jc = "acorn-jobs-completed"
-_sqs = None
-
-# Get the queue. Create one if not exists.
-def _GetJcQ():
-	global _sqs
-	_sqs = boto3.resource("sqs", region_name = _sqs_region)
-
-	_Log("Getting the job completion queue ...")
-	try:
-		queue = _sqs.get_queue_by_name(
-				QueueName = q_name_jc,
-				# QueueOwnerAWSAccountId='string'
-				)
-		#_Log(pprint.pformat(vars(queue), indent=2))
-		#{ '_url': 'https://queue.amazonaws.com/998754746880/acorn-exps',
-		#		  'meta': ResourceMeta('sqs', identifiers=[u'url'])}
-		return queue
-	except botocore.exceptions.ClientError as e:
-		if e.response["Error"]["Code"] == "AWS.SimpleQueueService.NonExistentQueue":
-			pass
-		else:
-			raise e
-
-	_Log("The queue doesn't exists. Creating one ...")
-	response = _bc.create_queue(QueueName = q_name_jc)
-	# Default message retention period is 4 days.
-
-	return sqs.get_queue_by_name(QueueName = q_name_jc)
-
-
-msg_body_jc = "acorn-job-completion"
-
-def _EnqJcMsg(q):
-	_Log("Enq a job completion message ...")
-	msg_attrs = {}
-
-	for k, v in {
-			# job_id for notifying the completion of the job to the job controller
-			"job_id": _job_id
-			# Job request msg handle to be deleted
-			, "job_req_msg_recript_handle": _jr_sqs_msg_receipt_handle}.iteritems():
-		msg_attrs[k] = {"StringValue": v, "DataType": "String"}
-
-	q.send_message(MessageBody=msg_body_jc, MessageAttributes=msg_attrs)
-
-
-# Loading the Youtube data file form EBS takes long, and could make a big
-# difference among nodes in different regions, which varies the start times of
-# Youtube clients in different regions.
-def _UnzipAcornDataToLocalSsd():
-	_Log("Unzip Acorn data to local SSD ...")
-
-	dn_in = "/home/ubuntu/work/acorn-data"
-	dn_out = "/mnt/local-ssd0/work/acorn-data"
-
-	try:
-		os.makedirs(dn_out)
-	except OSError as e:
-		if e.errno == errno.EEXIST and os.path.isdir(dn_out):
-			pass
-		else:
-			raise
-
-	fn_youtube_reqs = None
-	with open(_fn_acorn_youtube_yaml, "r") as fo:
-		doc = yaml.load(fo)
-		fn_youtube_reqs = doc["fn_youtube_reqs"]
-
-	fn_in = "%s/%s.7z" % (dn_in, fn_youtube_reqs)
-	cmd = "7z e -y -o%s %s" % (dn_out, fn_in)
-	Util.RunSubp(cmd)
-
-	# Used to use vmtouch
-	#cmd = "/usr/local/bin/vmtouch -t -f %s" % self.fn
-
-
+# Note: Some of these will be needed for batch experiments
 _jr_sqs_url = None
 _jr_sqs_msg_receipt_handle = None
 _num_regions = None
@@ -395,14 +257,14 @@ def main(argv):
 		_SyncTime()
 		#_InstallPkgs()
 		_MountAndFormatLocalSSDs()
-		#_CloneAcornSrcAndBuild()
+		#_CloneSrcAndBuild()
 		#_EditCassConf()
 
-		# TODO: No experiment data needed for Mutants
+		# Note: No experiment data needed for Mutants
 		#_EditYoutubeClientConf()
-		#_UnzipAcornDataToLocalSsd()
+		#_UnzipExpDataToLocalSsd()
 
-		# TODO: Not needed for now
+		# Note: Not needed for now
 		#_RunCass()
 		#_WaitUntilYouSeeAllCassNodes()
 

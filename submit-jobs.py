@@ -12,11 +12,7 @@ import Cons
 
 sys.path.insert(0, "%s/lib" % os.path.dirname(__file__))
 import Ec2Region
-
-
-sqs_region = "us-east-1"
-q_name_jr = "acorn-jobs-requested"
-msg_body = "acorn-exp-req"
+import JobReq
 
 
 def main(argv):
@@ -27,8 +23,8 @@ def main(argv):
 
 	job = argv[1]
 
-	bc = boto3.client("sqs", region_name = sqs_region)
-	sqs = boto3.resource("sqs", region_name = sqs_region)
+	bc = boto3.client("sqs", region_name = JobReq.sqs_region)
+	sqs = boto3.resource("sqs", region_name = JobReq.sqs_region)
 	q = GetQ(bc, sqs)
 
 	# http://stackoverflow.com/questions/3061/calling-a-function-of-a-module-from-a-string-with-the-functions-name-in-python
@@ -39,11 +35,11 @@ def main(argv):
 def GetQ(bc, sqs):
 	with Cons.MT("Getting the queue ..."):
 		queue = sqs.get_queue_by_name(
-				QueueName = q_name_jr,
+				QueueName = JobReq.sqs_q_name,
 				# QueueOwnerAWSAccountId='string'
 				)
 		#Cons.P(pprint.pformat(vars(queue), indent=2))
-		#{ '_url': 'https://queue.amazonaws.com/998754746880/acorn-exps',
+		#{ '_url': 'https://queue.amazonaws.com/998754746880/mutants-exps',
 		#		  'meta': ResourceMeta('sqs', identifiers=[u'url'])}
 		return queue
 
@@ -78,7 +74,7 @@ def _EnqReq(q, attrs):
 			msg_attrs[k] = {"StringValue": v, "DataType": "String"}
 		msg_attrs["job_controller_params"] = {"StringValue": json.dumps(jc_params), "DataType": "String"}
 
-		q.send_message(MessageBody=msg_body, MessageAttributes=msg_attrs)
+		q.send_message(MessageBody=JobReq.Msg.msg_body, MessageAttributes=msg_attrs)
 
 
 if __name__ == "__main__":

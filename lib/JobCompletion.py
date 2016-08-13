@@ -96,7 +96,7 @@ def _Poll(jc_q):
 
 
 class Msg:
-	msg_body_jc = "acorn-job-completion"
+	msg_body_jc = "mutants-job-completion"
 
 	def __init__(self, msg):
 		if msg.body != Msg.msg_body_jc:
@@ -117,17 +117,17 @@ class Msg:
 		self.msg = msg
 
 
-q_name_jc = "acorn-jobs-completed"
-
 def _GetQ():
+	sqs_q_name_jc = "mutants-jobs-completed"
+
 	# Get the queue. Create one if not exists.
 	try:
 		queue = _sqs.get_queue_by_name(
-				QueueName = q_name_jc,
+				QueueName = sqs_q_name_jc,
 				# QueueOwnerAWSAccountId='string'
 				)
 		#Cons.P(pprint.pformat(vars(queue), indent=2))
-		#{ '_url': 'https://queue.amazonaws.com/998754746880/acorn-exps',
+		#{ '_url': 'https://queue.amazonaws.com/998754746880/mutants-exps',
 		#		  'meta': ResourceMeta('sqs', identifiers=[u'url'])}
 		return queue
 	except botocore.exceptions.ClientError as e:
@@ -140,7 +140,7 @@ def _GetQ():
 	while True:
 		response = None
 		try:
-			response = _bc.create_queue(QueueName = q_name_jc)
+			response = _bc.create_queue(QueueName = sqs_q_name_jc)
 			# Default message retention period is 4 days.
 			print ""
 			break
@@ -155,4 +155,4 @@ def _GetQ():
 			else:
 				raise e
 
-	return _sqs.get_queue_by_name(QueueName = q_name_jc)
+	return _sqs.get_queue_by_name(QueueName = sqs_q_name_jc)

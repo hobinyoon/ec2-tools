@@ -91,8 +91,7 @@ def main(argv):
 
 	if len(argv) != 5:
 		raise RuntimeError("Usage: %s init_script jr_sqs_url jr_sqs_msg_receipt_handle num_regions\n"
-				"  E.g.: %s acorn-server None None 1\n"
-				"        The two Nones are for testing purposes."
+				"  E.g.: %s mutants-server None None 1"
 				% (argv[0], argv[0]))
 
 	global _fn_init_script

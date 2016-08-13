@@ -33,7 +33,8 @@ def PollBackground(jr_q):
 	_thr_poll.start()
 
 
-_q_name_jr = "acorn-jobs-requested"
+# TODO: Check if other places have hard-coded this
+sqs_q_name = "mutants-jobs-requested"
 
 def DeleteQ():
 	_Init()
@@ -41,7 +42,7 @@ def DeleteQ():
 	Cons.P("\nDeleting the job request queue so that requests don't reappear next time the job controller starts ...")
 	try:
 		q = _sqs.get_queue_by_name(
-				QueueName = _q_name_jr,
+				QueueName = sqs_q_name,
 				)
 		r = _bc.delete_queue(QueueUrl = q._url)
 		Cons.P(pprint.pformat(r, indent=2))
@@ -91,11 +92,11 @@ def Process(req, job_controller_gm_q):
 	# cluster_name for Cassandra. It's ok for multiple clusters to have the
 	# same name as long as they don't see each other through the gossip
 	# protocol.  It's even okay to use the default one: test-cluster
-	#req.attrs["cass_cluster_name"] = "acorn"
+	#req.attrs["cass_cluster_name"] = "mutants"
 
 	ReqSpotInsts.Req(
 			region_spot_req = jc_params["region_spot_req"]
-			, ami_name = jc_params.get("ami_name", "acorn-server")
+			, ami_name = jc_params.get("ami_name", "mutants-server")
 			, tags = req.attrs
 			, jr_sqs_url = jr_sqs_url
 			, jr_sqs_msg_receipt_handle = jr_sqs_msg_receipt_handle
@@ -107,25 +108,25 @@ def Process(req, job_controller_gm_q):
 	# Sleep a bit to make each request has unique job_id
 	time.sleep(1.1)
 
-	# Delete the job request msg for non-acorn-server nodes, e.g., acorn-dev
+	# Delete the job request msg for non-mutants-server nodes, e.g., mutants-dev
 	# nodes, so that they don't reappear.
-	if req.attrs["init_script"] not in ["acorn-server"]:
+	if req.attrs["init_script"] not in ["mutants-server"]:
 		DeleteMsg(jr_sqs_msg_receipt_handle)
 
 
+sqs_region = "us-east-1"
 
 _initialized = False
 _bc = None
 _sqs = None
-_sqs_region = "us-east-1"
 _q = None
 
 def _Init():
 	global _initialized
 	if _initialized == False:
 		global _bc, _sqs, _q
-		_bc = boto3.client("sqs", region_name = _sqs_region)
-		_sqs = boto3.resource("sqs", region_name = _sqs_region)
+		_bc = boto3.client("sqs", region_name = sqs_region)
+		_sqs = boto3.resource("sqs", region_name = sqs_region)
 		_initialized = True
 		_q = _GetQ()
 
@@ -168,7 +169,7 @@ def _Poll(jr_q):
 
 
 class Msg:
-	msg_body = "acorn-exp-req"
+	msg_body = "mutants-exp-req"
 
 	def __init__(self, msg):
 		if msg.body != Msg.msg_body:
@@ -193,11 +194,11 @@ def _GetQ():
 	# Get the queue. Create one if not exists.
 	try:
 		queue = _sqs.get_queue_by_name(
-				QueueName = _q_name_jr,
+				QueueName = sqs_q_name,
 				# QueueOwnerAWSAccountId='string'
 				)
 		#Cons.P(pprint.pformat(vars(queue), indent=2))
-		#{ '_url': 'https://queue.amazonaws.com/998754746880/acorn-exps',
+		#{ '_url': 'https://queue.amazonaws.com/998754746880/mutants-exps',
 		#		  'meta': ResourceMeta('sqs', identifiers=[u'url'])}
 		return queue
 	except botocore.exceptions.ClientError as e:
@@ -212,7 +213,7 @@ def _GetQ():
 	while True:
 		response = None
 		try:
-			response = _bc.create_queue(QueueName = _q_name_jr)
+			response = _bc.create_queue(QueueName = sqs_q_name)
 			# Default message retention period is 4 days.
 			print ""
 			break
@@ -227,4 +228,4 @@ def _GetQ():
 			else:
 				raise e
 
-	return _sqs.get_queue_by_name(QueueName = _q_name_jr)
+	return _sqs.get_queue_by_name(QueueName = sqs_q_name)
