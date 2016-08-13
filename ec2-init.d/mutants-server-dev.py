@@ -395,13 +395,16 @@ def main(argv):
 		_SyncTime()
 		#_InstallPkgs()
 		_MountAndFormatLocalSSDs()
-		_CloneAcornSrcAndBuild()
-		_EditCassConf()
-		_EditYoutubeClientConf()
-		_UnzipAcornDataToLocalSsd()
-		_RunCass()
+		#_CloneAcornSrcAndBuild()
+		#_EditCassConf()
 
-		_WaitUntilYouSeeAllCassNodes()
+		# TODO: No experiment data needed for Mutants
+		#_EditYoutubeClientConf()
+		#_UnzipAcornDataToLocalSsd()
+
+		# TODO: Not needed for now
+		#_RunCass()
+		#_WaitUntilYouSeeAllCassNodes()
 
 		# The node is not terminated by the job controller. When done with the
 		# development, it needds to be terminated manually.

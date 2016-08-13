@@ -20,7 +20,10 @@ def GetLatestAmiId(region, name = "acorn-server"):
 		region_ami = {
 				"us-east-1": "ami-645cda73"
 				}
-	# TODO: mutants
+	elif name == "mutants-server":
+		region_ami = {
+				"us-east-1": "ami-1fc7d575"
+				}
 	else:
 		raise RuntimeError("Unexpected name %s" % name)
 

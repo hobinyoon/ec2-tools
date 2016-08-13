@@ -23,7 +23,7 @@ def P(msg):
 		m0 = "%s: %s" % (time.strftime("%y%m%d-%H%M%S"), msg)
 		Cons.P(m0)
 
-		dn = "%s/.log" % os.path.dirname(__file__)
+		dn = "%s/../.log" % os.path.dirname(__file__)
 		if not os.path.isdir(dn):
 			Util.MkDirs(dn)
 
