@@ -74,7 +74,7 @@ class _Req:
 
 class Log:
 	def __init__(self, job_id):
-		dn = "%s/batch-processing/.log/job-req" % os.path.dirname(__file__)
+		dn = "%s/../.log/job-req" % os.path.dirname(__file__)
 		if not os.path.isdir(dn):
 			Util.MkDirs(dn)
 
