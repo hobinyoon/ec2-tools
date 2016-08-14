@@ -81,7 +81,7 @@ def PollMsgs():
 				except Queue.Empty:
 					pass
 
-		if isinstance(msg, str):
+		if isinstance(msg, str) or isinstance(msg, unicode):
 			JobControllerLog.P("\nGot a message: %s" % msg)
 		elif isinstance(msg, ClusterCleaner.Msg):
 			ProcessClusterCleanReq(msg)
