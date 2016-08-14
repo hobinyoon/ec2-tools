@@ -108,8 +108,8 @@ def Process(req, job_controller_gm_q):
 	# Sleep a bit to make each request has unique job_id
 	time.sleep(1.1)
 
-	# Delete the job request msg for non-mutants-server nodes, e.g., mutants-dev
-	# nodes, so that they don't reappear.
+	# Delete the job request msg for non-"mutants-server" nodes, e.g.,
+	# mutants-dev nodes, so that they don't reappear.
 	if req.attrs["init_script"] not in ["mutants-server"]:
 		DeleteMsg(jr_sqs_msg_receipt_handle)
 
