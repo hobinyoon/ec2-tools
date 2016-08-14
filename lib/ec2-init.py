@@ -72,11 +72,15 @@ def _RunInitByTags():
 	tags_str = ",".join(["%s:%s" % (k, v) for (k, v) in sorted(tags.items())])
 	_Log("tags_str: %s" % tags_str)
 
-	fn_module = "%s/ec2-init.d/%s.py" % (os.path.dirname(__file__), _fn_init_script)
+	fn_module = "%s/../ec2-init.d/%s.py" % (os.path.dirname(__file__), _fn_init_script)
 	mod_name,file_ext = os.path.splitext(os.path.split(fn_module)[-1])
 	if file_ext.lower() != '.py':
 		raise RuntimeError("Unexpected file_ext: %s" % file_ext)
-	py_mod = imp.load_source(mod_name, fn_module)
+	try:
+		py_mod = imp.load_source(mod_name, fn_module)
+	except IOError as e:
+		_Log("fn_module: %s" % fn_module)
+		raise e
 	getattr(py_mod, "main")([fn_module, _jr_sqs_url, _jr_sqs_msg_receipt_handle, _num_regions, tags_str])
 
 
