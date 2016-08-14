@@ -12,9 +12,6 @@ import Util
 import BotoClient
 
 
-_lock = threading.Lock()
-_last_checked_time = None
-_region_az_lowest_price = {}
 
 _num_checked = 0
 _num_checked_lock = threading.Lock()
@@ -24,10 +21,14 @@ _az_price = None
 _az_price_lock = threading.Lock()
 
 
+_lock_price_check = threading.Lock()
+_last_checked_time = None
+_region_az_lowest_price = {}
+# Returns {region: [az_with_lowest_price, the_price] }
 def GetTheLowestMaxPriceAZs(log, region_spot_req):
 	global _region_az_lowest_price
 
-	with _lock:
+	with _lock_price_check:
 		# If requested within the last 5 mins from the last request, return the
 		# stored one.
 		global _last_checked_time
@@ -44,26 +45,26 @@ def GetTheLowestMaxPriceAZs(log, region_spot_req):
 		global _num_checked
 		_num_checked = 0
 
-		# {region, CheckSpotPrice()}
-		csps = {}
+		# {region, SpotPriceStat()}
+		rsps = {}
 		for region, spot_req_params in region_spot_req.iteritems():
 			inst_type = spot_req_params["inst_type"]
-			csps[region] = CheckSpotPrice(log, region, inst_type)
+			rsps[region] = SpotPriceStat(log, region, inst_type)
 
 		threads = []
-		for region, v in csps.iteritems():
-			t = threading.Thread(target=v.Run)
+		for region, v in rsps.iteritems():
+			t = threading.Thread(target=v.Check)
 			t.daemon = True
 			threads.append(t)
 			t.start()
-
 		for t in threads:
 			t.join()
 		log.P("")
 
 		log.P("Region         inst_type az   cur 1d-avg 1d-max")
+		# {region: [az_with_lowest_price, the_price] }
 		_region_az_lowest_price = {}
-		for region, v in sorted(csps.iteritems()):
+		for region, v in sorted(rsps.iteritems()):
 			v.Print()
 			_region_az_lowest_price[region] = v.AzLowestPrice()
 		#log.P(pprint.pformat(_region_az_lowest_price))
@@ -80,14 +81,14 @@ def _Reset():
 	_az_price = {}
 
 
-class CheckSpotPrice():
+class SpotPriceStat():
 	def __init__(self, log, region, inst_type):
 		self.log = log
 		self.region = region
 		self.inst_type = inst_type
 		self.az_price = {}
 
-	def Run(self):
+	def Check(self):
 		try:
 			now = datetime.datetime.now()
 			one_day_ago = now - datetime.timedelta(days=2)
@@ -147,7 +148,6 @@ class CheckSpotPrice():
 			self.log.P("%s\nregion=%s\n%s" % (e, self.region, traceback.format_exc()))
 			os._exit(1)
 
-
 	def Print(self):
 		# ap-southeast-1
 		# 01234567890123
@@ -155,7 +155,6 @@ class CheckSpotPrice():
 		for az, p in sorted(self.az_price.iteritems()):
 			self.log.Pnnl(" %s" % p)
 		self.log.P("")
-
 
 	def AzLowestPrice(self):
 		az_lowest = None
@@ -168,7 +167,7 @@ class CheckSpotPrice():
 				if p.max < p_lowest:
 					az_lowest = az
 					p_lowest = p.max
-		return az_lowest
+		return [az_lowest, self.az_price[az_lowest]]
 
 
 class CurSpotPrice():
@@ -179,4 +178,4 @@ class CurSpotPrice():
 		self.max = price_max
 
 	def __str__(self):
-		return "%s %0.4f %0.4f %0.4f" % (self.az[-1:], self.cur, self.avg, self.max)
+		return "%s cur:%0.4f 2d_avg:%0.4f 2d_max:%0.4f" % (self.az[-1:], self.cur, self.avg, self.max)

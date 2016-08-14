@@ -16,7 +16,6 @@ import Ec2Region
 import JobReq
 
 
-
 def main(argv):
 	job_list = []
 	for k, v in globals().iteritems():

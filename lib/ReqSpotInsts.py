@@ -42,30 +42,32 @@ class _Req:
 			log.P("job_id:%s (for describing and terminating the cluster)" % job_id)
 
 			# Get AZ with the lowest last-2-day max spot price
-			# {region: az}
+			#   {region: [az_with_lowest_price, the_price] }
 			region_az_lowest_max_spot_price = SpotPrice.GetTheLowestMaxPriceAZs(log, region_spot_req)
 
-			rams = []
+			rats = []
 			for region, spot_req_params in region_spot_req.iteritems():
 				# Spot requests are made to specific AZs, which has the lowest last-1-day
 				# max price.
-				az = region_az_lowest_max_spot_price[region]
-				rams.append(ReqAndTag(log, region, spot_req_params, az, ami_name, tags, len(region_spot_req)
+				az = region_az_lowest_max_spot_price[region][0]
+				rats.append(ReqAndTag(log, region, spot_req_params, az, ami_name, tags, len(region_spot_req)
 					, jr_sqs_url, jr_sqs_msg_receipt_handle
 					))
+			#for r, az_price in region_az_lowest_max_spot_price.iteritems():
+			#	Cons.P("%s %s" % (r, az_price[0], az_price[1]))
+			spot_prices_str = "\n".join("%s-%s" % (k, v[1]) for k, v in sorted(region_az_lowest_max_spot_price.items()))
 
 			threads = []
-			for ram in rams:
-				t = threading.Thread(target=ram.Run)
+			for rat in rats:
+				t = threading.Thread(target=rat.Run)
 				t.daemon = True
 				threads.append(t)
 				t.start()
-
 			for t in threads:
 				t.join()
 
-			# May want to console-output current spot price too
-			job_controller_gm_q.put("job_id: %s. %d instances are created." % (job_id, len(region_spot_req))
+			job_controller_gm_q.put("job_id: %s. %d instances are created. Spot prices:\n%s" \
+					% (job_id, len(region_spot_req), spot_prices_str)
 					, block=True, timeout=None)
 		except Exception as e:
 			log.P("%s\n%s" % (e, traceback.format_exc()), target="both")
@@ -139,7 +141,7 @@ class ReqAndTag():
 cd /home/ubuntu/work
 rm -rf /home/ubuntu/work/ec2-tools
 sudo -i -u ubuntu bash -c 'git clone https://github.com/hobinyoon/ec2-tools.git /home/ubuntu/work/ec2-tools'
-sudo -i -u ubuntu /home/ubuntu/work/ec2-tools/ec2/ec2-init.py {0} {1} {2} {3}
+sudo -i -u ubuntu /home/ubuntu/work/ec2-tools/ec2-init.py {0} {1} {2} {3}
 """
 		user_data = user_data.format(self.tags["init_script"], self.jr_sqs_url, self.jr_sqs_msg_receipt_handle, self.num_regions)
 
