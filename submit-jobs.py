@@ -40,21 +40,20 @@ def main(argv):
 _sqs = None
 _sqs_q = None
 def _GetQ():
-	with Cons.MT("Getting the queue ..."):
-		global _sqs
-		if _sqs is None:
-			_sqs = boto3.resource("sqs", region_name = JobReq.sqs_region)
+	global _sqs
+	if _sqs is None:
+		_sqs = boto3.resource("sqs", region_name = JobReq.sqs_region)
 
-		global _sqs_q
-		if _sqs_q is None:
-			_sqs_q = _sqs.get_queue_by_name(
-					QueueName = JobReq.sqs_q_name,
-					# QueueOwnerAWSAccountId='string'
-					)
-			#Cons.P(pprint.pformat(vars(_sqs_q), indent=2))
-			#{ '_url': 'https://queue.amazonaws.com/998754746880/mutants-exps',
-			#		  'meta': ResourceMeta('sqs', identifiers=[u'url'])}
-		return _sqs_q
+	global _sqs_q
+	if _sqs_q is None:
+		_sqs_q = _sqs.get_queue_by_name(
+				QueueName = JobReq.sqs_q_name,
+				# QueueOwnerAWSAccountId='string'
+				)
+		#Cons.P(pprint.pformat(vars(_sqs_q), indent=2))
+		#{ '_url': 'https://queue.amazonaws.com/998754746880/mutants-exps',
+		#		  'meta': ResourceMeta('sqs', identifiers=[u'url'])}
+	return _sqs_q
 
 
 def Job_MutantsDevSingleServer():
