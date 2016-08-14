@@ -1,10 +1,14 @@
 TODO
 ----
-- Admission control. Launch a new cluster when the number of nodes in each DC
-	is less than 12. InstMonitor has the info.
+- For Mutants, ClusterMonitor can be modified as JobMonitor. Each job consists
+	of servers and clients (most probably a single client will do).
 
 - When a cluter is cleaned by ClusterCleaner, re-launch the job (make the same
-	job request again).
+	job request again). Doesn't the reappearing of SQS message already do this?
+	Double check!
+
+- Admission control. Launch a new cluster when the number of nodes in each DC
+	is less than 12. InstMonitor has the info. Not sure if I will need it.
 
 
 Note

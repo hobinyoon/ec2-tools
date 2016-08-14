@@ -14,15 +14,13 @@ sys.path.insert(0, "%s/lib" % os.path.dirname(__file__))
 import JobReq
 
 
-sqs_region = "us-east-1"
-
 _bc = None
 _sqs = None
 
 def main(argv):
 	global _bc, _sqs
-	_bc = boto3.client("sqs", region_name = sqs_region)
-	_sqs = boto3.resource("sqs", region_name = sqs_region)
+	_bc = boto3.client("sqs", region_name = JobReq.sqs_region)
+	_sqs = boto3.resource("sqs", region_name = JobReq.sqs_region)
 
 	q = GetQ()
 	if q is None:

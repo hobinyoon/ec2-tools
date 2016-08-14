@@ -152,7 +152,8 @@ class CM:
 						nojobid_inst[i.region].append(i)
 						num_nojobid_inst += 1
 
-			ClusterCleaner.MayClean(jobid_inst)
+			if self.mode == "run_until_stopped":
+				ClusterCleaner.MayClean(jobid_inst)
 
 			for job_id, v in sorted(jobid_inst.iteritems()):
 				self.dio.P("%s %d" % (job_id, len(v)))

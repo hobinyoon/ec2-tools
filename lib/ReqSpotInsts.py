@@ -138,10 +138,11 @@ class ReqAndTag():
 		# http://unix.stackexchange.com/questions/4342/how-do-i-get-sudo-u-user-to-use-the-users-env
 		user_data = \
 """#!/bin/bash
-cd /home/ubuntu/work
-rm -rf /home/ubuntu/work/ec2-tools
-sudo -i -u ubuntu bash -c 'git clone https://github.com/hobinyoon/ec2-tools.git /home/ubuntu/work/ec2-tools'
-sudo -i -u ubuntu /home/ubuntu/work/ec2-tools/lib/ec2-init.py {0} {1} {2} {3}
+mkdir -p /home/ubuntu/work/mutants
+cd /home/ubuntu/work/mutants
+rm -rf /home/ubuntu/work/mutants/ec2-tools
+sudo -i -u ubuntu bash -c 'git clone https://github.com/hobinyoon/mutants-ec2-tools.git /home/ubuntu/work/mutants/ec2-tools'
+sudo -i -u ubuntu /home/ubuntu/work/mutants/ec2-tools/lib/ec2-init.py {0} {1} {2} {3}
 """
 		user_data = user_data.format(self.tags["init_script"], self.jr_sqs_url, self.jr_sqs_msg_receipt_handle, self.num_regions)
 
