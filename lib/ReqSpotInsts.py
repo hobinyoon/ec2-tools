@@ -141,7 +141,7 @@ class ReqAndTag():
 cd /home/ubuntu/work
 rm -rf /home/ubuntu/work/ec2-tools
 sudo -i -u ubuntu bash -c 'git clone https://github.com/hobinyoon/ec2-tools.git /home/ubuntu/work/ec2-tools'
-sudo -i -u ubuntu /home/ubuntu/work/ec2-tools/ec2-init.py {0} {1} {2} {3}
+sudo -i -u ubuntu /home/ubuntu/work/ec2-tools/lib/ec2-init.py {0} {1} {2} {3}
 """
 		user_data = user_data.format(self.tags["init_script"], self.jr_sqs_url, self.jr_sqs_msg_receipt_handle, self.num_regions)
 
