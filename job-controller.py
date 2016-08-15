@@ -72,12 +72,16 @@ def PollMsgs():
 					pass
 
 				try:
-					if ClusterMonitor.CanLaunchAnotherCluster():
-						# TODO: I don't think the queue is needed here. Fetch one directly from the SQS queue.
-						# Something like this
-						#msg = JobReq.Get(timeout=0.01)
-						msg = _q_jr.get(timeout=0.01)
-						break
+					msg = _q_jr.get(timeout=0.01)
+					break
+
+					# We'll see if rate control is needed.
+					#if ClusterMonitor.CanLaunchAnotherCluster():
+					#	# TODO: I don't think the queue is needed here. Fetch one directly from the SQS queue.
+					#	# Something like this
+					#	#msg = JobReq.Get(timeout=0.01)
+					#	msg = _q_jr.get(timeout=0.01)
+					#	break
 				except Queue.Empty:
 					pass
 
