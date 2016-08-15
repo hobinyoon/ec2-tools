@@ -56,37 +56,49 @@ def _GetQ():
 	return _sqs_q
 
 
-def Job_MutantsDevSingleServer():
-	req_attrs = {
-			"init_script": "mutants-server-dev"
-			, "ami_name": "mutants-server"
-			, "region_spot_req": {
-				"us-east-1": {"inst_type": "c3.2xlarge", "max_price": 1.0}
+def Job_MutantsDevS1C1():
+	_EnqReq(
+			{"region": "us-east-1"
+				# Client uses the same instance type as the server, cause it generates
+				# all requests for a cluster of servers.
+				, "spot_req": {"inst_type": "c3.2xlarge", "max_price": 1.0}
 				#            vCPU ECU Memory (GiB) Instance Storage (GB) Linux/UNIX Usage
 				# c3.2xlarge    8  28           15            2 x 80 SSD   $0.42 per Hour
+
+				, "server": {
+					# We'll see if the AMIs need to be separated by DBs.
+					"init_script": "mutants-cassandra-server-dev"
+					# TODO
+					, "ami_name": "mutants-cassandra"
+					, "num_nodes": "1"
+					}
+
+				# The client needs to be in the same AZ.
+				, "client" : {
+					"init_script": "mutants-cassandra-client-dev"
+					, "ami_name": "mutants-cassandra"
+					}
 				}
-			}
-	_EnqReq(req_attrs)
+			)
 
 
 def _EnqReq(attrs):
 	with Cons.MT("Enq a request: "):
+		# Need to make a copy so that an SQS message can be sent while attrs is being
+		# modified.
 		attrs = attrs.copy()
 		Cons.P(pprint.pformat(attrs))
 
-		jc_params = {}
-		for k in attrs.keys():
-			if k in ["region_spot_req", "ami_name"]:
-				jc_params[k] = attrs[k]
-				del attrs[k]
-		#Cons.P(json.dumps(jc_params))
-
-		msg_attrs = {}
-		for k, v in attrs.iteritems():
-			msg_attrs[k] = {"StringValue": v, "DataType": "String"}
-		msg_attrs["job_controller_params"] = {"StringValue": json.dumps(jc_params), "DataType": "String"}
-
-		_GetQ().send_message(MessageBody=JobReq.Msg.msg_body, MessageAttributes=msg_attrs)
+		# A Mutants job req has too many attributes - well over 10. Pack then with
+		# a json format in the message body, not in the attributes.
+		#
+		# "You can attach up to ten attributes to each of your messages. The entire
+		# message, including the body plus all names, types, and values, can be as
+		# large as 256 KB (262,144 bytes)."
+		# - https://aws.amazon.com/blogs/aws/simple-queue-service-message-attributes
+		#
+		# Seems like the msg body doesn't need to be based64 encoded.
+		_GetQ().send_message(MessageBody=json.dumps(attrs))
 
 
 if __name__ == "__main__":
