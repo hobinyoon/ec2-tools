@@ -133,6 +133,11 @@ class CM:
 					" PublicIpAddress"
 					" State:Name) ...\n")
 
+			# TODO: Show the prices next to the running instances when describing them.
+			#spot_prices_str = "\n".join("%s-%s" % (k, v[1]) for k, v in sorted(region_az_lowest_max_spot_price.items()))
+
+			# TODO: Jobs don't cross regions. There are no inter-region jobs.
+			#
 			# Group by job_id. Only for those with job_ids
 			#   { job_id: {region: Inst} }
 			jobid_inst = {}
@@ -152,8 +157,9 @@ class CM:
 						nojobid_inst[i.region].append(i)
 						num_nojobid_inst += 1
 
-			if self.mode == "run_until_stopped":
-				ClusterCleaner.MayClean(jobid_inst)
+			# TODO
+			#if self.mode == "run_until_stopped":
+			#	ClusterCleaner.MayClean(jobid_inst)
 
 			for job_id, v in sorted(jobid_inst.iteritems()):
 				self.dio.P("%s %d" % (job_id, len(v)))
