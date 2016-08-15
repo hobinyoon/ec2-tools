@@ -1,181 +1,141 @@
 import datetime
 import os
-import pprint
 import sys
 import threading
 import traceback
 
 sys.path.insert(0, "%s/util" % os.path.dirname(__file__))
-import Cons
 import Util
 
 import BotoClient
+import JobControllerLog
 
 
+_lock = threading.Lock()
 
-_num_checked = 0
-_num_checked_lock = threading.Lock()
+# Query at most once for a 5 minute intervals. The second and later requests
+# get the cached result.
+#
+# {SpKey: SpValue}
+_cache = {}
+def MostStableAz(region, inst_type):
+	k = SpKey(region, inst_type)
 
-# Global { az: price }
-_az_price = None
-_az_price_lock = threading.Lock()
+	# Multiple job requests can be in flight. Protect cache and boto query.
+	with _lock:
+		global _cache
+		v = _cache.get(k, None)
+		if (v is not None) and v.Valid():
+			return v.MostStableAz()
 
-
-_lock_price_check = threading.Lock()
-_last_checked_time = None
-_region_az_lowest_price = {}
-# Returns {region: [az_with_lowest_price, the_price] }
-def GetTheLowestMaxPriceAZs(log, region_spot_req):
-	global _region_az_lowest_price
-
-	with _lock_price_check:
-		# If requested within the last 5 mins from the last request, return the
-		# stored one.
-		global _last_checked_time
-		if _last_checked_time is None:
-			_last_checked_time = datetime.datetime.now()
-		else:
-			diff = (datetime.datetime.now() - _last_checked_time).total_seconds()
-			if diff < 5 * 60:
-				return _region_az_lowest_price
-
-		_Reset()
-
-		log.Pnnl("Checking spot prices:")
-		global _num_checked
-		_num_checked = 0
-
-		# {region, SpotPriceStat()}
-		rsps = {}
-		for region, spot_req_params in region_spot_req.iteritems():
-			inst_type = spot_req_params["inst_type"]
-			rsps[region] = SpotPriceStat(log, region, inst_type)
-
-		threads = []
-		for region, v in rsps.iteritems():
-			t = threading.Thread(target=v.Check)
-			t.daemon = True
-			threads.append(t)
-			t.start()
-		for t in threads:
-			t.join()
-		log.P("")
-
-		log.P("Region         inst_type az   cur 1d-avg 1d-max")
-		# {region: [az_with_lowest_price, the_price] }
-		_region_az_lowest_price = {}
-		for region, v in sorted(rsps.iteritems()):
-			v.Print()
-			_region_az_lowest_price[region] = v.AzLowestPrice()
-		#log.P(pprint.pformat(_region_az_lowest_price))
-		return _region_az_lowest_price
+		v = _GetSpotPrice(k)
+		_cache[k] = v
+		return v.MostStableAz()
 
 
-def GetCurPrice(az):
-	with _az_price_lock:
-		return _az_price[az].cur
+def _GetSpotPrice(k):
+	try:
+		now = datetime.datetime.now()
+		start_time = now - datetime.timedelta(days=2)
+		JobControllerLog.P("Getting spot prices for (%s) ..." % k)
+
+		r = BotoClient.Get(k.region).describe_spot_price_history(
+				StartTime = start_time,
+				EndTime = now,
+				ProductDescriptions = ["Linux/UNIX"],
+				InstanceTypes = [k.inst_type],
+				)
+
+		# {az: {timestamp: price}}
+		az_ts_price = {}
+		for sp in r["SpotPriceHistory"]:
+			az = sp["AvailabilityZone"]
+			ts = sp["Timestamp"]
+			sp = float(sp["SpotPrice"])
+			if az not in az_ts_price:
+				az_ts_price[az] = {}
+			az_ts_price[az][ts] = sp
+
+		if len(az_ts_price) == 0:
+			raise RuntimeError("No price history for (%s)" % k)
+
+		# {az, [price_cur, price_avg, price_max]}
+		az_price = {}
+		for az, v in sorted(az_ts_price.iteritems()):
+			ts_prev = None
+			price_prev = None
+			dur_sum = 0
+			dur_price_sum = 0.0
+			price_max = 0.0
+			price_avg = 0.0
+
+			for ts, price in sorted(v.iteritems()):
+				if ts_prev is not None:
+					dur = (ts - ts_prev).total_seconds()
+					dur_sum += dur
+					dur_price_sum += (dur * price)
+
+				price_max = max(price, price_max)
+				ts_prev = ts
+				price_prev = price
+
+			if dur_sum != 0.0:
+				price_avg = dur_price_sum / dur_sum
+
+			az_price[az] = [price_prev, price_avg, price_max]
+		v = SpValue(az_price, now)
+		JobControllerLog.P("Spot prices for (%s):\n%s" % (k, Util.Indent(str(v), 2)))
+		return v
+	except Exception as e:
+		JobControllerLog.P("%s\nregion=%s\n%s" % (e, k.region, traceback.format_exc()))
+		os._exit(1)
 
 
-def _Reset():
-	global _az_price
-	_az_price = {}
-
-
-class SpotPriceStat():
-	def __init__(self, log, region, inst_type):
-		self.log = log
+class SpKey:
+	def __init__(self, region, inst_type):
 		self.region = region
 		self.inst_type = inst_type
-		self.az_price = {}
 
-	def Check(self):
-		try:
-			now = datetime.datetime.now()
-			one_day_ago = now - datetime.timedelta(days=2)
+	def __hash__(self):
+		# () is for tuple
+		return hash((self.region, self.inst_type))
 
-			r = BotoClient.Get(self.region).describe_spot_price_history(
-					StartTime = one_day_ago,
-					EndTime = now,
-					ProductDescriptions = ["Linux/UNIX"],
-					InstanceTypes = [self.inst_type],
-					)
-
-			# {az: {timestamp: price} }
-			az_ts_price = {}
-			for sp in r["SpotPriceHistory"]:
-				az = sp["AvailabilityZone"]
-				ts = sp["Timestamp"]
-				sp = float(sp["SpotPrice"])
-				if az not in az_ts_price:
-					az_ts_price[az] = {}
-				az_ts_price[az][ts] = sp
-
-			if len(az_ts_price) == 0:
-				raise RuntimeError("No price history for %s in %s" % (self.inst_type, self.region))
-
-			for az, v in sorted(az_ts_price.iteritems()):
-				ts_prev = None
-				price_prev = None
-				dur_sum = 0
-				dur_price_sum = 0.0
-				price_max = 0.0
-				price_avg = 0.0
-				for ts, price in sorted(v.iteritems()):
-					if ts_prev is not None:
-						dur = (ts - ts_prev).total_seconds()
-						dur_sum += dur
-						dur_price_sum += (dur * price)
-
-					price_max = max(price, price_max)
-					ts_prev = ts
-					price_prev = price
-				if dur_sum != 0.0:
-					price_avg = dur_price_sum / dur_sum
-				price_cur = price_prev
-				p = CurSpotPrice(az, price_cur, price_avg, price_max)
-				self.az_price[az] = p
-				with _az_price_lock:
-					_az_price[az] = p
-
-			with _num_checked_lock:
-				global _num_checked
-				_num_checked += 1
-				if _num_checked == 7:
-					#                        Checking spot prices:
-					self.log.Pnnl("\n                     ")
-				self.log.Pnnl(" %s" % self.region)
-		except Exception as e:
-			self.log.P("%s\nregion=%s\n%s" % (e, self.region, traceback.format_exc()))
-			os._exit(1)
-
-	def Print(self):
-		# ap-southeast-1
-		# 01234567890123
-		self.log.Pnnl("%-14s %-10s" % (self.region, self.inst_type))
-		for az, p in sorted(self.az_price.iteritems()):
-			self.log.Pnnl(" %s" % p)
-		self.log.P("")
-
-	def AzLowestPrice(self):
-		az_lowest = None
-		p_lowest = None
-		for az, p in self.az_price.iteritems():
-			if az_lowest is None:
-				az_lowest = az
-				p_lowest = p.max
-			else:
-				if p.max < p_lowest:
-					az_lowest = az
-					p_lowest = p.max
-		return [az_lowest, self.az_price[az_lowest]]
-
-
-class CurSpotPrice():
-	def __init__(self, az, price_cur, price_avg, price_max):
-		self.az = az
-		self.cur = price_cur
-		self.avg = price_avg
-		self.max = price_max
+	def __eq__(self, other):
+		return (self.region, self.inst_type) == (other.region, other.inst_type)
 
 	def __str__(self):
-		return "%s cur:%0.4f 2d_avg:%0.4f 2d_max:%0.4f" % (self.az[-1:], self.cur, self.avg, self.max)
+		return "%s %s" % (self.region, self.inst_type)
+
+
+class SpValue:
+	def __init__(self, az_price, time_checked):
+		# {az: [cur, 2d_avg, 2d_max]}
+		self.az_price = az_price
+		self.time_checked = time_checked
+
+	def Valid(self):
+		diff = datetime.datetime.now() - self.time_checked
+		return (diff.seconds < 300)
+
+	def MostStableAz(self):
+		az_ms = None
+		p_ms = None
+		for az, p in self.az_price.iteritems():
+			if az_ms is None:
+				az_ms = az
+				p_ms = p[2]
+			else:
+				if p[2] < p_ms:
+					az_ms = az
+					p_ms = p[2]
+		return az_ms
+
+	def __str__(self):
+		fmt = "%-15s %6.4f %6.4f %6.4f"
+		o = ""
+		#o += ("# time checked: %s" % (self.time_checked.strftime("%y%m%d-%H%M%S")))
+		o += Util.BuildHeader(fmt, "Az cur 2d_avg 2d_max")
+
+		for k, v in sorted(self.az_price.iteritems()):
+			o += ("\n" + fmt) % (k, v[0], v[1], v[2])
+		return o
