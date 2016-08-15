@@ -48,39 +48,38 @@ def PollMsgs():
 
 	while True:
 		with ClusterMonitor.CM():
-			# Blocked waiting until a request is available
-			#
-			# Interruptable get
-			#   http://stackoverflow.com/questions/212797/keyboard-interruptable-blocking-queue-in-python
+			# Had to poll on each of the queues with a timeout, since python doesn't
+			# seem to have an interruptable get.
+			# http://stackoverflow.com/questions/212797/keyboard-interruptable-blocking-queue-in-python
 			while True:
 				try:
-					msg = _q_general_msg.get(timeout=0.01)
+					msg = _q_general_msg.get(timeout=0.1)
 					break
 				except Queue.Empty:
 					pass
 
 				try:
-					msg = ClusterCleaner.Queue().get(timeout=0.01)
+					msg = ClusterCleaner.Queue().get(timeout=0.1)
 					break
 				except Queue.Empty:
 					pass
 
 				try:
-					msg = _q_jc.get(timeout=0.01)
+					msg = _q_jc.get(timeout=0.1)
 					break
 				except Queue.Empty:
 					pass
 
 				try:
-					msg = _q_jr.get(timeout=0.01)
+					msg = _q_jr.get(timeout=0.1)
 					break
 
 					# We'll see if rate control is needed.
 					#if ClusterMonitor.CanLaunchAnotherCluster():
 					#	# TODO: I don't think the queue is needed here. Fetch one directly from the SQS queue.
 					#	# Something like this
-					#	#msg = JobReq.Get(timeout=0.01)
-					#	msg = _q_jr.get(timeout=0.01)
+					#	#msg = JobReq.Get(timeout=0.1)
+					#	msg = _q_jr.get(timeout=0.1)
 					#	break
 				except Queue.Empty:
 					pass
