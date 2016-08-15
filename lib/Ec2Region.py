@@ -20,7 +20,7 @@ def GetLatestAmiId(region, name = "acorn-server"):
 		region_ami = {
 				"us-east-1": "ami-645cda73"
 				}
-	elif name == "mutants-server":
+	elif name == "mutants-cassandra-server":
 		region_ami = {
 				"us-east-1": "ami-0fcd5618"
 				}
