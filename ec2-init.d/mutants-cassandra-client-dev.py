@@ -258,7 +258,7 @@ def main(argv):
 		#		raise RuntimeError("Unexpected format %s" % t1)
 		#	_tags[t1[0]] = t1[1]
 		#_Log("tags:\n%s" % "\n".join(["  %s:%s" % (k, v) for (k, v) in sorted(_tags.items())]))
-		_Log("tags: %s" % pprint.pformat(tags))
+		_Log("_tags: %s" % pprint.pformat(_tags))
 
 		global _job_id
 		_job_id = _params["job_id"]
