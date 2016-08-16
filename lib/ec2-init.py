@@ -75,8 +75,6 @@ def _RunInitScript(params_encoded):
 		if _inst_id == res_id:
 			tags[r0["Key"]] = r0["Value"]
 	tags_json = json.dumps(tags)
-	# TODO
-	#tags_str = ",".join(["%s:%s" % (k, v) for (k, v) in sorted(tags.items())])
 	_Log("tags_json: %s" % tags_json)
 
 	fn_module = "%s/../ec2-init.d/%s.py" % (os.path.dirname(__file__), fn_init_script)

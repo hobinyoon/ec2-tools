@@ -14,6 +14,7 @@ import Cons
 import Util
 
 import BotoClient
+import Conf
 import Ec2Region
 import JobContOutput
 import SpotPrice
@@ -152,7 +153,7 @@ sudo -i -u ubuntu /home/ubuntu/work/mutants/ec2-tools/lib/ec2-init.py {0}
 		# TODO: Let the client do the house keeping: Uploading the result to S3 and
 		# notifying that the job is done.
 
-		ls = {'ImageId': Ec2Region.GetLatestAmiId(region = self.region, name = ami_name)
+		ls = {'ImageId': GetLatestAmiId(self.region, ami_name)
 				#, 'KeyName': 'string'
 				, 'SecurityGroups': ["cass-server"]
 				, 'UserData': base64.b64encode(user_data)
@@ -201,7 +202,7 @@ sudo -i -u ubuntu /home/ubuntu/work/mutants/ec2-tools/lib/ec2-init.py {0}
 		ami_name = self.req_msg.msg_body["server"]["ami_name"]
 		server_num_nodes = self.req_msg.msg_body["server"]["num_nodes"]
 
-		ls = {'ImageId': Ec2Region.GetLatestAmiId(region = self.region, name = ami_name)
+		ls = {'ImageId': GetLatestAmiId(self.region, ami_name)
 				#, 'KeyName': 'string'
 				, 'SecurityGroups': ["cass-server"]
 				, 'UserData': base64.b64encode(user_data)
@@ -313,10 +314,8 @@ sudo -i -u ubuntu /home/ubuntu/work/mutants/ec2-tools/lib/ec2-init.py {0}
 							num_terminated_or_running += 1
 							pub_ip = e1["PublicIpAddress"]
 
-							# Make region-ipaddr files. Helpful for dev. Match them with the hostnames.
-							# TODO: hostname can contain AZ as well.
-							# TODO: desc_inst will have the same format.
-							# Examples:
+							# Make region-ipaddr files. Helpful for dev. Match them with the
+							# hostnames. Examples:
 							#   ssh-us-east-1-c
 							#   ssh-us-east-1-s0
 							#   ssh-us-east-1-s1
@@ -400,3 +399,7 @@ class Log:
 				JobContOutput.Pnnl(msg)
 			else:
 				raise RuntimeError("Unexpected output: %s" % output)
+
+
+def GetLatestAmiId(region, name):
+	return Conf.Get()["region_ami"][name][region]
