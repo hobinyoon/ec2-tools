@@ -33,7 +33,7 @@ _region = None
 
 def _SetHostname():
 	# Hostname consists of availability zone name and launch req datetime
-	hn = "%s-%s" % (_az, _job_id, _tags["name"].replace("server", "s").replace("client", "c"))
+	hn = "%s-%s-%s" % (_az, _job_id, _tags["name"].replace("server", "s").replace("client", "c"))
 
 	# http://askubuntu.com/questions/9540/how-do-i-change-the-computer-name
 	Util.RunSubp("sudo sh -c 'echo \"%s\" > /etc/hostname'" % hn)
