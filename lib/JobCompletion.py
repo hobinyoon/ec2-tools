@@ -10,7 +10,7 @@ import traceback
 sys.path.insert(0, "%s/util" % os.path.dirname(__file__))
 import Cons
 
-import JobControllerLog
+import JobContOutput
 import JobReq
 import S3
 
@@ -25,7 +25,7 @@ def PollBackground(jc_q):
 
 def Process(msg):
 	job_id = msg.attrs["job_id"]
-	JobControllerLog.P("\nGot a job completion msg. job_id:%s Terminsting the cluster ..." % job_id)
+	JobContOutput.P("Got a job completion msg. job_id:%s Terminsting the cluster ..." % job_id)
 	TermCluster(job_id)
 
 	JobReq.DeleteMsg(msg.attrs["job_req_msg_recript_handle"])

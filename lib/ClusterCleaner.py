@@ -22,7 +22,7 @@ def Queue():
 
 # Clean the cluster when the number of nodes in the cluster is under the
 # threshold or when the cluster takes too long. Called periodically by
-# ClusterMonitor.
+# JobMonitor.
 def MayClean(jobid_inst):
 	WAIT_TIME_BEFORE_CLEAN_UNDER11 = 6 * 60
 	WAIT_TIME_BEFORE_CLEAN_11 = 55 * 60

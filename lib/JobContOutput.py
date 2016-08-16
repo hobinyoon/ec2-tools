@@ -8,11 +8,15 @@ sys.path.insert(0, "%s/util" % os.path.dirname(__file__))
 import Cons
 import Util
 
+import JobMonitor
+
 
 _log_lock = threading.Lock()
 
 def P(msg):
 	with _log_lock:
+		JobMonitor.Restart()
+
 		startswith_newline = False
 		if msg.startswith("\n"):
 			startswith_newline = True

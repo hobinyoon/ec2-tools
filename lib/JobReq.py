@@ -1,3 +1,4 @@
+import base64
 import boto3
 import botocore
 import json
@@ -16,7 +17,7 @@ sys.path.insert(0, "..")
 import ReqSpotInsts
 import RunAndMonitorEc2Inst
 
-import JobControllerLog
+import JobContOutput
 
 
 # Note: no graceful termination
@@ -33,7 +34,6 @@ def PollBackground(jr_q):
 	_thr_poll.start()
 
 
-# TODO: Check if other places have hard-coded this
 sqs_q_name = "mutants-jobs-requested"
 
 def DeleteQ():
@@ -54,7 +54,7 @@ def DeleteQ():
 
 
 def DeleteMsg(msg_receipt_handle):
-	Cons.P("Deleting the job request message ...")
+	JobContOutput.P("Deleting the job request message ...")
 	#Cons.P("  receipt_handle: %s" % msg_receipt_handle)
 	try:
 		response = _bc.delete_message(
@@ -69,37 +69,28 @@ def DeleteMsg(msg_receipt_handle):
 			raise e
 
 
-def Process(req, job_controller_gm_q):
+def Process(msg, job_controller_gm_q):
 	# Note: May want some admission control here, like one based on how many free
 	# instance slots are available.
 
 	job_id = time.strftime("%y%m%d-%H%M%S")
-	JobControllerLog.P("\nGot a job request msg. job_id:%s attrs:\n%s"
-			% (job_id, Util.Indent(pprint.pformat(req.attrs), 2)))
-	req.attrs["job_id"] = job_id
+	JobContOutput.P("Got a job request msg. job_id:%s attrs:\n%s"
+			% (job_id, Util.Indent(pprint.pformat(msg.msg_body), 2)))
 
 	# Pass these as the init script parameters. Decided not to use EC2 tag
 	# for these, due to its limitations.
 	#   http://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/allocation-tag-restrictions.html
-	jr_sqs_url = req.msg.queue_url
-	jr_sqs_msg_receipt_handle = req.msg.receipt_handle
-
-	# Get job controller parameters and delete them from the attrs
-	jc_params = json.loads(req.attrs["job_controller_params"])
-	req.attrs.pop("job_controller_params", None)
 
 	# Cassandra cluster name. It's ok for multiple clusters to have the same
 	# cluster_name for Cassandra. It's ok for multiple clusters to have the
 	# same name as long as they don't see each other through the gossip
 	# protocol.  It's even okay to use the default one: test-cluster
-	#req.attrs["cass_cluster_name"] = "mutants"
+	#msg.attrs["cass_cluster_name"] = "mutants"
 
+	# Request a Cassandra cluster and a client node
 	ReqSpotInsts.Req(
-			region_spot_req = jc_params["region_spot_req"]
-			, ami_name = jc_params.get("ami_name", "mutants-server")
-			, tags = req.attrs
-			, jr_sqs_url = jr_sqs_url
-			, jr_sqs_msg_receipt_handle = jr_sqs_msg_receipt_handle
+			job_id = job_id
+			, msg = msg
 			, job_controller_gm_q = job_controller_gm_q
 			)
 	# On-demand instances are too expensive.
@@ -108,10 +99,9 @@ def Process(req, job_controller_gm_q):
 	# Sleep a bit to make each request has unique job_id
 	time.sleep(1.1)
 
-	# Delete the job request msg for non-"mutants-server" nodes, e.g.,
-	# mutants-dev nodes, so that they don't reappear.
-	if req.attrs["init_script"] not in ["mutants-server"]:
-		DeleteMsg(jr_sqs_msg_receipt_handle)
+	# Delete the job request sqs msg dev nodes, so that they don't reappear.
+	if msg.IsDevJob():
+		DeleteMsg(msg.msg.receipt_handle)
 
 
 sqs_region = "us-east-1"
@@ -152,7 +142,9 @@ def _Poll(jr_q):
 					# error in the experiment script overnight.
 					VisibilityTimeout=3600,
 
-					# TODO: If this can be 0 or a faction of second, then this doesn't have to be in a separate thread.
+					# Note: If this can be 0 or a faction of second, then job req
+					# messages doen't have to be polled in a separate thread, and the
+					# main loop can use a single thread.
 					WaitTimeSeconds=5
 					)
 			for m in msgs:
@@ -169,25 +161,28 @@ def _Poll(jr_q):
 
 
 class Msg:
-	msg_body = "mutants-exp-req"
-
 	def __init__(self, msg):
-		if msg.body != Msg.msg_body:
-			raise RuntimeError("Unexpected. msg.body=[%s]" % msg.body)
+		self.msg = msg
+
 		if msg.receipt_handle is None:
 			raise RuntimeError("Unexpected")
-		if msg.message_attributes is None:
+		if msg.message_attributes is not None:
 			raise RuntimeError("Unexpected")
 
-		self.attrs = {}
-		for k, v in msg.message_attributes.iteritems():
-			if v["DataType"] != "String":
-				raise RuntimeError("Unexpected")
-			v1 = v["StringValue"]
-			self.attrs[k] = v1
-			#Cons.P("  %s: %s" % (k, v1))
+		self.msg_body = json.loads(msg.body)
 
-		self.msg = msg
+	def IsDevJob(self):
+		return self.msg_body["server"]["init_script"].endswith("-dev")
+
+	# To pass to the ec2 instances
+	def Serialize(self, extra_options):
+		d = self.msg_body.copy()
+		d["sqs_msg_receipt_handle"] = self.msg.receipt_handle
+		d["extra"] = extra_options
+		return base64.b64encode(json.dumps(d))
+
+	def __str__(self):
+		return pprint.pformat(self.msg_body)
 
 
 def _GetQ():

@@ -100,7 +100,6 @@ def _CloneSrcAndBuild():
 
 	# Git clone
 	Util.RunSubp("rm -rf /mnt/local-ssd0/work/mutants/cassandra")
-	# TODO: look for all hobin, case insensitive, in all files
 	Util.RunSubp("git clone https://github.com/hobinyoon/mutants-cassandra /mnt/local-ssd0/work/mutants/cassandra")
 
 	# Symlink

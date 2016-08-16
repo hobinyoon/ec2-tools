@@ -68,15 +68,14 @@ def Job_MutantsDevS1C1():
 				, "server": {
 					# We'll see if the AMIs need to be separated by DBs.
 					"init_script": "mutants-cassandra-server-dev"
-					# TODO
-					, "ami_name": "mutants-cassandra"
+					, "ami_name": "mutants-cassandra-server"
 					, "num_nodes": "1"
 					}
 
 				# The client needs to be in the same AZ.
 				, "client" : {
 					"init_script": "mutants-cassandra-client-dev"
-					, "ami_name": "mutants-cassandra"
+					, "ami_name": "mutants-client"
 					}
 				}
 			)

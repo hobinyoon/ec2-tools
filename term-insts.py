@@ -90,7 +90,7 @@ class TermInst:
 		#Cons.P(pprint.pformat(self.inst_ids_to_term, indent=2, width=100))
 
 		if len(self.inst_ids_to_term) > 0:
-			self.response = BotoClient.Get(self.region).terminate_instances(InstanceIds = self.inst_ids_to_term)
+			self.term_inst_response = BotoClient.Get(self.region).terminate_instances(InstanceIds = self.inst_ids_to_term)
 
 		with _regions_processed_lock:
 			global _regions_processed
@@ -106,8 +106,8 @@ class TermInst:
 		if len(self.inst_ids_to_term) == 0:
 			return
 
-		#Cons.P(pprint.pformat(self.response, indent=2, width=100))
-		for ti in self.response["TerminatingInstances"]:
+		#Cons.P(pprint.pformat(self.term_inst_response, indent=2, width=100))
+		for ti in self.term_inst_response["TerminatingInstances"]:
 			Cons.P(_fmt % (
 				self.region
 				, ti["InstanceId"]
