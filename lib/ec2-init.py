@@ -54,11 +54,14 @@ def _LogInstInfo():
 	_Log("region:    %s" % _region)
 
 
-def _RunInitByTags():
-	_Log("_fn_init_script           : %s" % _fn_init_script)
-	_Log("_jr_sqs_url               : %s" % _jr_sqs_url)
-	_Log("_jr_sqs_msg_receipt_handle: %s" % _jr_sqs_msg_receipt_handle)
-	_Log("_num_regions              : %s" % _num_regions)
+def _RunInitScript(params_encoded):
+	_Log("params_encoded: %s" % params_encoded)
+	params = json.loads(base64.b64decode(params_encoded))
+	_Log("params: %s" % pprint.pformat(params))
+
+	type_ = params["type"]
+	fn_init_script = params[type_]["init_script"]
+	_Log("fn_init_script: %s" % fn_init_script)
 
 	r = BotoClient.Get(_region).describe_tags()
 	#_Log(pprint.pformat(r, indent=2, width=100))
@@ -69,10 +72,12 @@ def _RunInitByTags():
 			continue
 		if _inst_id == res_id:
 			tags[r0["Key"]] = r0["Value"]
-	tags_str = ",".join(["%s:%s" % (k, v) for (k, v) in sorted(tags.items())])
-	_Log("tags_str: %s" % tags_str)
+	tags_json = json.dumps(tags)
+	# TODO
+	#tags_str = ",".join(["%s:%s" % (k, v) for (k, v) in sorted(tags.items())])
+	_Log("tags_json: %s" % tags_json)
 
-	fn_module = "%s/../ec2-init.d/%s.py" % (os.path.dirname(__file__), _fn_init_script)
+	fn_module = "%s/../ec2-init.d/%s.py" % (os.path.dirname(__file__), fn_init_script)
 	mod_name,file_ext = os.path.splitext(os.path.split(fn_module)[-1])
 	if file_ext.lower() != '.py':
 		raise RuntimeError("Unexpected file_ext: %s" % file_ext)
@@ -81,34 +86,18 @@ def _RunInitByTags():
 	except IOError as e:
 		_Log("fn_module: %s" % fn_module)
 		raise e
-	getattr(py_mod, "main")([fn_module, _jr_sqs_url, _jr_sqs_msg_receipt_handle, _num_regions, tags_str])
+	getattr(py_mod, "main")([fn_module, params_encoded, tags_json])
 
-
-_fn_init_script = None
-_jr_sqs_url = None
-_jr_sqs_msg_receipt_handle = None
-_num_regions = None
 
 def main(argv):
 	# This script is run under the user 'ubuntu'.
 	#Util.RunSubp("touch /tmp/%s" % getpass.getuser())
 
-	if len(argv) != 5:
-		raise RuntimeError("Usage: %s init_script jr_sqs_url jr_sqs_msg_receipt_handle num_regions\n"
-				"  E.g.: %s mutants-server None None 1"
-				% (argv[0], argv[0]))
-
-	global _fn_init_script
-	global _jr_sqs_url
-	global _jr_sqs_msg_receipt_handle
-	global _num_regions
-	_fn_init_script = argv[1]
-	_jr_sqs_url = argv[2]
-	_jr_sqs_msg_receipt_handle = argv[3]
-	_num_regions = argv[4]
+	if len(argv) != 2:
+		raise RuntimeError("Usage: %s base64_json_encoded_params" % argv[0])
 
 	_LogInstInfo()
-	_RunInitByTags()
+	_RunInitScript(argv[1])
 
 
 if __name__ == "__main__":
