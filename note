@@ -1,5 +1,5 @@
-TODO
-----
+TODOs
+-----
 - For Mutants, ClusterMonitor can be modified as JobMonitor. Each job consists
 	of servers and clients (most probably a single client will do).
 
