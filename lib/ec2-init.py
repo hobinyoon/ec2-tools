@@ -61,7 +61,7 @@ def _RunInitScript(params_encoded):
 	params = json.loads(base64.b64decode(params_encoded))
 	_Log("params: %s" % pprint.pformat(params))
 
-	type_ = params["type"]
+	type_ = params["extra"]["type"]
 	fn_init_script = params[type_]["init_script"]
 	_Log("fn_init_script: %s" % fn_init_script)
 
