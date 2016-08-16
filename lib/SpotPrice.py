@@ -140,7 +140,7 @@ def _GetSpotPrice(k):
 	try:
 		now = datetime.datetime.now()
 		start_time = now - datetime.timedelta(days=2)
-		JobContOutput.P("Getting spot prices for (%s) ..." % k)
+		JobContOutput.P("Getting spot prices for (%s) ..." % k, output="file")
 
 		r = BotoClient.Get(k.region).describe_spot_price_history(
 				StartTime = start_time,
@@ -187,7 +187,7 @@ def _GetSpotPrice(k):
 
 			az_price[az] = [price_prev, price_avg, price_max]
 		v = SpValue(az_price, now)
-		JobContOutput.P("Spot prices for (%s):\n%s" % (k, Util.Indent(str(v), 2)))
+		JobContOutput.P("Spot prices for (%s):\n%s" % (k, Util.Indent(str(v), 2)), output="file")
 		return v
 	except Exception as e:
 		JobContOutput.P("%s\nSpKey=[%s]\n%s" % (e, k, traceback.format_exc()))
