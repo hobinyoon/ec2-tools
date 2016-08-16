@@ -261,7 +261,7 @@ def main(argv):
 		_Log("_tags: %s" % pprint.pformat(_tags))
 
 		global _job_id
-		_job_id = _params["job_id"]
+		_job_id = _params["extra"]["job_id"]
 
 		global _az, _region
 		_az = Util.RunSubp("curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone", print_cmd = False, print_output = False)
