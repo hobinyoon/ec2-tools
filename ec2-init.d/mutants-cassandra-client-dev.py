@@ -214,7 +214,6 @@ def _RunCass():
 #		# a data center goes over capacity, it doesn't even get to the point where
 #		# a node is tagged, making the cluster think it has less nodes.
 #
-#		# TODO: if server, num server nodes
 #		#if num_nodes == _num_regions:
 #		#	break
 #		time.sleep(2)
@@ -239,25 +238,11 @@ def main(argv):
 		params_encoded = argv[1]
 		tags_json = argv[2]
 
-		# TODO
-		#global _jr_sqs_url, _jr_sqs_msg_receipt_handle
-		#_jr_sqs_url = argv[1]
-		#_jr_sqs_msg_receipt_handle = argv[2]
-		#tags_str = argv[4]
-
 		global _params
 		_params = json.loads(base64.b64decode(params_encoded))
 
 		global _tags
 		_tags = json.loads(tags_json)
-
-		# TODO
-		#for t in tags_str.split(","):
-		#	t1 = t.split(":")
-		#	if len(t1) != 2:
-		#		raise RuntimeError("Unexpected format %s" % t1)
-		#	_tags[t1[0]] = t1[1]
-		#_Log("tags:\n%s" % "\n".join(["  %s:%s" % (k, v) for (k, v) in sorted(_tags.items())]))
 		_Log("_tags: %s" % pprint.pformat(_tags))
 
 		global _job_id
