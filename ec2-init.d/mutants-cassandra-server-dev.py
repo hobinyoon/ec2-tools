@@ -31,6 +31,7 @@ def _Log(msg):
 _az = None
 _region = None
 
+
 def _SetHostname():
 	# Hostname consists of availability zone name and launch req datetime
 	hn = "%s-%s-%s" % (_az, _job_id, _tags["name"].replace("server", "s").replace("client", "c"))
@@ -95,17 +96,69 @@ def _MountAndFormatLocalSSDs():
 		Util.RunSubp("sudo chown -R ubuntu /mnt/local-%s" % ssds[i])
 
 
+def _StartSystemLogging():
+	Util.RunSubp("mkdir -p /mnt/local-ssd1/mutants/log/system")
+	Util.RunSubp("ln -s /mnt/local-ssd1/mutants/log /home/ubuntu/work/mutants/log")
+	# Local SSD structure:
+	# - ssd0 for database server
+	# - ssd1 for system or experiment logs
+
+	# work/mutants
+	#      └── log
+	#          └── system
+	#
+	# Cassandra log goes under its own directory. TODO: Does it have separate
+	# data and log? Or just data.
+	#
+
+	# TODO: How do you know the average IOPS of a disk from the system boot? dtat
+	# shows it only once in the beginning.
+	# - /sys/block/xvda/stat
+	# - Look into https://www.kernel.org/doc/Documentation/block/stat.txt
+
+	# dstat parameters
+	#   -d, --disk
+	#     enable disk stats (read, write)
+	#   -r, --io
+	#     enable I/O request stats (read, write requests)
+	#   -t, --time
+	#     enable time/date output
+	#   -tdrf
+
+	# Example:
+	#   ----system---- --dsk/xvda----dsk/xvdb----dsk/xvdc- --io/xvda-----io/xvdb-----io/xvdc--
+	#        time     | read  writ: read  writ: read  writ| read  writ: read  writ: read  writ
+	#   This makes sense. Cause a block is 4KB
+	#   22-08 04:17:32|   0  8192B:   0     0 :   0     0 |   0  2.00 :   0     0 :   0     0
+	#   For these 2, I am guessing that a lot of the IOs are absorbed by the file
+	#   system cache and some journaling data is written for durability.  I was editing
+	#   a file of about 10KB.
+	#   22-08 04:17:35|   0    12k:   0     0 :   0     0 |   0  2.00 :   0     0 :   0     0
+	#   22-08 04:17:37|   0    44k:   0     0 :   0     0 |   0  9.00 :   0     0 :   0     0
+
+	# So, what matters is the number of IOs.
+	# TODO: Do some experiment on the local SSD with various file sizes. And see how
+	# confident I am.
+
+	# IOPS vs TPS (transactions per second)? T is a single IO command written to
+	# the raw disk. IOPS includes the requests absorbed by caches. At which
+	# level? File system, block device, or hardware level?
+	#   dstat --disk-tps
+	#     per disk transactions per second (tps) stats
+	#   http://serverfault.com/questions/558523/relation-between-disk-iops-and-sar-tps
+
+
 def _CloneSrcAndBuild():
 	# Make parent
-	Util.RunSubp("mkdir -p /mnt/local-ssd0/work/mutants")
+	Util.RunSubp("mkdir -p /mnt/local-ssd0/mutants")
 
 	# Git clone
-	Util.RunSubp("rm -rf /mnt/local-ssd0/work/mutants/cassandra")
-	Util.RunSubp("git clone https://github.com/hobinyoon/mutants-cassandra /mnt/local-ssd0/work/mutants/cassandra")
+	Util.RunSubp("rm -rf /mnt/local-ssd0/mutants/cassandra")
+	Util.RunSubp("git clone https://github.com/hobinyoon/mutants-cassandra /mnt/local-ssd0/mutants/cassandra")
 
 	# Symlink
 	Util.RunSubp("rm -rf /home/ubuntu/work/mutants/cassandra")
-	Util.RunSubp("ln -s /mnt/local-ssd0/work/mutants-cassandra /home/ubuntu/work/mutants/cassandra")
+	Util.RunSubp("ln -s /mnt/local-ssd0/mutants-cassandra /home/ubuntu/work/mutants/cassandra")
 
 	# Build
 	#   Note: workaround for unmappable character for encoding ASCII.
@@ -228,6 +281,10 @@ _tags = {}
 
 _job_id = None
 
+
+# TODO: Don't let the logs to go out to stdout, unless it's an exception. It
+# goes to cloud-init-output.log, which eats up EBS gp2 volume IO credit.
+
 def main(argv):
 	try:
 		# This script is run under the user 'ubuntu'.
@@ -256,7 +313,13 @@ def main(argv):
 		_SyncTime()
 		#_InstallPkgs()
 		_MountAndFormatLocalSSDs()
+
+		# TODO
+		_StartSystemLogging()
+
+		# TODO
 		#_CloneSrcAndBuild()
+
 		#_EditCassConf()
 
 		# Note: No experiment data needed for Mutants
