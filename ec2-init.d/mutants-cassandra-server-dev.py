@@ -121,8 +121,8 @@ def _StartSystemLogging():
 	# - ssd1 for system or experiment logs
 
 	# work/mutants
-	#      └── log
-	#          └── system
+	#      `-- log
+	#          `-- system
 	#
 	# Cassandra log goes under its own directory. TODO: Does it have separate
 	# data and log? Or just data.
