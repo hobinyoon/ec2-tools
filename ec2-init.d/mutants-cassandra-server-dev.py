@@ -84,7 +84,24 @@ def _MountAndFormatLocalSSDs():
 
 		# Instance store volumes come TRIMmed when they are allocated. Without
 		# nodiscard, it takes about 80 secs for a 800GB SSD.
-		Util.RunSubp("sudo mkfs.ext4 -m 0 -E nodiscard -L local-%s /dev/%s" % (ssds[i], devs[i]))
+
+		# Prevent lazy Initialization
+		# - "When creating an Ext4 file system, the existing regions of the inode
+		#   tables must be cleaned (overwritten with nulls, or "zeroed"). The
+		#   "lazyinit" feature should significantly accelerate the creation of a
+		#   file system, because it does not immediately initialize all inode
+		#   tables, initializing them gradually instead during the initial mounting
+		#   process in background (from Kernel version 2.6.37)."
+		#   - https://www.thomas-krenn.com/en/wiki/Ext4_Filesystem
+		# - Default values are 1s, which do lazy init.
+		#   - man mkfs.ext4
+
+		# TODO
+		#Util.RunSubp("sudo mkfs.ext4 -m 0 -E discard,lazy_itable_init=0,lazy_journal_init=0 -L local-%s /dev/%s"
+		Util.RunSubp("sudo mkfs.ext4 -m 0 -E nodiscard,lazy_itable_init=0,lazy_journal_init=0 -L local-%s /dev/%s"
+				% (ssds[i], devs[i]))
+
+		# TODO: On the client machine too
 
 		# I suspect /etc/fstab is updated when the instance is initiated. Give it a
 		# bit of time and umount
@@ -146,6 +163,24 @@ def _StartSystemLogging():
 	#   dstat --disk-tps
 	#     per disk transactions per second (tps) stats
 	#   http://serverfault.com/questions/558523/relation-between-disk-iops-and-sar-tps
+
+	# About 5MB of writes. Much more efficient (smaller) than what either du -hs
+	# or du -bhs (b for actual file sizes) says. Hmm...
+	#   $ du -hs
+	#   11M	.
+	#   $ du -bhs
+	#   7.5M	.
+	#
+	# TODO: A lot less IOs than 3084k / 4k = 771. How?
+	#   ----system---- --dsk/xvda----dsk/xvdb----dsk/xvdc- --io/xvda-----io/xvdb-----io/xvdc--
+	#        time     | read  writ: read  writ: read  writ| read  writ: read  writ: read  writ
+	# 	22-08 13:50:51|   0     0 :4096B 3084k:   0     0 |   0     0 :1.00  36.0 :   0     0
+	# 	22-08 13:50:52|   0     0 :   0     0 :   0     0 |   0     0 :   0     0 :   0     0
+	# 	22-08 13:50:56|   0    16k:   0  1844k:   0     0 |   0  2.00 :   0  16.0 :   0     0
+	#
+	# So, file system IOs can be inflated or deflated (e.g., from read caching or
+	# write buffering) when translated to block device IOs.
+
 
 
 def _CloneSrcAndBuild():
