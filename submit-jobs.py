@@ -113,7 +113,7 @@ def Job_Castnet():
 				, "client" : {
 					"init_script": "castnet-dev"
 					# TODO: modify after moving some data
-					, "ami_name": "mutants-client"
+					, "ami_name": "castnet"
 					}
 				}
 			)
