@@ -52,7 +52,7 @@ def _SyncTime():
 	# Sync time. Important for Cassandra.
 	# http://askubuntu.com/questions/254826/how-to-force-a-clock-update-using-ntp
 	_Log("Synching time ...")
-	Util.RunSubp("sudo service ntp stop")
+	Util.RunSubp("sudo service ntp stop || true")
 
 	# Fails with a rc 1 in the init script. Mask with true for now.
 	Util.RunSubp("sudo /usr/sbin/ntpd -gq || true")
