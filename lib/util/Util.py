@@ -1,5 +1,6 @@
 import errno
 import inspect
+import multiprocessing
 import os
 import pprint
 import re
@@ -163,6 +164,19 @@ def RunSubp(cmd, env_ = os.environ.copy(), shell = True, print_cmd = True, print
 	if p.returncode != 0:
 		raise RuntimeError("Error: cmd=[%s] rc=%d" % (cmd, p.returncode))
 	return lines
+
+
+# Go with double fork. I can't find a good daemon example code.
+def RunDaemon(cmd, print_cmd = True):
+	if print_cmd:
+		print cmd
+	p = multiprocessing.Process(target=_RunDaemon, args=[cmd])
+	p.start()
+	p.join()
+
+
+def _RunDaemon(cmd):
+	subprocess.Popen(cmd, shell=True, stdin=None, stdout=None, stderr=None)
 
 
 def FileLine():

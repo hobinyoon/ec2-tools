@@ -14,12 +14,12 @@ import BotoClient
 import Ec2Region
 
 
-def GetByTags(tags):
+def GetServerPubIpsByJobId(job_id):
 	threads = []
 
 	dis = []
 	for r in Ec2Region.All():
-		dis.append(DescInst(r, tags))
+		dis.append(DescInst(r, {"job_id": job_id}))
 
 	for di in dis:
 		t = threading.Thread(target=di.Run)
@@ -36,6 +36,30 @@ def GetByTags(tags):
 			continue
 		ips.append(ip)
 	return ips
+
+
+#def GetByTags(tags):
+#	threads = []
+#
+#	dis = []
+#	for r in Ec2Region.All():
+#		dis.append(DescInst(r, tags))
+#
+#	for di in dis:
+#		t = threading.Thread(target=di.Run)
+#		threads.append(t)
+#		t.start()
+#
+#	for t in threads:
+#		t.join()
+#
+#	ips = []
+#	for di in dis:
+#		ip = di.GetIp()
+#		if ip == None:
+#			continue
+#		ips.append(ip)
+#	return ips
 
 
 class DescInst:

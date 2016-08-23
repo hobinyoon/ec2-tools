@@ -31,6 +31,7 @@ def _Log(msg):
 _az = None
 _region = None
 
+
 def _SetHostname():
 	# Hostname consists of availability zone name and launch req datetime
 	hn = "%s-%s-%s" % (_az, _job_id, _tags["name"].replace("server", "s").replace("client", "c"))
@@ -81,12 +82,26 @@ def _MountAndFormatLocalSSDs():
 		Util.RunSubp("sudo umount /dev/%s || true" % devs[i])
 		Util.RunSubp("sudo mkdir -p /mnt/local-%s" % ssds[i])
 
-		# Instance store volumes come TRIMmed when they are allocated. Without
-		# nodiscard, it takes about 80 secs for a 800GB SSD.
-		Util.RunSubp("sudo mkfs.ext4 -m 0 -E nodiscard -L local-%s /dev/%s" % (ssds[i], devs[i]))
+		# Prevent lazy Initialization
+		# - "When creating an Ext4 file system, the existing regions of the inode
+		#   tables must be cleaned (overwritten with nulls, or "zeroed"). The
+		#   "lazyinit" feature should significantly accelerate the creation of a
+		#   file system, because it does not immediately initialize all inode
+		#   tables, initializing them gradually instead during the initial mounting
+		#   process in background (from Kernel version 2.6.37)."
+		#   - https://www.thomas-krenn.com/en/wiki/Ext4_Filesystem
+		# - Default values are 1s, which do lazy init.
+		#   - man mkfs.ext4
+		#
+		# nodiscard is in the documentation
+		# - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ssd-instance-store.html
+		# - Without nodiscard, it takes about 80 secs for a 800GB SSD.
 
-		# I suspect /etc/fstab is updated when the instance is initiated. Give it a
-		# bit of time and umount
+		Util.RunSubp("sudo mkfs.ext4 -m 0 -E nodiscard,lazy_itable_init=0,lazy_journal_init=0 -L local-%s /dev/%s"
+				% (ssds[i], devs[i]))
+
+		# Some are already mounted. I suspect /etc/fstab does the magic when the
+		# file system is created. Give it some time and umount
 		time.sleep(1)
 		Util.RunSubp("sudo umount /dev/%s || true" % devs[i])
 
@@ -97,35 +112,36 @@ def _MountAndFormatLocalSSDs():
 
 def _CloneSrcAndBuild():
 	# Make parent
-	Util.RunSubp("mkdir -p /mnt/local-ssd0/work/mutants")
+	Util.RunSubp("mkdir -p /mnt/local-ssd0/mutants")
 
 	# Git clone
-	Util.RunSubp("rm -rf /mnt/local-ssd0/work/mutants/cassandra")
-	Util.RunSubp("git clone https://github.com/hobinyoon/mutants-cassandra /mnt/local-ssd0/work/mutants/cassandra")
+	Util.RunSubp("rm -rf /mnt/local-ssd0/mutants/cassandra")
+	Util.RunSubp("git clone https://github.com/hobinyoon/cassandra-3.9 /mnt/local-ssd0/mutants/cassandra")
 
 	# Symlink
 	Util.RunSubp("rm -rf /home/ubuntu/work/mutants/cassandra")
-	Util.RunSubp("ln -s /mnt/local-ssd0/work/mutants-cassandra /home/ubuntu/work/mutants/cassandra")
+	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/cassandra /home/ubuntu/work/mutants/cassandra")
 
 	# Build
-	#   Note: workaround for unmappable character for encoding ASCII.
+	#   TODO: Do you still need this? Note: workaround for unmappable character for encoding ASCII.
 	#   http://stackoverflow.com/questions/26067350/unmappable-character-for-encoding-ascii-but-my-files-are-in-utf-8
-	Util.RunSubp("cd /home/ubuntu/work/mutants/cassandra && (JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF8 ant)")
+	#Util.RunSubp("cd /home/ubuntu/work/mutants/cassandra && (JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF8 ant)")
+	Util.RunSubp("cd /home/ubuntu/work/mutants/cassandra && ant")
 
 
 def _EditCassConf():
-	_Log("Getting IP addrs of all running instances of tags %s ..." % _tags)
-	ips = GetIPs.GetByTags(_tags)
+	_Log("Getting IP addrs of all running instances of servers with job_id %s ..." % _job_id)
+	ips = GetIPs.GetServerPubIpsByJobId(_job_id)
 	_Log(ips)
 
 	fn_cass_yaml = "/home/ubuntu/work/mutants/cassandra/conf/cassandra.yaml"
 	_Log("Editing %s ..." % fn_cass_yaml)
 
-	# Update cassandra cluster name if specified.
-	if "cass_cluster_name" in _tags:
-		# http://stackoverflow.com/questions/7517632/how-do-i-escape-double-and-single-quotes-in-sed-bash
-		Util.RunSubp("sed -i 's/^cluster_name: .*/cluster_name: '\"'\"'%s'\"'\"'/g' %s"
-				% (_tags["cass_cluster_name"], fn_cass_yaml))
+	# Update cassandra cluster name if specified. No need to.
+	#if "cass_cluster_name" in _tags:
+	#	# http://stackoverflow.com/questions/7517632/how-do-i-escape-double-and-single-quotes-in-sed-bash
+	#	Util.RunSubp("sed -i 's/^cluster_name: .*/cluster_name: '\"'\"'%s'\"'\"'/g' %s"
+	#			% (_tags["cass_cluster_name"], fn_cass_yaml))
 
 	Util.RunSubp("sed -i 's/" \
 			"^          - seeds: .*" \
@@ -164,12 +180,13 @@ def _EditCassConf():
 			"/broadcast_rpc_address: %s" \
 			"/g' %s" % (GetIPs.GetMyPubIp(), fn_cass_yaml))
 
-	Util.RunSubp("sed -i 's/" \
-			"^endpoint_snitch:.*" \
-			"/endpoint_snitch: Ec2MultiRegionSnitch" \
-			"/g' %s" % fn_cass_yaml)
+	# No need for a single data center deployment
+	#Util.RunSubp("sed -i 's/" \
+	#		"^endpoint_snitch:.*" \
+	#		"/endpoint_snitch: Ec2MultiRegionSnitch" \
+	#		"/g' %s" % fn_cass_yaml)
 
-	# Edit parameters requested from tags
+	# TODO: Edit parameters requested from tags
 	for k, v in _tags.iteritems():
 		if k.startswith("mutants_options."):
 			#              0123456789012345
@@ -183,7 +200,7 @@ def _EditCassConf():
 # Note: This will be the YCSB configuration file
 #_fn_acorn_youtube_yaml = "/home/ubuntu/work/acorn/acorn/clients/youtube/acorn-youtube.yaml"
 #
-#def _EditYoutubeClientConf():
+#def _EditMutantsClientConf():
 #	_Log("Editing %s ..." % _fn_acorn_youtube_yaml)
 #	for k, v in _tags.iteritems():
 #		if k.startswith("acorn-youtube."):
@@ -201,6 +218,11 @@ def _RunCass():
 	Util.RunSubp("/home/ubuntu/work/mutants/cassandra/bin/cassandra")
 
 
+# TODO: get the number of servers from the json parameter
+#
+# How does a client node know that the servers are ready? It can query
+# system.peers and system.local with cqlsh.
+#
 #def _WaitUntilYouSeeAllCassNodes():
 #	_Log("Wait until all Cassandra nodes are up ...")
 #	# Keep checking until you see all nodes are up -- "UN" status.
@@ -227,6 +249,10 @@ _params = None
 _tags = {}
 
 _job_id = None
+
+
+# TODO: Don't let the logs to go out to stdout, unless it's an exception. It
+# goes to cloud-init-output.log, which eats up EBS gp2 volume IO credit.
 
 def main(argv):
 	try:
@@ -256,15 +282,17 @@ def main(argv):
 		_SyncTime()
 		#_InstallPkgs()
 		_MountAndFormatLocalSSDs()
-		#_CloneSrcAndBuild()
-		#_EditCassConf()
+		_StartSystemLogging()
+		_CloneSrcAndBuild()
+		_EditCassConf()
 
+		# TODO: _EditMutantsClientConf()
 		# Note: No experiment data needed for Mutants
-		#_EditYoutubeClientConf()
 		#_UnzipExpDataToLocalSsd()
 
-		# Note: Not needed for now
 		#_RunCass()
+
+		# Only the client node need this. Server nodes don't need this.
 		#_WaitUntilYouSeeAllCassNodes()
 
 		# The node is not terminated by the job controller. When done with the

@@ -82,9 +82,6 @@ def _MountAndFormatLocalSSDs():
 		Util.RunSubp("sudo umount /dev/%s || true" % devs[i])
 		Util.RunSubp("sudo mkdir -p /mnt/local-%s" % ssds[i])
 
-		# Instance store volumes come TRIMmed when they are allocated. Without
-		# nodiscard, it takes about 80 secs for a 800GB SSD.
-
 		# Prevent lazy Initialization
 		# - "When creating an Ext4 file system, the existing regions of the inode
 		#   tables must be cleaned (overwritten with nulls, or "zeroed"). The
@@ -95,16 +92,16 @@ def _MountAndFormatLocalSSDs():
 		#   - https://www.thomas-krenn.com/en/wiki/Ext4_Filesystem
 		# - Default values are 1s, which do lazy init.
 		#   - man mkfs.ext4
+		#
+		# nodiscard is in the documentation
+		# - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ssd-instance-store.html
+		# - Without nodiscard, it takes about 80 secs for a 800GB SSD.
 
-		# TODO
-		#Util.RunSubp("sudo mkfs.ext4 -m 0 -E discard,lazy_itable_init=0,lazy_journal_init=0 -L local-%s /dev/%s"
 		Util.RunSubp("sudo mkfs.ext4 -m 0 -E nodiscard,lazy_itable_init=0,lazy_journal_init=0 -L local-%s /dev/%s"
 				% (ssds[i], devs[i]))
 
-		# TODO: On the client machine too
-
-		# I suspect /etc/fstab is updated when the instance is initiated. Give it a
-		# bit of time and umount
+		# Some are already mounted. I suspect /etc/fstab does the magic when the
+		# file system is created. Give it some time and umount
 		time.sleep(1)
 		Util.RunSubp("sudo umount /dev/%s || true" % devs[i])
 
@@ -113,25 +110,26 @@ def _MountAndFormatLocalSSDs():
 		Util.RunSubp("sudo chown -R ubuntu /mnt/local-%s" % ssds[i])
 
 
+# Local SSD structure:
+# - ssd0 for database server, ycsb
+# - ssd1 for system or experiment logs
+#
+# ~
+# `-- work
+#     `-- mutants
+#         |-- ec2-tools
+#         |-- ycsb      (symlink to /mnt/local-ssd0/mutants/ycsb)
+#         |-- cassandra (symlink to /mnt/local-ssd0/mutants/cassandra)
+#         `-- log       (symlink to /mnt/local-ssd1/mutants/log)
+#             `-- system
+#
+# Cassandra log goes under its own directory. TODO: Does it have separate data
+# and log? Or just data.
+
 def _StartSystemLogging():
 	Util.RunSubp("mkdir -p /mnt/local-ssd1/mutants/log/system")
+	Util.RunSubp("rm /home/ubuntu/work/mutants/log || true")
 	Util.RunSubp("ln -s /mnt/local-ssd1/mutants/log /home/ubuntu/work/mutants/log")
-	# Local SSD structure:
-	# - ssd0 for database server
-	# - ssd1 for system or experiment logs
-
-	# work/mutants
-	#      `-- log
-	#          `-- system
-	#
-	# Cassandra log goes under its own directory. TODO: Does it have separate
-	# data and log? Or just data.
-	#
-
-	# TODO: How do you know the average IOPS of a disk from the system boot? dtat
-	# shows it only once in the beginning.
-	# - /sys/block/xvda/stat
-	# - Look into https://www.kernel.org/doc/Documentation/block/stat.txt
 
 	# dstat parameters
 	#   -d, --disk
@@ -141,46 +139,23 @@ def _StartSystemLogging():
 	#   -t, --time
 	#     enable time/date output
 	#   -tdrf
+	Util.RunDaemon("cd /home/ubuntu/work/mutants/log && dstat -tdrf --output dstat-`date +\"%y%m%d-%H%M%S\"`.csv >/dev/null 2>&1")
 
-	# Example:
-	#   ----system---- --dsk/xvda----dsk/xvdb----dsk/xvdc- --io/xvda-----io/xvdb-----io/xvdc--
-	#        time     | read  writ: read  writ: read  writ| read  writ: read  writ: read  writ
-	#   This makes sense. Cause a block is 4KB
-	#   22-08 04:17:32|   0  8192B:   0     0 :   0     0 |   0  2.00 :   0     0 :   0     0
-	#   For these 2, I am guessing that a lot of the IOs are absorbed by the file
-	#   system cache and some journaling data is written for durability.  I was editing
-	#   a file of about 10KB.
-	#   22-08 04:17:35|   0    12k:   0     0 :   0     0 |   0  2.00 :   0     0 :   0     0
-	#   22-08 04:17:37|   0    44k:   0     0 :   0     0 |   0  9.00 :   0     0 :   0     0
 
-	# So, what matters is the number of IOs.
-	# TODO: Do some experiment on the local SSD with various file sizes. And see how
-	# confident I am.
-
-	# IOPS vs TPS (transactions per second)? T is a single IO command written to
-	# the raw disk. IOPS includes the requests absorbed by caches. At which
-	# level? File system, block device, or hardware level?
-	#   dstat --disk-tps
-	#     per disk transactions per second (tps) stats
-	#   http://serverfault.com/questions/558523/relation-between-disk-iops-and-sar-tps
-
-	# About 5MB of writes. Much more efficient (smaller) than what either du -hs
-	# or du -bhs (b for actual file sizes) says. Hmm...
-	#   $ du -hs
-	#   11M	.
-	#   $ du -bhs
-	#   7.5M	.
-	#
-	# TODO: A lot less IOs than 3084k / 4k = 771. How?
-	#   ----system---- --dsk/xvda----dsk/xvdb----dsk/xvdc- --io/xvda-----io/xvdb-----io/xvdc--
-	#        time     | read  writ: read  writ: read  writ| read  writ: read  writ: read  writ
-	# 	22-08 13:50:51|   0     0 :4096B 3084k:   0     0 |   0     0 :1.00  36.0 :   0     0
-	# 	22-08 13:50:52|   0     0 :   0     0 :   0     0 |   0     0 :   0     0 :   0     0
-	# 	22-08 13:50:56|   0    16k:   0  1844k:   0     0 |   0  2.00 :   0  16.0 :   0     0
-	#
-	# So, file system IOs can be inflated or deflated (e.g., from read caching or
-	# write buffering) when translated to block device IOs.
-
+# How do you know the average IOPS of a disk from the system boot?
+# - dstat shows it when it starts
+# - You can parse /sys/block/xvda/stat
+#   - https://www.kernel.org/doc/Documentation/block/stat.txt
+#
+# File system IOs can be inflated or deflated (e.g., from read caching or write
+# buffering) when translated to block device IOs.
+#
+# IOPS vs TPS (transactions per second)? T is a single IO command written to
+# the raw disk. IOPS includes the requests absorbed by caches. At which
+# level? Probably at the block device level.
+#   dstat --disk-tps
+#     per disk transactions per second (tps) stats
+#   http://serverfault.com/questions/558523/relation-between-disk-iops-and-sar-tps
 
 
 def _CloneSrcAndBuild():
@@ -189,31 +164,32 @@ def _CloneSrcAndBuild():
 
 	# Git clone
 	Util.RunSubp("rm -rf /mnt/local-ssd0/mutants/cassandra")
-	Util.RunSubp("git clone https://github.com/hobinyoon/mutants-cassandra /mnt/local-ssd0/mutants/cassandra")
+	Util.RunSubp("git clone https://github.com/hobinyoon/cassandra-3.9 /mnt/local-ssd0/mutants/cassandra")
 
 	# Symlink
 	Util.RunSubp("rm -rf /home/ubuntu/work/mutants/cassandra")
-	Util.RunSubp("ln -s /mnt/local-ssd0/mutants-cassandra /home/ubuntu/work/mutants/cassandra")
+	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/cassandra /home/ubuntu/work/mutants/cassandra")
 
 	# Build
-	#   Note: workaround for unmappable character for encoding ASCII.
+	#   TODO: Do you still need this? Note: workaround for unmappable character for encoding ASCII.
 	#   http://stackoverflow.com/questions/26067350/unmappable-character-for-encoding-ascii-but-my-files-are-in-utf-8
-	Util.RunSubp("cd /home/ubuntu/work/mutants/cassandra && (JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF8 ant)")
+	#Util.RunSubp("cd /home/ubuntu/work/mutants/cassandra && (JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF8 ant)")
+	Util.RunSubp("cd /home/ubuntu/work/mutants/cassandra && ant")
 
 
 def _EditCassConf():
-	_Log("Getting IP addrs of all running instances of tags %s ..." % _tags)
-	ips = GetIPs.GetByTags(_tags)
+	_Log("Getting IP addrs of all running instances of servers with job_id %s ..." % _job_id)
+	ips = GetIPs.GetServerPubIpsByJobId(_job_id)
 	_Log(ips)
 
 	fn_cass_yaml = "/home/ubuntu/work/mutants/cassandra/conf/cassandra.yaml"
 	_Log("Editing %s ..." % fn_cass_yaml)
 
-	# Update cassandra cluster name if specified.
-	if "cass_cluster_name" in _tags:
-		# http://stackoverflow.com/questions/7517632/how-do-i-escape-double-and-single-quotes-in-sed-bash
-		Util.RunSubp("sed -i 's/^cluster_name: .*/cluster_name: '\"'\"'%s'\"'\"'/g' %s"
-				% (_tags["cass_cluster_name"], fn_cass_yaml))
+	# Update cassandra cluster name if specified. No need to.
+	#if "cass_cluster_name" in _tags:
+	#	# http://stackoverflow.com/questions/7517632/how-do-i-escape-double-and-single-quotes-in-sed-bash
+	#	Util.RunSubp("sed -i 's/^cluster_name: .*/cluster_name: '\"'\"'%s'\"'\"'/g' %s"
+	#			% (_tags["cass_cluster_name"], fn_cass_yaml))
 
 	Util.RunSubp("sed -i 's/" \
 			"^          - seeds: .*" \
@@ -252,12 +228,13 @@ def _EditCassConf():
 			"/broadcast_rpc_address: %s" \
 			"/g' %s" % (GetIPs.GetMyPubIp(), fn_cass_yaml))
 
-	Util.RunSubp("sed -i 's/" \
-			"^endpoint_snitch:.*" \
-			"/endpoint_snitch: Ec2MultiRegionSnitch" \
-			"/g' %s" % fn_cass_yaml)
+	# No need for a single data center deployment
+	#Util.RunSubp("sed -i 's/" \
+	#		"^endpoint_snitch:.*" \
+	#		"/endpoint_snitch: Ec2MultiRegionSnitch" \
+	#		"/g' %s" % fn_cass_yaml)
 
-	# Edit parameters requested from tags
+	# TODO: Edit parameters requested from tags
 	for k, v in _tags.iteritems():
 		if k.startswith("mutants_options."):
 			#              0123456789012345
@@ -271,7 +248,7 @@ def _EditCassConf():
 # Note: This will be the YCSB configuration file
 #_fn_acorn_youtube_yaml = "/home/ubuntu/work/acorn/acorn/clients/youtube/acorn-youtube.yaml"
 #
-#def _EditYoutubeClientConf():
+#def _EditMutantsClientConf():
 #	_Log("Editing %s ..." % _fn_acorn_youtube_yaml)
 #	for k, v in _tags.iteritems():
 #		if k.startswith("acorn-youtube."):
@@ -289,6 +266,11 @@ def _RunCass():
 	Util.RunSubp("/home/ubuntu/work/mutants/cassandra/bin/cassandra")
 
 
+# TODO: get the number of servers from the json parameter
+#
+# How does a client node know that the servers are ready? It can query
+# system.peers and system.local with cqlsh.
+#
 #def _WaitUntilYouSeeAllCassNodes():
 #	_Log("Wait until all Cassandra nodes are up ...")
 #	# Keep checking until you see all nodes are up -- "UN" status.
@@ -348,21 +330,17 @@ def main(argv):
 		_SyncTime()
 		#_InstallPkgs()
 		_MountAndFormatLocalSSDs()
-
-		# TODO
 		_StartSystemLogging()
+		_CloneSrcAndBuild()
+		_EditCassConf()
 
-		# TODO
-		#_CloneSrcAndBuild()
-
-		#_EditCassConf()
-
+		# TODO: _EditMutantsClientConf()
 		# Note: No experiment data needed for Mutants
-		#_EditYoutubeClientConf()
 		#_UnzipExpDataToLocalSsd()
 
-		# Note: Not needed for now
-		#_RunCass()
+		_RunCass()
+
+		# Only the client node need this. Server nodes don't need this.
 		#_WaitUntilYouSeeAllCassNodes()
 
 		# The node is not terminated by the job controller. When done with the
