@@ -123,8 +123,7 @@ def _MountAndFormatLocalSSDs():
 #         `-- log       (symlink to /mnt/local-ssd1/mutants/log)
 #             `-- system
 #
-# Cassandra log goes under its own directory. TODO: Does it have separate data
-# and log? Or just data.
+# Cassandra data and log goes under its own directory.
 
 def _StartSystemLogging():
 	Util.RunSubp("mkdir -p /mnt/local-ssd1/mutants/log/system")
@@ -142,9 +141,10 @@ def _StartSystemLogging():
 	Util.RunDaemon("cd /home/ubuntu/work/mutants/log && dstat -tdrf --output dstat-`date +\"%y%m%d-%H%M%S\"`.csv >/dev/null 2>&1")
 
 
-# How do you know the average IOPS of a disk from the system boot?
-# - dstat shows it when it starts
-# - You can parse /sys/block/xvda/stat
+# How do you know the average IOPS of a disk from the system boot? dtat shows
+# it only once in the beginning.
+# - cat /sys/block/xvda/stat
+#   - It has the number of read IOs and write IOs processed
 #   - https://www.kernel.org/doc/Documentation/block/stat.txt
 #
 # File system IOs can be inflated or deflated (e.g., from read caching or write
@@ -171,9 +171,6 @@ def _CloneSrcAndBuild():
 	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/cassandra /home/ubuntu/work/mutants/cassandra")
 
 	# Build
-	#   TODO: Do you still need this? Note: workaround for unmappable character for encoding ASCII.
-	#   http://stackoverflow.com/questions/26067350/unmappable-character-for-encoding-ascii-but-my-files-are-in-utf-8
-	#Util.RunSubp("cd /home/ubuntu/work/mutants/cassandra && (JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF8 ant)")
 	Util.RunSubp("cd /home/ubuntu/work/mutants/cassandra && ant")
 
 

@@ -147,6 +147,9 @@ sudo -i -u ubuntu /home/ubuntu/work/mutants/ec2-tools/lib/ec2-init.py {0}
 	# jr_sqs_url = msg.msg.queue_url
 
 	def _ReqSpotInstClient(self):
+		if "client" not in self.req_msg.msg_body:
+			return
+
 		user_data = _Req.user_data.format(self.req_msg.Serialize({"job_id": self.job_id, "type": "client"}))
 		ami_name = self.req_msg.msg_body["client"]["ami_name"]
 
@@ -198,6 +201,9 @@ sudo -i -u ubuntu /home/ubuntu/work/mutants/ec2-tools/lib/ec2-init.py {0}
 					raise e
 
 	def _ReqSpotInstServer(self):
+		if "server" not in self.req_msg.msg_body:
+			return
+
 		user_data = _Req.user_data.format(self.req_msg.Serialize({"job_id": self.job_id, "type": "server"}))
 		ami_name = self.req_msg.msg_body["server"]["ami_name"]
 		server_num_nodes = self.req_msg.msg_body["server"]["num_nodes"]

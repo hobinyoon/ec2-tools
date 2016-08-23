@@ -81,6 +81,25 @@ def Job_MutantsDevS1C1():
 			)
 
 
+def Job_MutantsDevS1():
+	_EnqReq(
+			{"region": "us-east-1"
+				# Client uses the same instance type as the server, cause it generates
+				# all requests for a cluster of servers.
+				, "spot_req": {"inst_type": "c3.2xlarge", "max_price": 1.0}
+				#            vCPU ECU Memory (GiB) Instance Storage (GB) Linux/UNIX Usage
+				# c3.2xlarge    8  28           15            2 x 80 SSD   $0.42 per Hour
+
+				, "server": {
+					# We'll see if the AMIs need to be separated by DBs.
+					"init_script": "mutants-cassandra-server-dev"
+					, "ami_name": "mutants-cassandra-server"
+					, "num_nodes": "1"
+					}
+				}
+			)
+
+
 def _EnqReq(attrs):
 	with Cons.MT("Enq a request: "):
 		# Need to make a copy so that an SQS message can be sent while attrs is being
