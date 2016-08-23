@@ -62,6 +62,8 @@ def _MountAndFormatLocalSSDs():
 	# Make sure we are using the known machine types
 	inst_type = Util.RunSubp("curl -s http://169.254.169.254/latest/meta-data/instance-type", print_cmd = False, print_output = False)
 
+	# TODO: use a dict.
+	# TODO: attach other EBS devices too.
 	ssds = []
 	devs = []
 
@@ -96,7 +98,6 @@ def _MountAndFormatLocalSSDs():
 		# nodiscard is in the documentation
 		# - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ssd-instance-store.html
 		# - Without nodiscard, it takes about 80 secs for a 800GB SSD.
-
 		Util.RunSubp("sudo mkfs.ext4 -m 0 -E nodiscard,lazy_itable_init=0,lazy_journal_init=0 -L local-%s /dev/%s"
 				% (ssds[i], devs[i]))
 
@@ -331,17 +332,10 @@ def main(argv):
 		_CloneSrcAndBuild()
 		_EditCassConf()
 
-		# TODO: _EditMutantsClientConf()
-		# Note: No experiment data needed for Mutants
-		#_UnzipExpDataToLocalSsd()
-
 		_RunCass()
 
-		# Only the client node need this. Server nodes don't need this.
-		#_WaitUntilYouSeeAllCassNodes()
-
-		# The node is not terminated by the job controller. When done with the
-		# development, it needds to be terminated manually.
+		# Server nodes are not terminated here. When the client is done with the
+		# experiment, it requests termination of the servers.
 	except Exception as e:
 		msg = "Exception: %s\n%s" % (e, traceback.format_exc())
 		_Log(msg)

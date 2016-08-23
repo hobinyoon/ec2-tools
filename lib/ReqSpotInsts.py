@@ -153,9 +153,6 @@ sudo -i -u ubuntu /home/ubuntu/work/mutants/ec2-tools/lib/ec2-init.py {0}
 		user_data = _Req.user_data.format(self.req_msg.Serialize({"job_id": self.job_id, "type": "client"}))
 		ami_name = self.req_msg.msg_body["client"]["ami_name"]
 
-		# TODO: Let the client do the house keeping: Uploading the result to S3 and
-		# notifying that the job is done.
-
 		ls = {'ImageId': GetLatestAmiId(self.region, ami_name)
 				#, 'KeyName': 'string'
 				, 'SecurityGroups': ["cass-server"]
@@ -216,6 +213,44 @@ sudo -i -u ubuntu /home/ubuntu/work/mutants/ec2-tools/lib/ec2-init.py {0}
 				, 'InstanceType': self.inst_type
 				, 'EbsOptimized': True
 				, 'Placement': {'AvailabilityZone': self.az}
+				# You need to be careful. The storage cost is higher than the VM spot
+				# price, which is around $0.1/hour.
+				#                             $/GB-month     $/hour
+				#                                 size_in_GB
+				#   EBS gp2                        0.100  80 0.0110
+				#   EBS st1 (throughput optimized) 0.045 500 0.0308
+				#   EBS sc1 (cold HDD)             0.025 500 0.0171
+				#
+				#   calc "0.100 *  80 / (365.25/12*24)"
+				#   calc "0.045 * 500 / (365.25/12*24)"
+				#   calc "0.025 * 500 / (365.25/12*24)"
+				, 'BlockDeviceMappings': [
+					{
+						'DeviceName': '/dev/sdd',
+						'Ebs': {
+							'VolumeSize': 80,
+							'DeleteOnTermination': True,
+							'VolumeType': 'gp2'
+							},
+						}
+					, {
+						'DeviceName': '/dev/sde',
+						'Ebs': {
+							# sc1 and st1 should have a minimum size of 500 GB
+							'VolumeSize': 500,
+							'DeleteOnTermination': True,
+							'VolumeType': 'sc1'
+							},
+						}
+					, {
+						'DeviceName': '/dev/sdf',
+						'Ebs': {
+							'VolumeSize': 500,
+							'DeleteOnTermination': True,
+							'VolumeType': 'st1',
+							},
+						}
+					],
 				}
 
 		while True:

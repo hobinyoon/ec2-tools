@@ -62,6 +62,8 @@ def _MountAndFormatLocalSSDs():
 	# Make sure we are using the known machine types
 	inst_type = Util.RunSubp("curl -s http://169.254.169.254/latest/meta-data/instance-type", print_cmd = False, print_output = False)
 
+	# TODO: use a dict.
+	# TODO: attach other EBS devices too.
 	ssds = []
 	devs = []
 
@@ -96,7 +98,6 @@ def _MountAndFormatLocalSSDs():
 		# nodiscard is in the documentation
 		# - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ssd-instance-store.html
 		# - Without nodiscard, it takes about 80 secs for a 800GB SSD.
-
 		Util.RunSubp("sudo mkfs.ext4 -m 0 -E nodiscard,lazy_itable_init=0,lazy_journal_init=0 -L local-%s /dev/%s"
 				% (ssds[i], devs[i]))
 
@@ -110,6 +111,20 @@ def _MountAndFormatLocalSSDs():
 		Util.RunSubp("sudo chown -R ubuntu /mnt/local-%s" % ssds[i])
 
 
+def _StartSystemLogging():
+	Util.RunSubp("mkdir -p /mnt/local-ssd1/mutants/log/system")
+	Util.RunSubp("rm /home/ubuntu/work/mutants/log || true")
+	Util.RunSubp("ln -s /mnt/local-ssd1/mutants/log /home/ubuntu/work/mutants/log")
+
+	# dstat parameters
+	#   -d, --disk
+	#     enable disk stats (read, write)
+	#   -r, --io
+	#     enable I/O request stats (read, write requests)
+	#   -t, --time
+	#     enable time/date output
+	#   -tdrf
+	Util.RunDaemon("cd /home/ubuntu/work/mutants/log && dstat -tdrf --output dstat-`date +\"%y%m%d-%H%M%S\"`.csv >/dev/null 2>&1")
 def _CloneSrcAndBuild():
 	# Make parent
 	Util.RunSubp("mkdir -p /mnt/local-ssd0/mutants")
@@ -123,9 +138,6 @@ def _CloneSrcAndBuild():
 	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/cassandra /home/ubuntu/work/mutants/cassandra")
 
 	# Build
-	#   TODO: Do you still need this? Note: workaround for unmappable character for encoding ASCII.
-	#   http://stackoverflow.com/questions/26067350/unmappable-character-for-encoding-ascii-but-my-files-are-in-utf-8
-	#Util.RunSubp("cd /home/ubuntu/work/mutants/cassandra && (JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF8 ant)")
 	Util.RunSubp("cd /home/ubuntu/work/mutants/cassandra && ant")
 
 
@@ -287,16 +299,15 @@ def main(argv):
 		_EditCassConf()
 
 		# TODO: _EditMutantsClientConf()
-		# Note: No experiment data needed for Mutants
-		#_UnzipExpDataToLocalSsd()
 
-		#_RunCass()
-
-		# Only the client node need this. Server nodes don't need this.
+		# TODO: Only the client node need this. Server nodes don't need this.
 		#_WaitUntilYouSeeAllCassNodes()
 
-		# The node is not terminated by the job controller. When done with the
-		# development, it needds to be terminated manually.
+		# TODO: Let the client do the house keeping: Uploading the result to S3 and
+		# notifying that the job is done.
+
+		# The client node requests termination of the nodes with the same job_id.
+		# Dev nodes are not terminated automatically.
 	except Exception as e:
 		msg = "Exception: %s\n%s" % (e, traceback.format_exc())
 		_Log(msg)
