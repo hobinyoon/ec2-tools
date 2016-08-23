@@ -172,7 +172,12 @@ class Msg:
 		self.msg_body = json.loads(msg.body)
 
 	def IsDevJob(self):
-		return self.msg_body["server"]["init_script"].endswith("-dev")
+		if "server" in self.msg_body:
+			return self.msg_body["server"]["init_script"].endswith("-dev")
+		elif "client" in self.msg_body:
+			return self.msg_body["client"]["init_script"].endswith("-dev")
+		else:
+			raise RuntimeError("Unexpected")
 
 	# To pass to the ec2 instances
 	def Serialize(self, extra_options):

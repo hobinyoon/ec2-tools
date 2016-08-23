@@ -45,7 +45,9 @@ class _Req:
 			self.inst_type = req_msg.msg_body["spot_req"]["inst_type"]
 			self.az = SpotPrice.MostStableAz(self.region, self.inst_type)
 			self.spot_max_price = req_msg.msg_body["spot_req"]["max_price"]
-			self.num_nodes = int(self.req_msg.msg_body["server"]["num_nodes"]) + 1
+			self.num_nodes = 1
+			if "server" in self.req_msg.msg_body:
+				self.num_nodes += int(self.req_msg.msg_body["server"]["num_nodes"])
 
 			self.spot_req_infos = _Req.SpotReqInfos()
 

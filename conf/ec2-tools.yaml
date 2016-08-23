@@ -21,6 +21,9 @@ region_ami:
   mutants-client:
     us-east-1: ami-15f09102
 
+  castnet:
+    us-east-1: ami-15f09102
+
 ec2_regions:
   all:
     - ap-northeast-1

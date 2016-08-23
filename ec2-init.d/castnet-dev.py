@@ -127,132 +127,17 @@ def _StartSystemLogging():
 	Util.RunDaemon("cd /home/ubuntu/work/mutants/log && dstat -tdrf --output dstat-`date +\"%y%m%d-%H%M%S\"`.csv >/dev/null 2>&1")
 
 
-def _CloneSrcAndBuild():
+def _CloneSrc():
 	# Make parent
-	Util.RunSubp("mkdir -p /mnt/local-ssd0/mutants")
+	Util.RunSubp("mkdir -p /mnt/local-ssd0/castnet")
 
 	# Git clone
 	Util.RunSubp("rm -rf /mnt/local-ssd0/mutants/cassandra")
-	Util.RunSubp("git clone https://github.com/hobinyoon/cassandra-3.9 /mnt/local-ssd0/mutants/cassandra")
+	Util.RunSubp("git clone https://github.com/hobinyoon/castnet.git /mnt/local-ssd0/castnet")
 
 	# Symlink
-	Util.RunSubp("rm -rf /home/ubuntu/work/mutants/cassandra")
-	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/cassandra /home/ubuntu/work/mutants/cassandra")
-
-	# Build
-	Util.RunSubp("cd /home/ubuntu/work/mutants/cassandra && ant")
-
-
-def _EditCassConf():
-	_Log("Getting IP addrs of all running instances of servers with job_id %s ..." % _job_id)
-	ips = GetIPs.GetServerPubIpsByJobId(_job_id)
-	_Log(ips)
-
-	fn_cass_yaml = "/home/ubuntu/work/mutants/cassandra/conf/cassandra.yaml"
-	_Log("Editing %s ..." % fn_cass_yaml)
-
-	# Update cassandra cluster name if specified. No need to.
-	#if "cass_cluster_name" in _tags:
-	#	# http://stackoverflow.com/questions/7517632/how-do-i-escape-double-and-single-quotes-in-sed-bash
-	#	Util.RunSubp("sed -i 's/^cluster_name: .*/cluster_name: '\"'\"'%s'\"'\"'/g' %s"
-	#			% (_tags["cass_cluster_name"], fn_cass_yaml))
-
-	Util.RunSubp("sed -i 's/" \
-			"^          - seeds: .*" \
-			"/          - seeds: \"%s\"" \
-			"/g' %s" % (",".join(ips), fn_cass_yaml))
-
-	Util.RunSubp("sed -i 's/" \
-			"^listen_address: localhost" \
-			"/#listen_address: localhost" \
-			"/g' %s" % fn_cass_yaml)
-
-	Util.RunSubp("sed -i 's/" \
-			"^# listen_interface: eth0" \
-			"/listen_interface: eth0" \
-			"/g' %s" % fn_cass_yaml)
-
-	# sed doesn't support "?"
-	#   http://stackoverflow.com/questions/4348166/using-with-sed
-	Util.RunSubp("sed -i 's/" \
-			"^\(# \|\)broadcast_address: .*" \
-			"/broadcast_address: %s" \
-			"/g' %s" % (GetIPs.GetMyPubIp(), fn_cass_yaml))
-
-	Util.RunSubp("sed -i 's/" \
-			"^rpc_address: localhost" \
-			"/#rpc_address: localhost" \
-			"/g' %s" % fn_cass_yaml)
-
-	Util.RunSubp("sed -i 's/" \
-			"^# rpc_interface: eth1" \
-			"/rpc_interface: eth0" \
-			"/g' %s" % fn_cass_yaml)
-
-	Util.RunSubp("sed -i 's/" \
-			"^\(# \|\)broadcast_rpc_address: .*" \
-			"/broadcast_rpc_address: %s" \
-			"/g' %s" % (GetIPs.GetMyPubIp(), fn_cass_yaml))
-
-	# No need for a single data center deployment
-	#Util.RunSubp("sed -i 's/" \
-	#		"^endpoint_snitch:.*" \
-	#		"/endpoint_snitch: Ec2MultiRegionSnitch" \
-	#		"/g' %s" % fn_cass_yaml)
-
-	# TODO: Edit parameters requested from tags
-	for k, v in _tags.iteritems():
-		if k.startswith("mutants_options."):
-			#              0123456789012345
-			k1 = k[16:]
-			Util.RunSubp("sed -i 's/" \
-					"^    %s:.*" \
-					"/    %s: %s" \
-					"/g' %s" % (k1, k1, v, fn_cass_yaml))
-
-
-# Note: This will be the YCSB configuration file
-#_fn_acorn_youtube_yaml = "/home/ubuntu/work/acorn/acorn/clients/youtube/acorn-youtube.yaml"
-#
-#def _EditMutantsClientConf():
-#	_Log("Editing %s ..." % _fn_acorn_youtube_yaml)
-#	for k, v in _tags.iteritems():
-#		if k.startswith("acorn-youtube."):
-#			#              01234567890123
-#			k1 = k[14:]
-#			Util.RunSubp("sed -i 's/" \
-#					"^%s:.*" \
-#					"/%s: %s" \
-#					"/g' %s" % (k1, k1, v, _fn_acorn_youtube_yaml))
-
-
-def _RunCass():
-	_Log("Running Cassandra ...")
-	Util.RunSubp("rm -rf ~/work/mutants/cassandra/data")
-	Util.RunSubp("/home/ubuntu/work/mutants/cassandra/bin/cassandra")
-
-
-# TODO: get the number of servers from the json parameter
-#
-# How does a client node know that the servers are ready? It can query
-# system.peers and system.local with cqlsh.
-#
-#def _WaitUntilYouSeeAllCassNodes():
-#	_Log("Wait until all Cassandra nodes are up ...")
-#	# Keep checking until you see all nodes are up -- "UN" status.
-#	while True:
-#		# Get all IPs with the tags. Hope every node sees all other nodes by this
-#		# time.
-#		num_nodes = Util.RunSubp("/home/ubuntu/work/mutants/cassandra/bin/nodetool status | grep \"^UN \" | wc -l", shell = True)
-#		num_nodes = int(num_nodes)
-#
-#		# The number of regions (_num_regions) needs to be explicitly passed. When
-#		# a data center goes over capacity, it doesn't even get to the point where
-#		# a node is tagged, making the cluster think it has less nodes.
-#
-#		#if num_nodes == _num_regions:
-#		#	break
-#		time.sleep(2)
+	Util.RunSubp("rm -rf /home/ubuntu/work/castnet")
+	Util.RunSubp("ln -s /mnt/local-ssd0/castnet /home/ubuntu/work/castnet")
 
 
 # Note: Some of these will be needed for batch experiments
@@ -296,19 +181,9 @@ def main(argv):
 		_SyncTime()
 		#_InstallPkgs()
 		_MountAndFormatLocalSSDs()
-		_StartSystemLogging()
-		_CloneSrcAndBuild()
-		_EditCassConf()
+		#_StartSystemLogging()
+		_CloneSrc()
 
-		# TODO: _EditMutantsClientConf()
-
-		# TODO: Only the client node need this. Server nodes don't need this.
-		#_WaitUntilYouSeeAllCassNodes()
-
-		# TODO: Let the client do the house keeping: Uploading the result to S3 and
-		# notifying that the job is done.
-
-		# The client node requests termination of the nodes with the same job_id.
 		# Dev nodes are not terminated automatically.
 	except Exception as e:
 		msg = "Exception: %s\n%s" % (e, traceback.format_exc())
