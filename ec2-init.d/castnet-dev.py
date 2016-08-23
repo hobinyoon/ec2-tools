@@ -39,6 +39,12 @@ def _SetHostname():
 	# http://askubuntu.com/questions/9540/how-do-i-change-the-computer-name
 	Util.RunSubp("sudo sh -c 'echo \"%s\" > /etc/hostname'" % hn)
 	Util.RunSubp("sudo sed -i '/^127.0.0.1 localhost.*/c\\127.0.0.1 localhost %s' /etc/hosts" % hn)
+
+	# sudo service hostname restart
+	#   Failed to restart hostname.service: Unit hostname.service is masked.
+	#   http://forums.debian.net/viewtopic.php?f=5&t=126007
+	Util.RunSubp("sudo rm /lib/systemd/system/hostname.service")
+	Util.RunSubp("sudo systemctl unmask hostname.service")
 	Util.RunSubp("sudo service hostname restart")
 
 

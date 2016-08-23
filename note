@@ -24,6 +24,9 @@ Clean up logs before making a new AMI. You may want to put something in /var/log
 	  && sudo rm /var/log/cloud-init*
 
 
+$ sudo -H pip install boto3 PyYAML
+
+
 Done
 ----
 - When a cluster doesn't start in 6 mins, kill the instances. Spot
