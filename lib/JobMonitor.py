@@ -40,9 +40,9 @@ def Restart():
 	t.start()
 
 
-#def Stop():
-#	with _lock:
-#		_Stop()
+def Stop():
+	with _lock:
+		_Stop()
 
 
 # Called by desc-insts.py
