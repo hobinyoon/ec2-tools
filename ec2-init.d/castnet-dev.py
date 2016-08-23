@@ -128,11 +128,8 @@ def _StartSystemLogging():
 
 
 def _CloneSrc():
-	# Make parent
-	Util.RunSubp("mkdir -p /mnt/local-ssd0/castnet")
-
 	# Git clone
-	Util.RunSubp("rm -rf /mnt/local-ssd0/mutants/cassandra")
+	Util.RunSubp("rm -rf /mnt/local-ssd0/castnet")
 	Util.RunSubp("git clone https://github.com/hobinyoon/castnet.git /mnt/local-ssd0/castnet")
 
 	# Symlink
