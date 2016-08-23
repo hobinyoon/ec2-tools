@@ -43,7 +43,7 @@ def _SetHostname():
 	# sudo service hostname restart
 	#   Failed to restart hostname.service: Unit hostname.service is masked.
 	#   http://forums.debian.net/viewtopic.php?f=5&t=126007
-	Util.RunSubp("sudo rm /lib/systemd/system/hostname.service")
+	Util.RunSubp("sudo rm /lib/systemd/system/hostname.service || true")
 	Util.RunSubp("sudo systemctl unmask hostname.service")
 	Util.RunSubp("sudo service hostname restart")
 
