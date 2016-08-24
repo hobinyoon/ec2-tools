@@ -133,7 +133,7 @@ def _StartSystemLogging():
 	Util.RunDaemon("cd /home/ubuntu/work/mutants/log && dstat -tdrf --output dstat-`date +\"%y%m%d-%H%M%S\"`.csv >/dev/null 2>&1")
 
 
-def _CloneSrc():
+def _CloneSrcBuild():
 	# Git clone
 	Util.RunSubp("rm -rf /mnt/local-ssd0/castnet")
 	Util.RunSubp("git clone https://github.com/hobinyoon/castnet.git /mnt/local-ssd0/castnet")
@@ -147,6 +147,9 @@ def _CloneSrc():
 	# Symlink
 	Util.RunSubp("rm -rf /home/ubuntu/work/castnet")
 	Util.RunSubp("ln -s /mnt/local-ssd0/castnet /home/ubuntu/work/castnet")
+
+	# Build to save time
+	Util.RunSubp("cd /home/ubuntu/work/castnet/simulator && ./build-and-run.sh > /dev/null 2>&1")
 
 
 # Note: Some of these will be needed for batch experiments
@@ -191,7 +194,7 @@ def main(argv):
 		#_InstallPkgs()
 		_MountAndFormatLocalSSDs()
 		#_StartSystemLogging()
-		_CloneSrc()
+		_CloneSrcBuild()
 
 		# Dev nodes are not terminated automatically.
 	except Exception as e:
