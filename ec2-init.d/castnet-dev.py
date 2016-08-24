@@ -138,6 +138,12 @@ def _CloneSrc():
 	Util.RunSubp("rm -rf /mnt/local-ssd0/castnet")
 	Util.RunSubp("git clone https://github.com/hobinyoon/castnet.git /mnt/local-ssd0/castnet")
 
+	# Edit the git source repository for easy development.
+	Util.RunSubp("sed -i 's/" \
+			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/castnet.git" \
+			"/\\turl = git@github.com:hobinyoon\/castnet.git" \
+			"/g' %s" % "/mnt/local-ssd0/castnet/.git/config")
+
 	# Symlink
 	Util.RunSubp("rm -rf /home/ubuntu/work/castnet")
 	Util.RunSubp("ln -s /mnt/local-ssd0/castnet /home/ubuntu/work/castnet")
