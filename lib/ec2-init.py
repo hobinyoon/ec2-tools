@@ -96,6 +96,12 @@ def main(argv):
 	if len(argv) != 2:
 		raise RuntimeError("Usage: %s base64_json_encoded_params" % argv[0])
 
+	# Edit the git source repository for easy development.
+	Util.RunSubp("sed -i 's/" \
+			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mutants-ec2-tools.git" \
+			"/\\turl = git@github.com:hobinyoon\/mutants-ec2-tools.git" \
+			"/g' %s" % "~/work/mutants/ec2-tools/.git/config")
+
 	_LogInstInfo()
 	_RunInitScript(argv[1])
 
