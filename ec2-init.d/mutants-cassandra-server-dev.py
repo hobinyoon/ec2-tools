@@ -38,7 +38,7 @@ def _SetHostname():
 
 	# http://askubuntu.com/questions/9540/how-do-i-change-the-computer-name
 	Util.RunSubp("sudo sh -c 'echo \"%s\" > /etc/hostname'" % hn)
-	# “c” command in sed is used to replace every line matches with the pattern
+	# "c" command in sed is used to replace every line matches with the pattern
 	# or ranges with the new given line.
 	# - http://www.thegeekstuff.com/2009/11/unix-sed-tutorial-append-insert-replace-and-count-file-lines/?ref=driverlayer.com
 	Util.RunSubp("sudo sed -i '/^127.0.0.1 localhost.*/c\\127.0.0.1 localhost %s' /etc/hosts" % hn)
