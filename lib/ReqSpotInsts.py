@@ -161,7 +161,8 @@ sudo -i -u ubuntu /home/ubuntu/work/mutants/ec2-tools/lib/ec2-init.py {0}
 				, 'UserData': base64.b64encode(user_data)
 				#, 'AddressingType': 'string'
 				, 'InstanceType': self.inst_type
-				, 'EbsOptimized': True
+				# c3.8xlarge doesn't support EBS optimized
+				, 'EbsOptimized': (False if self.inst_type == "c3.8xlarge" else True)
 				, 'Placement': {'AvailabilityZone': self.az}
 				}
 
