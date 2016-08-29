@@ -22,8 +22,10 @@ import Ec2Region
 # associated snapshots.
 
 _AMI_prefix_to_keep_at_most_2 = [
-"acorn-server"
-, "castnet"]
+		"acorn-server"
+		, "castnet"
+		, "mutants-cassandra-server"
+		, "mutants-client"]
 
 def main(argv):
 	iscs = []
@@ -159,29 +161,37 @@ class ImageSnapshotCleaner:
 		Cons.P("%s" % self.region)
 
 		m = "  ami_myproj_to_keep  :"
+		i = 0
 		for img in self.imgs_myproj_to_keep:
+			if (i >= 2) and (i % 2 == 0):
+				m += "\n                       "
 			m += (" (%s, %s, %s)" % (img.name, SimpleDatetime(img.creation_date), img.image_id))
+			i += 1
 		Cons.P(m)
 
 		m = "  ami_myproj_to_delete:"
 		i = 0
 		for img in self.imgs_myproj_to_delete:
 			if (i >= 2) and (i % 2 == 0):
-				m += "\n                      "
+				m += "\n                       "
 			m += (" (%s, %s, %s)" % (img.name, SimpleDatetime(img.creation_date), img.image_id))
 			i += 1
 		Cons.P(m)
 
-		m = "  ami_others         :"
+		m = "  ami_others          :"
+		i = 0
 		for img in self.imgs_others:
+			if (i >= 2) and (i % 2 == 0):
+				m += "\n                       "
 			m += (" (%s, %s, %s)" % (img.name, SimpleDatetime(img.creation_date), img.image_id))
+			i += 1
 		Cons.P(m)
 
-		m = "  snapshots_to_keep  :"
+		m = "  snapshots_to_keep   :"
 		i = 0
 		for sn in self.ss_to_keep:
 			if (i >= 3) and (i % 3 == 0):
-				m += "\n                      "
+				m += "\n                       "
 			m += (" %s(%s)" % (sn.snapshot_id, sn.ami_id))
 			i += 1
 		Cons.P(m)
