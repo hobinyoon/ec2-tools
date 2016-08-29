@@ -140,75 +140,15 @@ def _CloneSrcAndBuild():
 	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/cassandra /home/ubuntu/work/mutants/cassandra")
 
 	# Build
+	# TODO: Not sure this will be needed
 	Util.RunSubp("cd /home/ubuntu/work/mutants/cassandra && ant")
 
 
-def _EditCassConf():
+def _EditYcsbConf():
 	_Log("Getting IP addrs of all running instances of servers with job_id %s ..." % _job_id)
 	ips = GetIPs.GetServerPubIpsByJobId(_job_id)
-	_Log(ips)
-
-	fn_cass_yaml = "/home/ubuntu/work/mutants/cassandra/conf/cassandra.yaml"
-	_Log("Editing %s ..." % fn_cass_yaml)
-
-	# Update cassandra cluster name if specified. No need to.
-	#if "cass_cluster_name" in _tags:
-	#	# http://stackoverflow.com/questions/7517632/how-do-i-escape-double-and-single-quotes-in-sed-bash
-	#	Util.RunSubp("sed -i 's/^cluster_name: .*/cluster_name: '\"'\"'%s'\"'\"'/g' %s"
-	#			% (_tags["cass_cluster_name"], fn_cass_yaml))
-
-	Util.RunSubp("sed -i 's/" \
-			"^          - seeds: .*" \
-			"/          - seeds: \"%s\"" \
-			"/g' %s" % (",".join(ips), fn_cass_yaml))
-
-	Util.RunSubp("sed -i 's/" \
-			"^listen_address: localhost" \
-			"/#listen_address: localhost" \
-			"/g' %s" % fn_cass_yaml)
-
-	Util.RunSubp("sed -i 's/" \
-			"^# listen_interface: eth0" \
-			"/listen_interface: eth0" \
-			"/g' %s" % fn_cass_yaml)
-
-	# sed doesn't support "?"
-	#   http://stackoverflow.com/questions/4348166/using-with-sed
-	Util.RunSubp("sed -i 's/" \
-			"^\(# \|\)broadcast_address: .*" \
-			"/broadcast_address: %s" \
-			"/g' %s" % (GetIPs.GetMyPubIp(), fn_cass_yaml))
-
-	Util.RunSubp("sed -i 's/" \
-			"^rpc_address: localhost" \
-			"/#rpc_address: localhost" \
-			"/g' %s" % fn_cass_yaml)
-
-	Util.RunSubp("sed -i 's/" \
-			"^# rpc_interface: eth1" \
-			"/rpc_interface: eth0" \
-			"/g' %s" % fn_cass_yaml)
-
-	Util.RunSubp("sed -i 's/" \
-			"^\(# \|\)broadcast_rpc_address: .*" \
-			"/broadcast_rpc_address: %s" \
-			"/g' %s" % (GetIPs.GetMyPubIp(), fn_cass_yaml))
-
-	# No need for a single data center deployment
-	#Util.RunSubp("sed -i 's/" \
-	#		"^endpoint_snitch:.*" \
-	#		"/endpoint_snitch: Ec2MultiRegionSnitch" \
-	#		"/g' %s" % fn_cass_yaml)
-
-	# TODO: Edit parameters requested from tags
-	for k, v in _tags.iteritems():
-		if k.startswith("mutants_options."):
-			#              0123456789012345
-			k1 = k[16:]
-			Util.RunSubp("sed -i 's/" \
-					"^    %s:.*" \
-					"/    %s: %s" \
-					"/g' %s" % (k1, k1, v, fn_cass_yaml))
+	_Log("Server public addrs: %s" % " ".join(ips))
+	# TODO: will need it for YCSB
 
 
 # Note: This will be the YCSB configuration file
@@ -297,8 +237,8 @@ def main(argv):
 		#_InstallPkgs()
 		_MountAndFormatLocalSSDs()
 		_StartSystemLogging()
-		_CloneSrcAndBuild()
-		_EditCassConf()
+		#_CloneSrcAndBuild()
+		_EditYcsbConf()
 
 		# TODO: _EditMutantsClientConf()
 
