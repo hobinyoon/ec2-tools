@@ -131,6 +131,11 @@ def _CloneSrcAndBuild():
 	# Make parent
 	Util.RunSubp("mkdir -p /mnt/local-ssd0/mutants")
 
+	__CloneAndBuildCassandra()
+	__CloneAndBuildYcsb()
+
+
+def __CloneAndBuildCassandra():
 	# Git clone
 	Util.RunSubp("rm -rf /mnt/local-ssd0/mutants/cassandra")
 	Util.RunSubp("git clone https://github.com/hobinyoon/cassandra-3.9 /mnt/local-ssd0/mutants/cassandra")
@@ -141,6 +146,19 @@ def _CloneSrcAndBuild():
 
 	# Build. For cassandra-cli
 	Util.RunSubp("cd /home/ubuntu/work/mutants/cassandra && ant")
+
+
+def __CloneAndBuildYcsb():
+	# Git clone
+	Util.RunSubp("rm -rf /mnt/local-ssd0/mutants/YCSB")
+	Util.RunSubp("git clone https://github.com/hobinyoon/YCSB /mnt/local-ssd0/mutants/YCSB")
+
+	# Symlink
+	Util.RunSubp("rm -rf /home/ubuntu/work/mutants/YCSB")
+	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/YCSB /home/ubuntu/work/mutants/YCSB")
+
+	# Build
+	Util.RunSubp("cd /home/ubuntu/work/mutants/YCSB && mvn -pl com.yahoo.ycsb:cassandra-binding -am clean package -DskipTests")
 
 
 def _EditYcsbConf():
