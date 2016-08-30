@@ -242,7 +242,7 @@ sudo -i -u ubuntu /home/ubuntu/work/mutants/ec2-tools/lib/ec2-init.py {0}
 							# sc1 and st1 should have a minimum size of 500 GB
 							'VolumeSize': 500,
 							'DeleteOnTermination': True,
-							'VolumeType': 'sc1'
+							'VolumeType': 'st1'
 							},
 						}
 					, {
@@ -250,7 +250,7 @@ sudo -i -u ubuntu /home/ubuntu/work/mutants/ec2-tools/lib/ec2-init.py {0}
 						'Ebs': {
 							'VolumeSize': 500,
 							'DeleteOnTermination': True,
-							'VolumeType': 'st1',
+							'VolumeType': 'sc1',
 							},
 						}
 					],
