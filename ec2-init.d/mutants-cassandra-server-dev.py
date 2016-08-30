@@ -113,7 +113,6 @@ def _MountAndFormatLocalSSDs():
 		# It takes quite long for EBS HDDs.
 		Util.RunSubp("sudo mkfs.ext4 -m 0 -E nodiscard,lazy_itable_init=0,lazy_journal_init=0 -L %s /dev/%s"
 				% (dir_name, dev_name))
-		if dir_name in ["ebs-st1", "ebs-sc1"]:
 
 		# Some are already mounted. I suspect /etc/fstab does the magic when the
 		# file system is created. Give it some time and umount
