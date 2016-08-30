@@ -179,7 +179,7 @@ def _CloneSrcAndBuild():
 
 	# Edit the git source repository for easy development.
 	Util.RunSubp("sed -i 's/" \
-			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/cassandra-3.9.git" \
+			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/cassandra-3.9" \
 			"/\\turl = git@github.com:hobinyoon\/cassandra-3.9.git" \
 			"/g' %s" % "~/work/mutants/cassandra/.git/config")
 

@@ -149,7 +149,7 @@ def __CloneAndBuildCassandra():
 
 	# Edit the git source repository for easy development.
 	Util.RunSubp("sed -i 's/" \
-			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/cassandra-3.9.git" \
+			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/cassandra-3.9" \
 			"/\\turl = git@github.com:hobinyoon\/cassandra-3.9.git" \
 			"/g' %s" % "~/work/mutants/cassandra/.git/config")
 
@@ -168,12 +168,12 @@ def __CloneAndBuildYcsb():
 
 	# Edit the git source repository for easy development.
 	Util.RunSubp("sed -i 's/" \
-			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/YCSB.git" \
+			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/YCSB" \
 			"/\\turl = git@github.com:hobinyoon\/YCSB.git" \
 			"/g' %s" % "~/work/mutants/YCSB/.git/config")
 
 
-def _EditYcsbConf():
+def _GenCassServerIpFile():
 	_Log("Getting IP addrs of all running instances of servers with job_id %s ..." % _job_id)
 	ips = GetIPs.GetServerPubIpsByJobId(_job_id)
 	_Log("Server public addrs: %s" % " ".join(ips))
@@ -272,7 +272,7 @@ def main(argv):
 		_MountAndFormatLocalSSDs()
 		_StartSystemLogging()
 		_CloneSrcAndBuild()
-		_EditYcsbConf()
+		_GenCassServerIpFile()
 
 		# TODO: _EditMutantsClientConf()
 
