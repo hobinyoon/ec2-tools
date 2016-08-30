@@ -61,7 +61,7 @@ def Job_MutantsDevS1C1():
 			{"region": "us-east-1"
 				# Client uses the same instance type as the server, cause it generates
 				# all requests for a cluster of servers.
-				, "spot_req": {"inst_type": "c3.2xlarge", "max_price": 1.0}
+				, "spot_req": {"inst_type": "c3.2xlarge", "max_price": 2.0}
 				#            vCPU ECU Memory (GiB) Instance Storage (GB) Linux/UNIX Usage
 				# c3.2xlarge    8  28           15            2 x 80 SSD   $0.42 per Hour
 
@@ -86,7 +86,7 @@ def Job_MutantsDevS1():
 			{"region": "us-east-1"
 				# Client uses the same instance type as the server, cause it generates
 				# all requests for a cluster of servers.
-				, "spot_req": {"inst_type": "c3.2xlarge", "max_price": 1.0}
+				, "spot_req": {"inst_type": "c3.2xlarge", "max_price": 2.0}
 				#            vCPU ECU Memory (GiB) Instance Storage (GB) Linux/UNIX Usage
 				# c3.2xlarge    8  28           15            2 x 80 SSD   $0.42 per Hour
 
