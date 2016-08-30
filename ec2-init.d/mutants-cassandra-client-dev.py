@@ -147,6 +147,12 @@ def __CloneAndBuildCassandra():
 	# Build. For cassandra-cli
 	Util.RunSubp("cd /home/ubuntu/work/mutants/cassandra && ant")
 
+	# Edit the git source repository for easy development.
+	Util.RunSubp("sed -i 's/" \
+			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/cassandra-3.9.git" \
+			"/\\turl = git@github.com:hobinyoon\/cassandra-3.9.git" \
+			"/g' %s" % "~/work/mutants/cassandra/.git/config")
+
 
 def __CloneAndBuildYcsb():
 	# Git clone
@@ -159,6 +165,12 @@ def __CloneAndBuildYcsb():
 
 	# Build
 	Util.RunSubp("cd /home/ubuntu/work/mutants/YCSB && mvn -pl com.yahoo.ycsb:cassandra-binding -am clean package -DskipTests")
+
+	# Edit the git source repository for easy development.
+	Util.RunSubp("sed -i 's/" \
+			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/YCSB.git" \
+			"/\\turl = git@github.com:hobinyoon\/YCSB.git" \
+			"/g' %s" % "~/work/mutants/YCSB/.git/config")
 
 
 def _EditYcsbConf():

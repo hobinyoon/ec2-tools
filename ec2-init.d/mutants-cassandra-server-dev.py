@@ -177,6 +177,12 @@ def _CloneSrcAndBuild():
 	# Build
 	Util.RunSubp("cd /home/ubuntu/work/mutants/cassandra && ant")
 
+	# Edit the git source repository for easy development.
+	Util.RunSubp("sed -i 's/" \
+			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/cassandra-3.9.git" \
+			"/\\turl = git@github.com:hobinyoon\/cassandra-3.9.git" \
+			"/g' %s" % "~/work/mutants/cassandra/.git/config")
+
 
 def _EditCassConf():
 	_Log("Getting IP addrs of all running instances of servers with job_id %s ..." % _job_id)
