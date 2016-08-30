@@ -164,7 +164,7 @@ def __CloneAndBuildYcsb():
 	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/YCSB /home/ubuntu/work/mutants/YCSB")
 
 	# Build
-	Util.RunSubp("cd /home/ubuntu/work/mutants/YCSB && mvn -pl com.yahoo.ycsb:cassandra-binding -am clean package -DskipTests")
+	Util.RunSubp("cd /home/ubuntu/work/mutants/YCSB && mvn -pl com.yahoo.ycsb:cassandra-binding -am clean package -DskipTests >/dev/null 2>&1")
 
 	# Edit the git source repository for easy development.
 	Util.RunSubp("sed -i 's/" \
