@@ -139,8 +139,7 @@ def _CloneSrcAndBuild():
 	Util.RunSubp("rm -rf /home/ubuntu/work/mutants/cassandra")
 	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/cassandra /home/ubuntu/work/mutants/cassandra")
 
-	# Build
-	# TODO: Not sure this will be needed
+	# Build. For cassandra-cli
 	Util.RunSubp("cd /home/ubuntu/work/mutants/cassandra && ant")
 
 
@@ -148,7 +147,12 @@ def _EditYcsbConf():
 	_Log("Getting IP addrs of all running instances of servers with job_id %s ..." % _job_id)
 	ips = GetIPs.GetServerPubIpsByJobId(_job_id)
 	_Log("Server public addrs: %s" % " ".join(ips))
-	# TODO: will need it for YCSB
+
+	Util.RunSubp("mkdir -p /mnt/local-ssd0/mutants/.run")
+	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/.run /home/ubuntu/work/mutants/.run")
+	fn = "/home/ubuntu/work/mutants/.run/cassandra-server-ips"
+	with open(fn, "w") as fo:
+		fo.write(" ".join(ips))
 
 
 # Note: This will be the YCSB configuration file
@@ -237,7 +241,7 @@ def main(argv):
 		#_InstallPkgs()
 		_MountAndFormatLocalSSDs()
 		_StartSystemLogging()
-		#_CloneSrcAndBuild()
+		_CloneSrcAndBuild()
 		_EditYcsbConf()
 
 		# TODO: _EditMutantsClientConf()
