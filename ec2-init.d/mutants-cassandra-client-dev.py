@@ -38,6 +38,9 @@ def _SetHostname():
 
 	# http://askubuntu.com/questions/9540/how-do-i-change-the-computer-name
 	Util.RunSubp("sudo sh -c 'echo \"%s\" > /etc/hostname'" % hn)
+	# "c" command in sed is used to replace every line matches with the pattern
+	# or ranges with the new given line.
+	# - http://www.thegeekstuff.com/2009/11/unix-sed-tutorial-append-insert-replace-and-count-file-lines/?ref=driverlayer.com
 	Util.RunSubp("sudo sed -i '/^127.0.0.1 localhost.*/c\\127.0.0.1 localhost %s' /etc/hosts" % hn)
 	Util.RunSubp("sudo service hostname restart")
 
@@ -62,27 +65,29 @@ def _MountAndFormatLocalSSDs():
 	# Make sure we are using the known machine types
 	inst_type = Util.RunSubp("curl -s http://169.254.169.254/latest/meta-data/instance-type", print_cmd = False, print_output = False)
 
-	# TODO: use a dict.
-	# TODO: attach other EBS devices too.
-	ssds = []
-	devs = []
+	# {dev_name: directory_name}
+	# ext4 label is the same as the directory_name
+	blk_devs = {}
 
 	# All c3 types has 2 SSDs
 	if inst_type.startswith("c3."):
-		ssds = ["ssd0", "ssd1"]
-		devs = ["xvdb", "xvdc"]
+		blk_devs = {
+				"xvdb": "local-ssd0"
+				, "xvdc": "local-ssd1"
+				}
 	elif inst_type in ["r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge"
 			, "i2.xlarge"]:
-		ssds = ["ssd0"]
-		devs = ["xvdb"]
+		blk_devs = {
+				"xvdb": "local-ssd0"
+				}
 	else:
 		raise RuntimeError("Unexpected instance type %s" % inst_type)
 
 	Util.RunSubp("sudo umount /mnt || true")
-	for i in range(len(ssds)):
-		_Log("Setting up Local %s ..." % ssds[i])
-		Util.RunSubp("sudo umount /dev/%s || true" % devs[i])
-		Util.RunSubp("sudo mkdir -p /mnt/local-%s" % ssds[i])
+	for dev_name, dir_name in blk_devs.iteritems():
+		_Log("Setting up %s ..." % dev_name)
+		Util.RunSubp("sudo umount /dev/%s || true" % dev_name)
+		Util.RunSubp("sudo mkdir -p /mnt/%s" % dir_name)
 
 		# Prevent lazy Initialization
 		# - "When creating an Ext4 file system, the existing regions of the inode
@@ -98,17 +103,17 @@ def _MountAndFormatLocalSSDs():
 		# nodiscard is in the documentation
 		# - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ssd-instance-store.html
 		# - Without nodiscard, it takes about 80 secs for a 800GB SSD.
-		Util.RunSubp("sudo mkfs.ext4 -m 0 -E nodiscard,lazy_itable_init=0,lazy_journal_init=0 -L local-%s /dev/%s"
-				% (ssds[i], devs[i]))
+		Util.RunSubp("sudo mkfs.ext4 -m 0 -E nodiscard,lazy_itable_init=0,lazy_journal_init=0 -L %s /dev/%s"
+				% (dir_name, dev_name))
 
 		# Some are already mounted. I suspect /etc/fstab does the magic when the
 		# file system is created. Give it some time and umount
 		time.sleep(1)
-		Util.RunSubp("sudo umount /dev/%s || true" % devs[i])
+		Util.RunSubp("sudo umount /dev/%s || true" % dev_name)
 
 		# -o discard for TRIM
-		Util.RunSubp("sudo mount -t ext4 -o discard /dev/%s /mnt/local-%s" % (devs[i], ssds[i]))
-		Util.RunSubp("sudo chown -R ubuntu /mnt/local-%s" % ssds[i])
+		Util.RunSubp("sudo mount -t ext4 -o discard /dev/%s /mnt/%s" % (dev_name, dir_name))
+		Util.RunSubp("sudo chown -R ubuntu /mnt/%s" % dir_name)
 
 
 def _StartSystemLogging():

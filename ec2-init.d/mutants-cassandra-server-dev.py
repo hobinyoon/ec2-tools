@@ -176,6 +176,11 @@ def _CloneSrcAndBuild():
 	# Make parent
 	Util.RunSubp("mkdir -p /mnt/local-ssd0/mutants")
 
+	__CloneAndBuildCassandra()
+	__CloneAndBuildMisc()
+
+
+def __CloneAndBuildCassandra():
 	# Git clone
 	Util.RunSubp("rm -rf /mnt/local-ssd0/mutants/cassandra")
 	Util.RunSubp("git clone https://github.com/hobinyoon/cassandra-3.9 /mnt/local-ssd0/mutants/cassandra")
@@ -192,6 +197,22 @@ def _CloneSrcAndBuild():
 			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/cassandra-3.9" \
 			"/\\turl = git@github.com:hobinyoon\/cassandra-3.9.git" \
 			"/g' %s" % "~/work/mutants/cassandra/.git/config")
+
+
+def __CloneAndBuildMisc():
+	# Git clone
+	Util.RunSubp("rm -rf /mnt/local-ssd0/mutants/misc")
+	Util.RunSubp("git clone https://github.com/hobinyoon/mutants-misc /mnt/local-ssd0/mutants/misc")
+
+	# Symlink
+	Util.RunSubp("rm -rf /home/ubuntu/work/mutants/misc")
+	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/misc /home/ubuntu/work/mutants/misc")
+
+	# Edit the git source repository for easy development.
+	Util.RunSubp("sed -i 's/" \
+			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mutants-misc" \
+			"/\\turl = git@github.com:hobinyoon\/mutants-misc.git" \
+			"/g' %s" % "~/work/mutants/misc/.git/config")
 
 
 def _EditCassConf():
