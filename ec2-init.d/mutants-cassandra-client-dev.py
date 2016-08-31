@@ -143,7 +143,7 @@ def _CloneSrcAndBuild():
 def __CloneAndBuildCassandra():
 	# Git clone
 	Util.RunSubp("rm -rf /mnt/local-ssd0/mutants/cassandra")
-	Util.RunSubp("git clone https://github.com/hobinyoon/cassandra-3.9 /mnt/local-ssd0/mutants/cassandra")
+	Util.RunSubp("git clone https://github.com/hobinyoon/mutants-cassandra-3.9 /mnt/local-ssd0/mutants/cassandra")
 
 	# Symlink
 	Util.RunSubp("rm -rf /home/ubuntu/work/mutants/cassandra")
@@ -154,8 +154,8 @@ def __CloneAndBuildCassandra():
 
 	# Edit the git source repository for easy development.
 	Util.RunSubp("sed -i 's/" \
-			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/cassandra-3.9" \
-			"/\\turl = git@github.com:hobinyoon\/cassandra-3.9.git" \
+			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mutants-cassandra-3.9" \
+			"/\\turl = git@github.com:hobinyoon\/mutants-cassandra-3.9.git" \
 			"/g' %s" % "~/work/mutants/cassandra/.git/config")
 
 
