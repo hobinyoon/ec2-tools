@@ -73,7 +73,8 @@ def _MountAndFormatLocalSSDs():
 	if inst_type.startswith("c3."):
 		blk_devs = {
 				"xvdb": "local-ssd0"
-				, "xvdc": "local-ssd1"
+				# Not needed for now
+				#, "xvdc": "local-ssd1"
 				, "xvdd": "ebs-gp2"
 				, "xvde": "ebs-st1"
 				, "xvdf": "ebs-sc1"
@@ -92,7 +93,30 @@ def _MountAndFormatLocalSSDs():
 	# Init local SSDs
 	# https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/disk-performance.html
 	if inst_type.startswith("c3."):
-		Util.RunSubp("time -p (sudo dd if=/dev/zero bs=1M | sudo tee /dev/xvdb > /dev/xvdc)")
+		Util.RunSubp("sudo umount /dev/xvdb || true")
+		Util.RunSubp("sudo umount /dev/xvdc || true")
+		# tee has a problem of not stopping. For now, you can give up on ssd1.
+		# - https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=89224
+		#Util.RunSubp("sudo sh -c \"dd if=/dev/zero bs=1M | tee /dev/xvdb > /dev/xvdc\"", measure_time=True)
+		Util.RunSubp("sudo dd if=/dev/zero bs=1M | tee /dev/xvdb", measure_time=True)
+
+		# Test with virtual block devices
+		#   $ sudo dd if=/dev/zero of=/run/dev0-backstore bs=1M count=100
+		#   $ sudo dd if=/dev/zero of=/run/dev1-backstore bs=1M count=100
+		#   $ grep loop /proc/devices
+		#   7 loop
+		#   $ sudo mknod /dev/fake-dev0 b 7 200
+		#   $ sudo losetup /dev/fake-dev0  /run/dev0-backstore
+		#   $ sudo mknod /dev/fake-dev1 b 7 201
+		#   $ sudo losetup /dev/fake-dev1  /run/dev1-backstore
+		#   $ lsblk
+		#   - http://askubuntu.com/questions/546921/how-to-create-virtual-block-devices
+		#   - You can use /dev/full too, which is easier.
+		#Util.RunSubp("sudo umount /dev/loop200 || true")
+		#Util.RunSubp("sudo umount /dev/loop201 || true")
+		#
+		#Util.RunSubpStopOn("sudo sh -c \"dd if=/dev/zero bs=1M | tee /dev/loop200 > /dev/loop201\"", measure_time=True)
+		#Util.RunSubp("sudo dd if=/dev/zero bs=1M of=/dev/loop201 || true", measure_time=True)
 
 	Util.RunSubp("sudo umount /mnt || true")
 	for dev_name, dir_name in blk_devs.iteritems():
@@ -115,9 +139,13 @@ def _MountAndFormatLocalSSDs():
 		# - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ssd-instance-store.html
 		# - Without nodiscard, it takes about 80 secs for a 800GB SSD.
 		#
-		# It takes quite long for EBS HDDs.
-		Util.RunSubp("time -p sudo mkfs.ext4 -m 0 -E nodiscard,lazy_itable_init=0,lazy_journal_init=0 -L %s /dev/%s"
-				% (dir_name, dev_name))
+		# Could be parallelized
+		#   local-ssd0   9,799 ms
+		#   ebs-gp2     11,728 ms
+		#   ebs-st1     68,082 ms
+		#   ebs-sc1    207,481 ms
+		Util.RunSubp("sudo mkfs.ext4 -m 0 -E nodiscard,lazy_itable_init=0,lazy_journal_init=0 -L %s /dev/%s"
+				% (dir_name, dev_name), measure_time=True)
 
 		# Some are already mounted. I suspect /etc/fstab does the magic when the
 		# file system is created. Give it some time and umount
