@@ -89,6 +89,13 @@ def _MountAndFormatLocalSSDs():
 	else:
 		raise RuntimeError("Unexpected instance type %s" % inst_type)
 
+	# Init local SSDs
+	# https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/disk-performance.html
+	if ("xvdb" in blk_devs) and ("xvdc" in blk_devs):
+		Util.RunSubp("time -p sudo dd if=/dev/zero bs=1M | tee /dev/xvdb > /dev/xvdc")
+	elif "xvdb" in blk_devs:
+		Util.RunSubp("time -p sudo dd if=/dev/zero bs=1M > /dev/xvdc")
+
 	Util.RunSubp("sudo umount /mnt || true")
 	for dev_name, dir_name in blk_devs.iteritems():
 		_Log("Setting up %s ..." % dev_name)
@@ -111,7 +118,7 @@ def _MountAndFormatLocalSSDs():
 		# - Without nodiscard, it takes about 80 secs for a 800GB SSD.
 		#
 		# It takes quite long for EBS HDDs.
-		Util.RunSubp("sudo mkfs.ext4 -m 0 -E nodiscard,lazy_itable_init=0,lazy_journal_init=0 -L %s /dev/%s"
+		Util.RunSubp("time -p sudo mkfs.ext4 -m 0 -E nodiscard,lazy_itable_init=0,lazy_journal_init=0 -L %s /dev/%s"
 				% (dir_name, dev_name))
 
 		# Some are already mounted. I suspect /etc/fstab does the magic when the
