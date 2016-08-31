@@ -145,20 +145,26 @@ def MkDirs(path):
 			raise
 
 
-def RunSubp(cmd, env_ = os.environ.copy(), shell = True, print_cmd = True, print_output = True):
+def RunSubp(cmd, env=os.environ.copy(), shell=True, print_cmd=True, print_output=True, measure_time=False):
 	if print_cmd:
-		Cons.P(cmd)
+		with Cons.MT(cmd, measure_time):
+			return _RunSubp(cmd, env=env, shell=shell, print_output=print_output)
+	else:
+		return _RunSubp(cmd, env=env, shell=shell, print_output=print_output)
+
+
+def _RunSubp(cmd, env, shell, print_output):
 	lines = ""
 	p = None
 	if shell:
-		p = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+		p = subprocess.Popen(cmd, env=env, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 	else:
-		p = subprocess.Popen(cmd.split(" "), shell=shell, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+		p = subprocess.Popen(cmd.split(" "), env=env, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 	# http://stackoverflow.com/questions/18421757/live-output-from-subprocess-command
 	# It can read char by char depending on the requirements.
 	for line in iter(p.stdout.readline, ''):
 		if print_output:
-			Cons.P(Indent(line.rstrip(), 2))
+			Cons.P(line.rstrip())
 		lines += line
 	p.wait()
 	if p.returncode != 0:
