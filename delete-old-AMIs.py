@@ -44,6 +44,8 @@ def main(argv):
 	for i in iscs:
 		i.PrintWhatToKeepAndDelete()
 
+	# TODO: Let the user confirm if it looks ok.
+
 	Cons.P("")
 	Cons.P("Deregistering Amis and deleting snapshots ...")
 	for i in iscs:
@@ -124,6 +126,9 @@ class ImageSnapshotCleaner:
 			imgs_all = []
 			for img in response["Images"]:
 				imgs_all.append(ImageSnapshotCleaner.AMI(img))
+
+			# TODO: us-east-1 keeps 2 AMIs per prefix (image type), other regions
+			# don't need to keep anything at all.
 
 			# {prefix: img}
 			imgs_myproj_to_keep_at_most_2 = {}
