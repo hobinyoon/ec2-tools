@@ -91,10 +91,8 @@ def _MountAndFormatLocalSSDs():
 
 	# Init local SSDs
 	# https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/disk-performance.html
-	if ("xvdb" in blk_devs) and ("xvdc" in blk_devs):
-		Util.RunSubp("time -p sudo dd if=/dev/zero bs=1M | tee /dev/xvdb > /dev/xvdc")
-	elif "xvdb" in blk_devs:
-		Util.RunSubp("time -p sudo dd if=/dev/zero bs=1M > /dev/xvdc")
+	if inst_type.startswith("c3."):
+		Util.RunSubp("time -p (sudo dd if=/dev/zero bs=1M | sudo tee /dev/xvdb > /dev/xvdc)")
 
 	Util.RunSubp("sudo umount /mnt || true")
 	for dev_name, dir_name in blk_devs.iteritems():

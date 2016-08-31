@@ -83,6 +83,11 @@ def _MountAndFormatLocalSSDs():
 	else:
 		raise RuntimeError("Unexpected instance type %s" % inst_type)
 
+	# Init local SSDs
+	# https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/disk-performance.html
+	if inst_type.startswith("c3."):
+		Util.RunSubp("time -p (sudo dd if=/dev/zero bs=1M | sudo tee /dev/xvdb > /dev/xvdc)")
+
 	Util.RunSubp("sudo umount /mnt || true")
 	for dev_name, dir_name in blk_devs.iteritems():
 		_Log("Setting up %s ..." % dev_name)
@@ -103,7 +108,7 @@ def _MountAndFormatLocalSSDs():
 		# nodiscard is in the documentation
 		# - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ssd-instance-store.html
 		# - Without nodiscard, it takes about 80 secs for a 800GB SSD.
-		Util.RunSubp("sudo mkfs.ext4 -m 0 -E nodiscard,lazy_itable_init=0,lazy_journal_init=0 -L %s /dev/%s"
+		Util.RunSubp("time -p sudo mkfs.ext4 -m 0 -E nodiscard,lazy_itable_init=0,lazy_journal_init=0 -L %s /dev/%s"
 				% (dir_name, dev_name))
 
 		# Some are already mounted. I suspect /etc/fstab does the magic when the
@@ -117,9 +122,9 @@ def _MountAndFormatLocalSSDs():
 
 
 def _StartSystemLogging():
-	Util.RunSubp("mkdir -p /mnt/local-ssd1/mutants/log/system")
+	Util.RunSubp("mkdir -p /mnt/local-ssd0/mutants/log/system")
 	Util.RunSubp("rm /home/ubuntu/work/mutants/log || true")
-	Util.RunSubp("ln -s /mnt/local-ssd1/mutants/log /home/ubuntu/work/mutants/log")
+	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/log /home/ubuntu/work/mutants/log")
 
 	# dstat parameters
 	#   -d, --disk
