@@ -64,10 +64,13 @@ def Job_MutantsDevS1C1():
 				#
 				#            vCPU ECU Memory (GiB) Instance Storage (GB) Linux/UNIX Usage
 				# c3.2xlarge    8  28           15            2 x 80 SSD  $0.42  per Hour
-				# r3.xlarge     4  13         30.5            1 x 80 SSD  $0.333 per Hour. Local SSDs don't need initialization.
+				# r3.xlarge     4  13         30.5            1 x 80 SSD  $0.333 per Hour.
 				#
-				#, "spot_req": {"inst_type": "c3.2xlarge", "max_price": 2.0}
-				, "spot_req": {"inst_type": "r3.xlarge", "max_price": 2.0}
+				# r3 types don't need local SSD initialization. However, even after
+				# init, it's still slower(86 MB/s) than c3 (372 MB/s).
+				#
+				, "spot_req": {"inst_type": "c3.2xlarge", "max_price": 2.0}
+				#, "spot_req": {"inst_type": "r3.xlarge", "max_price": 2.0}
 
 				, "server": {
 					# We'll see if the AMIs need to be separated by DBs.
@@ -90,8 +93,8 @@ def Job_MutantsDevS1():
 			{"region": "us-east-1"
 				# Client uses the same instance type as the server, cause it generates
 				# all requests for a cluster of servers.
-				#, "spot_req": {"inst_type": "c3.2xlarge", "max_price": 2.0}
-				, "spot_req": {"inst_type": "r3.xlarge", "max_price": 2.0}
+				, "spot_req": {"inst_type": "c3.2xlarge", "max_price": 2.0}
+				#, "spot_req": {"inst_type": "r3.xlarge", "max_price": 2.0}
 
 				, "server": {
 					# We'll see if the AMIs need to be separated by DBs.
