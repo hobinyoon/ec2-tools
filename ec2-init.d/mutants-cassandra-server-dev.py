@@ -126,7 +126,7 @@ def _MountAndFormatLocalSSDs():
 
 # Local SSD structure:
 # - ssd0 for database server, ycsb
-# - ssd1 for system or experiment logs
+# - ssd1 for system or experiment logs. Well, most r3 types have only 1 SSD. ss0 for now.
 #
 # ~
 # `-- work
@@ -140,9 +140,9 @@ def _MountAndFormatLocalSSDs():
 # Cassandra data and log goes under its own directory.
 
 def _StartSystemLogging():
-	Util.RunSubp("mkdir -p /mnt/local-ssd1/mutants/log/system")
+	Util.RunSubp("mkdir -p /mnt/local-ssd0/mutants/log/system")
 	Util.RunSubp("rm /home/ubuntu/work/mutants/log || true")
-	Util.RunSubp("ln -s /mnt/local-ssd1/mutants/log /home/ubuntu/work/mutants/log")
+	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/log /home/ubuntu/work/mutants/log")
 
 	# dstat parameters
 	#   -d, --disk
