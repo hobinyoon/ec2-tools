@@ -44,6 +44,10 @@ def Indent(s0, ind):
 	return re.sub(re.compile("^", re.MULTILINE), spaces, s0)
 
 
+def Prepend(msg, p):
+	return re.sub(re.compile("^", re.MULTILINE), p, msg)
+
+
 def IndPrint(s0, ind = 0):
 	# Thread-safely is not considered
 	global _ind
