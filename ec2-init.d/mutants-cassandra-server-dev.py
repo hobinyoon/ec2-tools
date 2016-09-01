@@ -100,7 +100,7 @@ def _MountAndFormatLocalSSDs():
 		#Util.RunSubp("sudo sh -c \"dd if=/dev/zero bs=1M | tee /dev/xvdb > /dev/xvdc\"", measure_time=True)
 		#
 		# sudo dd if=/dev/zero bs=1M of=/dev/xvdb || true
-		#   dd: error writing ‘/dev/xvdb’: No space left on device
+		#   dd: error writing '/dev/xvdb': No space left on device
 		#   81910+0 records in
 		#   81909+0 records out
 		#   85887811584 bytes (86 GB) copied, 1394.5 s, 61.6 MB/s
@@ -257,8 +257,16 @@ def __CloneAndBuildMisc():
 
 def _EditCassConf():
 	_Log("Getting IP addrs of all running instances of servers with job_id %s ..." % _job_id)
-	ips = GetIPs.GetServerPubIpsByJobId(_job_id)
-	_Log(ips)
+	ips = None
+	while True:
+		ips = GetIPs.GetServerPubIpsByJobId(_job_id)
+		_Log(ips)
+		num_nodes = int(_params["server"]["num_nodes"])
+		if len(ips) != int(num_nodes):
+			_Log("Expecting %d IPs. Retrying..." % num_nodes)
+			time.sleep(1)
+		else:
+			break
 
 	fn_cass_yaml = "/home/ubuntu/work/mutants/cassandra/conf/cassandra.yaml"
 	_Log("Editing %s ..." % fn_cass_yaml)
