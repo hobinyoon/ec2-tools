@@ -98,7 +98,14 @@ def _MountAndFormatLocalSSDs():
 		# tee has a problem of not stopping. For now, you can give up on ssd1.
 		# - https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=89224
 		#Util.RunSubp("sudo sh -c \"dd if=/dev/zero bs=1M | tee /dev/xvdb > /dev/xvdc\"", measure_time=True)
-		Util.RunSubp("sudo dd if=/dev/zero bs=1M | tee /dev/xvdb", measure_time=True)
+		#
+		# sudo dd if=/dev/zero bs=1M of=/dev/xvdb || true
+		#   dd: error writing ‘/dev/xvdb’: No space left on device
+		#   81910+0 records in
+		#   81909+0 records out
+		#   85887811584 bytes (86 GB) copied, 1394.5 s, 61.6 MB/s
+		#   1394510 ms = 23 mins
+		Util.RunSubp("sudo dd if=/dev/zero bs=1M of=/dev/xvdb || true", measure_time=True)
 
 		# Test with virtual block devices
 		#   $ sudo dd if=/dev/zero of=/run/dev0-backstore bs=1M count=100
