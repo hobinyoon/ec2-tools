@@ -90,21 +90,10 @@ def _MountAndFormatLocalSSDs():
 		Util.RunSubp("sudo umount /dev/%s || true" % devs[i])
 		Util.RunSubp("sudo mkdir -p /mnt/local-%s" % ssds[i])
 
-		# Prevent lazy Initialization
-		# - "When creating an Ext4 file system, the existing regions of the inode
-		#   tables must be cleaned (overwritten with nulls, or "zeroed"). The
-		#   "lazyinit" feature should significantly accelerate the creation of a
-		#   file system, because it does not immediately initialize all inode
-		#   tables, initializing them gradually instead during the initial mounting
-		#   process in background (from Kernel version 2.6.37)."
-		#   - https://www.thomas-krenn.com/en/wiki/Ext4_Filesystem
-		# - Default values are 1s, which do lazy init.
-		#   - man mkfs.ext4
-		#
 		# nodiscard is in the documentation
 		# - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ssd-instance-store.html
 		# - Without nodiscard, it takes about 80 secs for a 800GB SSD.
-		Util.RunSubp("sudo mkfs.ext4 -m 0 -E nodiscard,lazy_itable_init=0,lazy_journal_init=0 -L local-%s /dev/%s"
+		Util.RunSubp("sudo mkfs.ext4 -m 0 -E nodiscard -L local-%s /dev/%s"
 				% (ssds[i], devs[i]))
 
 		# Some are already mounted. I suspect /etc/fstab does the magic when the
