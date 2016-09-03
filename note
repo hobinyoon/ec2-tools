@@ -1,7 +1,5 @@
 TODOs
 -----
-TODO: ImportError: No module named boto3
-
 Low priority. When a cluter is cleaned by ClusterCleaner, re-launch the job
 (make the same job request again). Doesn't the reappearing of SQS message
 already do this?  Double check!
@@ -13,6 +11,9 @@ it.
 
 Notes
 -----
+On MacOS, ImportError: No module named boto3
+- Can't figure it out. Might be from the pip upgrade. Move to mt-s7.
+
 Update installed pip packages on Mac OS
 	root# time pip freeze --local | grep -v '^\-e' | cut -d = -f 1  | xargs -n1 pip install -U --ignore-installed six
 	- http://stackoverflow.com/questions/2720014/upgrading-all-packages-with-pip
@@ -28,6 +29,7 @@ Clean up logs before making a new AMI. You may want to put something in /var/log
 	  && sudo rm /var/log/cloud-init*
 
 $ sudo -H pip install boto3 PyYAML
+
 
 Done
 ----
