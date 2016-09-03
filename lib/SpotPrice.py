@@ -54,8 +54,15 @@ class SpValue:
 					p_ms = p[2]
 		return az_ms
 
+	# Returns -1.0, when the key is not found. It might happen when the server
+	# doesn't return any result.
 	def CurPrice(self, az):
-		return self.az_price[az][0]
+		p = -1.0
+		try:
+			p = self.az_price[az][0]
+		except KeyError:
+			pass
+		return p
 
 	def __str__(self):
 		fmt = "%-15s %6.4f %6.4f %6.4f"
