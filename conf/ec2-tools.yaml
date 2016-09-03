@@ -16,7 +16,7 @@ region_ami:
     us-east-1: ami-645cda73
 
   mutants-cassandra-server:
-    us-east-1: ami-f95c32ee
+    us-east-1: ami-822d4695
 
   mutants-client:
     us-east-1: ami-342a4423
