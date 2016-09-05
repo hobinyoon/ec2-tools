@@ -84,9 +84,14 @@ def _MountAndFormatLocalSSDs():
 		raise RuntimeError("Unexpected instance type %s" % inst_type)
 
 	# Init local SSDs
-	# https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/disk-performance.html
+	# - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/disk-performance.html
+	# - Client node probably won't need this -- YCSB won't get bottlenecked by
+	#   the local SSD --, but it needs to wait for the server, it might as well
+	#   do something.
 	if inst_type.startswith("c3."):
-		Util.RunSubp("time -p (sudo dd if=/dev/zero bs=1M | sudo tee /dev/xvdb > /dev/xvdc)")
+		Util.RunSubp("sudo umount /dev/xvdb || true")
+		Util.RunSubp("sudo umount /dev/xvdc || true")
+		Util.RunSubp("sudo dd if=/dev/zero bs=1M of=/dev/xvdb || true", measure_time=True)
 
 	Util.RunSubp("sudo umount /mnt || true")
 	for dev_name, dir_name in blk_devs.iteritems():
