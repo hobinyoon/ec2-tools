@@ -192,8 +192,7 @@ def _StartSystemLogging():
 	#   -t, --time
 	#     enable time/date output
 	#   -tdrf
-	Util.RunDaemon("cd /home/ubuntu/work/mutants/log && dstat -tdrf --output dstat-`date +\"%y%m%d-%H%M%S\"`.csv >/dev/null 2>&1")
-
+	Util.RunDaemon("cd /home/ubuntu/work/mutants/log && dstat -cdn -C total -D xvda,xvdb,xvde,xvdf -r --output dstat-`date +\"%y%m%d-%H%M%S\"`.csv >/dev/null 2>&1")
 
 # How do you know the average IOPS of a disk from the system boot? dtat shows
 # it only once in the beginning.
