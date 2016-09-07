@@ -186,7 +186,9 @@ def RunDaemon(cmd, print_cmd = True):
 
 
 def _RunDaemon(cmd):
-	subprocess.Popen(cmd, shell=True, stdin=None, stdout=None, stderr=None)
+	# http://stackoverflow.com/questions/14735001/ignoring-output-from-subprocess-popen
+	with open(os.devnull, "w") as devnull:
+		subprocess.Popen(cmd, shell=True, stdin=devnull, stdout=devnull, stderr=devnull)
 
 
 def FileLine():
