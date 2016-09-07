@@ -139,7 +139,7 @@ def _StartSystemLogging():
 	#   -t, --time
 	#     enable time/date output
 	#   -tdrf
-	Util.RunDaemon("cd /home/ubuntu/work/mutants/log && dstat -cdn -C total -D xvda,xvdb -r --output dstat-`date +\"%y%m%d-%H%M%S\"`.csv >/dev/null 2>&1")
+	Util.RunDaemon("cd /home/ubuntu/work/mutants/log && dstat -cdn -C total -D xvda,xvdb -r --output dstat-`date +\"%y%m%d-%H%M%S\"`.csv")
 
 
 def _CloneSrcAndBuild():
