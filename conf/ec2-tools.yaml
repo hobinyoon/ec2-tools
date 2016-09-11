@@ -22,7 +22,7 @@ region_ami:
     us-east-1: ami-342a4423
 
   castnet:
-    us-east-1: ami-a2e492b5
+    us-east-1: ami-70fb8a67
 
 ec2_regions:
   all:
