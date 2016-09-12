@@ -217,6 +217,7 @@ def _CloneSrcAndBuild():
 
 	__CloneAndBuildCassandra()
 	__CloneAndBuildMisc()
+	__CloneAndBuildYcsb()
 
 
 def __CloneAndBuildCassandra():
@@ -252,6 +253,25 @@ def __CloneAndBuildMisc():
 			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mutants-misc" \
 			"/\\turl = git@github.com:hobinyoon\/mutants-misc.git" \
 			"/g' %s" % "~/work/mutants/misc/.git/config")
+
+
+def __CloneAndBuildYcsb():
+	# Git clone
+	Util.RunSubp("rm -rf /mnt/local-ssd0/mutants/YCSB")
+	Util.RunSubp("git clone https://github.com/hobinyoon/YCSB /mnt/local-ssd0/mutants/YCSB")
+
+	# Symlink
+	Util.RunSubp("rm -rf /home/ubuntu/work/mutants/YCSB")
+	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/YCSB /home/ubuntu/work/mutants/YCSB")
+
+	# Build
+	Util.RunSubp("cd /home/ubuntu/work/mutants/YCSB && mvn -pl com.yahoo.ycsb:cassandra-binding -am clean package -DskipTests >/dev/null 2>&1")
+
+	# Edit the git source repository for easy development.
+	Util.RunSubp("sed -i 's/" \
+			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/YCSB" \
+			"/\\turl = git@github.com:hobinyoon\/YCSB.git" \
+			"/g' %s" % "~/work/mutants/YCSB/.git/config")
 
 
 def _EditCassConf():
