@@ -24,7 +24,7 @@ import Ec2Region
 _AMI_prefix_to_keep_at_most_2 = [
 		"acorn-server"
 		, "castnet"
-		, "mutants-cassandra-server"
+		, "mutants-server"
 		, "mutants-client"]
 
 def main(argv):
@@ -44,7 +44,16 @@ def main(argv):
 	for i in iscs:
 		i.PrintWhatToKeepAndDelete()
 
-	# TODO: Let the user confirm if it looks ok.
+	num_AMIs_to_delete = 0
+	for i in iscs:
+		num_AMIs_to_delete += len(i.imgs_myproj_to_delete)
+	if num_AMIs_to_delete == 0:
+		Cons.P("Nothing to delete")
+		return
+
+	confirm = raw_input("Would you like to proceed (Y/N)? ")
+	if confirm != "Y":
+		return
 
 	Cons.P("")
 	Cons.P("Deregistering Amis and deleting snapshots ...")
@@ -127,32 +136,35 @@ class ImageSnapshotCleaner:
 			for img in response["Images"]:
 				imgs_all.append(ImageSnapshotCleaner.AMI(img))
 
-			# TODO: us-east-1 keeps 2 AMIs per prefix (image type), other regions
-			# don't need to keep anything at all.
+			# us-east-1 keeps 2 AMIs per prefix (image type), other regions don't
+			# need to keep anything at all.
+			if self.region == "us-east-1":
+				# {prefix: img}
+				imgs_myproj_to_keep_at_most_2 = {}
+				for img in imgs_all:
+					classified = False
+					for prefix in _AMI_prefix_to_keep_at_most_2:
+						if img.name.startswith(prefix):
+							if prefix not in imgs_myproj_to_keep_at_most_2:
+								imgs_myproj_to_keep_at_most_2[prefix] = []
+							imgs_myproj_to_keep_at_most_2[prefix].append(img)
+							classified = True
+							break
+					if not classified:
+						self.imgs_others.append(img)
+				#Cons.P(pprint.pformat(imgs_myproj_to_keep_at_most_2))
 
-			# {prefix: img}
-			imgs_myproj_to_keep_at_most_2 = {}
-			for img in imgs_all:
-				classified = False
-				for prefix in _AMI_prefix_to_keep_at_most_2:
-					if img.name.startswith(prefix):
-						if prefix not in imgs_myproj_to_keep_at_most_2:
-							imgs_myproj_to_keep_at_most_2[prefix] = []
-						imgs_myproj_to_keep_at_most_2[prefix].append(img)
-						classified = True
-						break
-				if not classified:
-					self.imgs_others.append(img)
-			#Cons.P(pprint.pformat(imgs_myproj_to_keep_at_most_2))
-
-			# Sort by image creation_date
-			for prefix, v in sorted(imgs_myproj_to_keep_at_most_2.iteritems()):
-				sorted_v = sorted(v)
-				for i in range(len(v)):
-					if i < len(v) - 2:
-						self.imgs_myproj_to_delete.append(sorted_v[i])
-					else:
-						self.imgs_myproj_to_keep.append(sorted_v[i])
+				# Sort by image creation_date
+				for prefix, v in sorted(imgs_myproj_to_keep_at_most_2.iteritems()):
+					sorted_v = sorted(v)
+					for i in range(len(v)):
+						if i < len(v) - 2:
+							self.imgs_myproj_to_delete.append(sorted_v[i])
+						else:
+							self.imgs_myproj_to_keep.append(sorted_v[i])
+			else:
+				for img in imgs_all:
+					self.imgs_myproj_to_delete.append(img)
 
 		except Exception as e:
 			Cons.P("%s\n%s\nregion=%s" %
