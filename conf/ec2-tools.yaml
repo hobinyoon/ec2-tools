@@ -19,7 +19,7 @@ region_ami:
     us-east-1: ami-d8d4a0cf
 
   mutants-client:
-    us-east-1: ami-342a4423
+    us-east-1: ami-3bd4a02c
 
   castnet:
     us-east-1: ami-67a9d970
