@@ -127,7 +127,7 @@ def _MountAndFormatLocalSSDs():
 
 
 def _StartSystemLogging():
-	Util.RunSubp("mkdir -p /mnt/local-ssd0/mutants/log-volatile/system")
+	Util.RunSubp("mkdir -p /mnt/local-ssd0/mutants/log-volatile/dstat")
 	Util.RunSubp("rm /home/ubuntu/work/mutants/log-volatile || true")
 	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/log-volatile /home/ubuntu/work/mutants/log-volatile")
 
@@ -139,7 +139,7 @@ def _StartSystemLogging():
 	#   -t, --time
 	#     enable time/date output
 	#   -tdrf
-	Util.RunDaemon("cd /home/ubuntu/work/mutants/log-volatile && dstat -cdn -C total -D xvda,xvdb -r --output dstat-`date +\"%y%m%d-%H%M%S\"`.csv")
+	Util.RunDaemon("cd /home/ubuntu/work/mutants/log-volatile/dstat && dstat -cdn -C total -D xvda,xvdb -r --output dstat-`date +\"%y%m%d-%H%M%S\"`.csv")
 
 
 def _CloneSrcAndBuild():
