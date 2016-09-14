@@ -126,10 +126,19 @@ def _MountAndFormatLocalSSDs():
 		Util.RunSubp("sudo chown -R ubuntu /mnt/%s" % dir_name)
 
 
+# I'm not sure if you'll need this here. The YCSB script will restart dstat.
 def _StartSystemLogging():
-	Util.RunSubp("mkdir -p /mnt/local-ssd0/mutants/log-volatile/dstat")
-	Util.RunSubp("rm /home/ubuntu/work/mutants/log-volatile || true")
-	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/log-volatile /home/ubuntu/work/mutants/log-volatile")
+	dn_log_ssd0 = "/mnt/local-ssd0/mutants/log-volatile"
+	dn_log = "/home/ubuntu/work/mutants/log-volatile"
+
+	Util.RunSubp("mkdir -p %s" % dn_log_ssd0)
+
+	# Create a symlink
+	Util.RunSubp("rm %s || true" % dn_log)
+	Util.RunSubp("ln -s %s %s" % (dn_log_ssd0, dn_log))
+
+	dn_log_dstat = "%s/%s/dstat" % (dn_log, _job_id)
+	Util.RunSubp("mkdir -p %s" % dn_log_dstat)
 
 	# dstat parameters
 	#   -d, --disk
@@ -139,7 +148,8 @@ def _StartSystemLogging():
 	#   -t, --time
 	#     enable time/date output
 	#   -tdrf
-	Util.RunDaemon("cd /home/ubuntu/work/mutants/log-volatile/dstat && dstat -cdn -C total -D xvda,xvdb -r --output dstat-`date +\"%y%m%d-%H%M%S\"`.csv")
+	Util.RunDaemon("dstat -cdn -C total -D xvda,xvdb -r --output %s/%s.csv"
+			% (dn_log_dstat, datetime.datetime.now().strftime("%y%m%d-%H%M%S")))
 
 
 def _CloneSrcAndBuild():
@@ -302,7 +312,6 @@ def main(argv):
 		_SyncTime()
 		#_InstallPkgs()
 		_MountAndFormatLocalSSDs()
-		_StartSystemLogging()
 		_CloneSrcAndBuild()
 		_GenCassServerIpFile()
 

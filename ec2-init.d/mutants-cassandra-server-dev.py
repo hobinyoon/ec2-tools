@@ -179,10 +179,19 @@ def _MountAndFormatLocalSSDs():
 #
 # Cassandra data and log goes under its own directory.
 
+# I'm not sure if you'll need this here. The YCSB script will restart dstat.
 def _StartSystemLogging():
-	Util.RunSubp("mkdir -p /mnt/local-ssd0/mutants/log-volatile/dstat")
-	Util.RunSubp("rm /home/ubuntu/work/mutants/log-volatile || true")
-	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/log-volatile /home/ubuntu/work/mutants/log-volatile")
+	dn_log_ssd0 = "/mnt/local-ssd0/mutants/log-volatile"
+	dn_log = "/home/ubuntu/work/mutants/log-volatile"
+
+	Util.RunSubp("mkdir -p %s" % dn_log_ssd0)
+
+	# Create a symlink
+	Util.RunSubp("rm %s || true" % dn_log)
+	Util.RunSubp("ln -s %s %s" % (dn_log_ssd0, dn_log))
+
+	dn_log_dstat = "%s/%s/dstat" % (dn_log, _job_id)
+	Util.RunSubp("mkdir -p %s" % dn_log_dstat)
 
 	# dstat parameters
 	#   -d, --disk
@@ -197,7 +206,8 @@ def _StartSystemLogging():
 	# xvdd  80G /mnt/ebs-gp2
 	# xvde 500G /mnt/ebs-st1
 	# xvdf 500G /mnt/ebs-sc1
-	Util.RunDaemon("cd /home/ubuntu/work/mutants/log-volatile/dstat && dstat -cdn -C total -D xvda,xvdb,xvdd,xvde,xvdf -r --output dstat-`date +\"%y%m%d-%H%M%S\"`.csv")
+	Util.RunDaemon("dstat -cdn -C total -D xvda,xvdb,xvdd,xvde,xvdf -r --output %s/%s.csv"
+			% (dn_log_dstat, datetime.datetime.now().strftime("%y%m%d-%H%M%S")))
 
 # How do you know the average IOPS of a disk from the system boot? dtat shows
 # it only once in the beginning.
@@ -440,7 +450,6 @@ def main(argv):
 		_SyncTime()
 		#_InstallPkgs()
 		_MountAndFormatLocalSSDs()
-		_StartSystemLogging()
 		_CloneSrcAndBuild()
 		_EditCassConf()
 
