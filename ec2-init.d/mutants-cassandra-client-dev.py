@@ -128,8 +128,8 @@ def _MountAndFormatLocalSSDs():
 
 # I'm not sure if you'll need this here. The YCSB script will restart dstat.
 def _StartSystemLogging():
-	dn_log_ssd0 = "/mnt/local-ssd0/mutants/log-volatile"
-	dn_log = "/home/ubuntu/work/mutants/log-volatile"
+	dn_log_ssd0 = "/mnt/local-ssd0/mutants/log"
+	dn_log = "/home/ubuntu/work/mutants/log"
 
 	Util.RunSubp("mkdir -p %s" % dn_log_ssd0)
 
