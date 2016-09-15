@@ -1,4 +1,13 @@
 region_ami:
+  mutants-cassandra-server:
+    us-east-1: ami-2f7c0e38
+
+  mutants-client:
+    us-east-1: ami-f2acdee5
+
+  castnet:
+    us-east-1: ami-67a9d970
+
   acorn-server:
     ap-northeast-1: ami-7352af12
     ap-northeast-2: ami-d5bc76bb
@@ -14,15 +23,6 @@ region_ami:
 
   tweets-db:
     us-east-1: ami-645cda73
-
-  mutants-cassandra-server:
-    us-east-1: ami-2f7c0e38
-
-  mutants-client:
-    us-east-1: ami-3bd4a02c
-
-  castnet:
-    us-east-1: ami-67a9d970
 
 ec2_regions:
   all:
