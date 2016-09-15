@@ -1,20 +1,12 @@
 #!/usr/bin/env python
 
-import base64
-import boto3
-import botocore
 import datetime
-import errno
-import imp
-import json
 import os
 import pprint
 import re
 import sys
-import threading
 import time
 import traceback
-import yaml
 import zipfile
 
 sys.path.insert(0, "%s/../lib/util" % os.path.dirname(__file__))
@@ -22,10 +14,9 @@ import Cons
 import Util
 
 sys.path.insert(0, "%s/../lib" % os.path.dirname(__file__))
-import GetIPs
-
-sys.path.insert(0, "%s/work/mutants/ec2-tools/lib" % os.path.expanduser("~"))
 import BotoClient
+
+import Ec2InitUtil
 
 
 # This is run under the user 'ubuntu'.
@@ -34,13 +25,13 @@ def main(argv):
 		if len(argv) != 3:
 			raise RuntimeError("Unexpected argv %s" % argv)
 
-		Params.Set(argv[1])
-		Ec2Tags.Set(argv[2])
+		Ec2InitUtil.SetParams(argv[1])
+		Ec2InitUtil.SetEc2Tags(argv[2])
 
 		SetHostname()
-		SyncTime()
+		Ec2InitUtil.SyncTime()
 		MountAndFormatLocalSSDs()
-		ChangeLogOutput()
+		Ec2InitUtil.ChangeLogOutput()
 		CloneSrcAndBuild()
 		WaitForServerNodes()
 		WaitForCassServers()
@@ -56,36 +47,11 @@ def main(argv):
 		Cons.P(msg)
 
 
-class Params:
-	_p = None
-
-	@staticmethod
-	def Set(v):
-		Params._p = json.loads(base64.b64decode(v))
-		#Cons.P("Params._p: %s" % pprint.pformat(Params._p))
-
-	@staticmethod
-	def Get(k):
-		return Params._p[k]
-
-
-class Ec2Tags:
-	_t = None
-
-	@statidmethod
-	def Set(v):
-		Ec2Tags._t = json.loads(v)
-		Cons.P("Ec2Tags._t: %s" % pprint.pformat(Ec2Tags._t))
-
-	@staticmethod
-	def Get(k):
-		return Ec2Tags._t[k]
-
-
 def SetHostname():
 	with Cons.MT("Setting host name ..."):
 		# Hostname consists of availability zone name and launch req datetime
-		hn = "%s-%s-%s" % (GetAz(), Params.Get("extra")["job_id"], Ec2Tags.Get("name").replace("server", "s").replace("client", "c"))
+		hn = "%s-%s-%s" % (Ec2InitUtil.GetAz(), Ec2InitUtil.GetJobId()
+				, Ec2InitUtil.GetEc2Tag("name").replace("server", "s").replace("client", "c"))
 
 		# http://askubuntu.com/questions/9540/how-do-i-change-the-computer-name
 		Util.RunSubp("sudo sh -c 'echo \"%s\" > /etc/hostname'" % hn)
@@ -96,20 +62,7 @@ def SetHostname():
 		Util.RunSubp("sudo service hostname restart")
 
 
-def SyncTime():
-	# Sync time. Not only important for Cassandra, it helps consistent analysis
-	# of logs across the server nodes and the client node.
-	# - http://askubuntu.com/questions/254826/how-to-force-a-clock-update-using-ntp
-	with Cons.MT("Synching time ..."):
-		Util.RunSubp("sudo service ntp stop")
-
-		# Fails with a rc 1 in the init script. Mask with true for now.
-		Util.RunSubp("sudo /usr/sbin/ntpd -gq || true")
-
-		Util.RunSubp("sudo service ntp start")
-
-
-#def _InstallPkgs():
+#def InstallPkgs():
 #	with Cons.MT("Installing packages ..."):
 #		Util.RunSubp("sudo apt-get update && sudo apt-get install -y pssh dstat")
 
@@ -127,7 +80,8 @@ def MountAndFormatLocalSSDs():
 		if inst_type.startswith("c3."):
 			blk_devs = {
 					"xvdb": "local-ssd0"
-					, "xvdc": "local-ssd1"
+					# Not needed for now
+					#, "xvdc": "local-ssd1"
 					}
 		elif inst_type in ["r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge"
 				, "i2.xlarge"]:
@@ -167,8 +121,8 @@ def MountAndFormatLocalSSDs():
 			# nodiscard is in the documentation
 			# - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ssd-instance-store.html
 			# - Without nodiscard, it takes about 80 secs for a 800GB SSD.
-			Util.RunSubp("time -p sudo mkfs.ext4 -m 0 -E nodiscard,lazy_itable_init=0,lazy_journal_init=0 -L %s /dev/%s"
-					% (dir_name, dev_name))
+			Util.RunSubp("sudo mkfs.ext4 -m 0 -E nodiscard,lazy_itable_init=0,lazy_journal_init=0 -L %s /dev/%s"
+					% (dir_name, dev_name), measure_time=True)
 
 			# Some are already mounted. I suspect /etc/fstab does the magic when the
 			# file system is created. Give it some time and umount
@@ -180,52 +134,31 @@ def MountAndFormatLocalSSDs():
 			Util.RunSubp("sudo chown -R ubuntu /mnt/%s" % dir_name)
 
 
-def ChangeLogOutput():
-	dn_log_ssd0 = "/mnt/local-ssd0/mutants/log"
-	dn_log = "/home/ubuntu/work/mutants/log"
-
-	Util.RunSubp("mkdir -p %s" % dn_log_ssd0)
-
-	# Create a symlink
-	Util.RunSubp("rm %s || true" % dn_log)
-	Util.RunSubp("ln -s %s %s" % (dn_log_ssd0, dn_log))
-
-	dn = "%s/%s" % (dn_log, Params.Get("extra")["job_id"])
-	Util.RunSubp("mkdir -p %s" % dn)
-
-	# Redict stdout to the log file in local SSD
-	fn = "%s/%s/cloud-init" % (dn, Ec2Tags.Get("name").replace("server", "s").replace("client", "c"))
-	Cons.P("Redirecting stdout to %s" % fn)
-
-	fo = open(fn, "a")
-	sys.stdout = fo
-	Cons.SetStdout(fo)
-
-
-# I'm not sure if you'll need this here. The YCSB script will restart dstat.
-def _StartSystemLogging():
-	dn_log_ssd0 = "/mnt/local-ssd0/mutants/log"
-	dn_log = "/home/ubuntu/work/mutants/log"
-
-	Util.RunSubp("mkdir -p %s" % dn_log_ssd0)
-
-	# Create a symlink
-	Util.RunSubp("rm %s || true" % dn_log)
-	Util.RunSubp("ln -s %s %s" % (dn_log_ssd0, dn_log))
-
-	dn_log_dstat = "%s/%s/dstat" % (dn_log, Params.Get("extra")["job_id"])
-	Util.RunSubp("mkdir -p %s" % dn_log_dstat)
-
-	# dstat parameters
-	#   -d, --disk
-	#     enable disk stats (read, write)
-	#   -r, --io
-	#     enable I/O request stats (read, write requests)
-	#   -t, --time
-	#     enable time/date output
-	#   -tdrf
-	Util.RunDaemon("dstat -cdn -C total -D xvda,xvdb -r --output %s/%s.csv"
-			% (dn_log_dstat, datetime.datetime.now().strftime("%y%m%d-%H%M%S")))
+# You don't need dstat logging here. The YCSB script will restart it.
+# You don't need dstat logging here. The YCSB script will restart dstat.
+#def StartDstatLogging():
+#	dn_log_ssd0 = "/mnt/local-ssd0/mutants/log"
+#	dn_log = "/home/ubuntu/work/mutants/log"
+#
+#	Util.RunSubp("mkdir -p %s" % dn_log_ssd0)
+#
+#	# Create a symlink
+#	Util.RunSubp("rm %s || true" % dn_log)
+#	Util.RunSubp("ln -s %s %s" % (dn_log_ssd0, dn_log))
+#
+#	dn_log_dstat = "%s/%s/dstat" % (dn_log, Ec2InitUtil.GetJobId())
+#	Util.RunSubp("mkdir -p %s" % dn_log_dstat)
+#
+#	# dstat parameters
+#	#   -d, --disk
+#	#     enable disk stats (read, write)
+#	#   -r, --io
+#	#     enable I/O request stats (read, write requests)
+#	#   -t, --time
+#	#     enable time/date output
+#	#   -tdrf
+#	Util.RunDaemon("dstat -cdn -C total -D xvda,xvdb -r --output %s/%s.csv"
+#			% (dn_log_dstat, datetime.datetime.now().strftime("%y%m%d-%H%M%S")))
 
 
 def CloneSrcAndBuild():
@@ -295,14 +228,15 @@ def _CloneAndBuildYcsb():
 _nm_ip = None
 def WaitForServerNodes():
 	# Wait for all the server nodes to be up
-	server_num_nodes_expected = int(Params.Get("server")["num_nodes"])
-	with Cons.MTnnl("Waiting for %d server node(s) " % server_num_nodes_expected):
+	server_num_nodes_expected = int(Ec2InitUtil.GetParam("server")["num_nodes"])
+	with Cons.MTnnl("Waiting for %d server node(s) with job_id %s"
+			% (server_num_nodes_expected, Ec2InitUtil.GetJobId())):
 		global _nm_ip
 		_nm_ip = None
 		while True:
 			_nm_ip = {}
-			r = BotoClient.Get(GetRegion()).describe_instances(
-					Filters=[ { "Name": "tag:job_id", "Values": [ Params.Get("extra")["job_id"], ] }, ],
+			r = BotoClient.Get(Ec2InitUtil.GetRegion()).describe_instances(
+					Filters=[ { "Name": "tag:job_id", "Values": [ Ec2InitUtil.GetJobId() ] }, ],
 					)
 			for r0 in r["Reservations"]:
 				for i in r0["Instances"]:
@@ -323,14 +257,14 @@ def WaitForServerNodes():
 			time.sleep(1)
 		sys.stdout.write(" all up.\n")
 
-		Util.RunSubp("mkdir -p /mnt/local-ssd0/mutants/.run", )
-		Util.RunSubp("rm /home/ubuntu/work/mutants/.run || true")
-		Util.RunSubp("ln -s /mnt/local-ssd0/mutants/.run /home/ubuntu/work/mutants/.run")
-		fn = "/home/ubuntu/work/mutants/.run/cassandra-server-ips"
-		with open(fn, "w") as fo:
-			fo.write(" ".join(v for k, v in _nm_ip.iteritems()))
-		Cons.P("Created %s %d" % (fn, os.path.getsize(fn)))
-		# Note: Will need to to round-robin the server nodes when there are multiple of them.
+	Util.RunSubp("mkdir -p /mnt/local-ssd0/mutants/.run", )
+	Util.RunSubp("rm /home/ubuntu/work/mutants/.run || true")
+	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/.run /home/ubuntu/work/mutants/.run")
+	fn = "/home/ubuntu/work/mutants/.run/cassandra-server-ips"
+	with open(fn, "w") as fo:
+		fo.write(" ".join(v for k, v in _nm_ip.iteritems()))
+	Cons.P("Created %s %d" % (fn, os.path.getsize(fn)))
+	# Note: Will need to to round-robin the server nodes when there are multiple of them.
 
 
 def WaitForCassServers():
@@ -376,67 +310,20 @@ def RunYcsb():
 	with Cons.MT("Running YCSB ..."):
 		cmd = "%s/work/mutants/YCSB/mutants/restart-dstat-run-workload.py \"%s\"" \
 				% (os.path.expanduser("~")
-						, Params.Get("client")["ycsb"]["workload_type"]
-						, Params.Get("client")["ycsb"]["params"])
+						, Ec2InitUtil.GetParam("client")["ycsb"]["workload_type"]
+						, Ec2InitUtil.GetParam("client")["ycsb"]["params"])
+		Util.RunSubp(cmd)
 
 
 def MayTerminateCluster():
-	if "terminate_cluster_when_done" in Params.Get("client"):
-		if Params.Get("client")["terminate_cluster_when_done"] == "true":
+	if "terminate_cluster_when_done" in Ec2InitUtil.GetParam("client"):
+		if Ec2InitUtil.GetParam("client")["terminate_cluster_when_done"] == "true":
 			pass
 			# TODO: make a termination request
 
 			# Note: Some of these will be needed for batch experiments
 			#_jr_sqs_url = None
 			#_jr_sqs_msg_receipt_handle = None
-
-
-_ec2_tags = None
-def GetEc2Tags():
-	global _ec2_tags
-	if _ec2_tags is not None:
-		return _ec2_tags
-
-	r = BotoClient.Get(GetRegion()).describe_tags()
-	#Cons.P(pprint.pformat(r, indent=2, width=100))
-	_ec2_tags = {}
-	for r0 in r["Tags"]:
-		res_id = r0["ResourceId"]
-		if InstId() != res_id:
-			continue
-		_ec2_tags[r0["Key"]] = r0["Value"]
-	return _ec2_tags
-
-
-_az = None
-_region = None
-def GetAz():
-	global _az, _region
-	if _az is not None:
-		return _az
-
-	_az = Util.RunSubp("curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone", print_cmd = False, print_output = False)
-	_region = _az[:-1]
-	return _az
-
-def GetRegion():
-	global _az, _region
-	if _region is not None:
-		return _region
-
-	_az = Util.RunSubp("curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone", print_cmd = False, print_output = False)
-	_region = _az[:-1]
-	return _region
-
-
-_inst_id = None
-def InstId():
-	global _inst_id
-	if _inst_id is not None:
-		return _inst_id
-
-	_inst_id  = Util.RunSubp("curl -s http://169.254.169.254/latest/meta-data/instance-id", print_cmd = False, print_output = False)
-	return _inst_id
 
 
 if __name__ == "__main__":
