@@ -78,7 +78,7 @@ def Process(msg, job_controller_gm_q):
 			% (job_id, Util.Indent(pprint.pformat(msg.msg_body), 2)))
 
 	# Pass these as the init script parameters. Decided not to use EC2 tag
-	# for these, due to its limitations.
+	# for these, due to its limited numbers.
 	#   http://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/allocation-tag-restrictions.html
 
 	# Cassandra cluster name. It's ok for multiple clusters to have the same

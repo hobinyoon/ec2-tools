@@ -83,6 +83,16 @@ def Job_MutantsDevS1C1():
 				, "client" : {
 					"init_script": "mutants-cassandra-client-dev"
 					, "ami_name": "mutants-client"
+					, "ycsb": {
+						"workload_type": "d"
+						, "params" : "-p recordcount=1000" \
+								" -p operationcount=50000000" \
+								" -p status.interval=1" \
+								" -p fieldcount=10" \
+								" -p fieldlength=2000" \
+								" -threads 100"
+								}
+					, "terminate_cluster_when_done": "false"
 					}
 				}
 			)

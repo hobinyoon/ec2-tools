@@ -65,6 +65,8 @@ def _RunInitScript(params_encoded):
 	fn_init_script = params[type_]["init_script"]
 	_Log("fn_init_script: %s" % fn_init_script)
 
+	# We pass both params and tags to the next init script. tags have "name",
+	# e.g., "client", "server0", "server1", ..., which is not in params.
 	r = BotoClient.Get(_region).describe_tags()
 	#_Log(pprint.pformat(r, indent=2, width=100))
 	tags = {}

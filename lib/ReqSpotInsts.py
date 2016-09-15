@@ -236,6 +236,7 @@ sudo -i -u ubuntu /home/ubuntu/work/mutants/ec2-tools/lib/ec2-init.py {0}
 							'VolumeType': 'gp2'
 							},
 						}
+					# TODO: may want to specify these 2 selectively to reduce cost
 					, {
 						'DeviceName': '/dev/sde',
 						'Ebs': {
