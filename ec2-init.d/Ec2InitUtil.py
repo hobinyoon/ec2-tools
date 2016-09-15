@@ -1,6 +1,12 @@
 import base64
 import json
+import os
 import pprint
+import sys
+
+sys.path.insert(0, "%s/../lib/util" % os.path.dirname(__file__))
+import Cons
+import Util
 
 
 _params = None
@@ -74,24 +80,25 @@ def SyncTime():
 
 
 def ChangeLogOutput():
-	dn_log_ssd0 = "/mnt/local-ssd0/mutants/log"
-	dn_log = "/home/ubuntu/work/mutants/log"
+	with Cons.MT("Changing log output the local SSD ..."):
+		dn_log_ssd0 = "/mnt/local-ssd0/mutants/log"
+		dn_log = "/home/ubuntu/work/mutants/log"
 
-	Util.RunSubp("mkdir -p %s" % dn_log_ssd0)
+		Util.RunSubp("mkdir -p %s" % dn_log_ssd0)
 
-	# Create a symlink
-	Util.RunSubp("rm %s || true" % dn_log)
-	Util.RunSubp("ln -s %s %s" % (dn_log_ssd0, dn_log))
+		# Create a symlink
+		Util.RunSubp("rm %s || true" % dn_log)
+		Util.RunSubp("ln -s %s %s" % (dn_log_ssd0, dn_log))
 
-	dn = "%s/%s" % (dn_log, Ec2InitUtil.GetJobId())
-	Util.RunSubp("mkdir -p %s" % dn)
+		dn = "%s/%s/%s" % (dn_log, GetJobId()
+				, GetEc2Tag("name").replace("server", "s").replace("client", "c"))
+		Util.MkDirs(dn)
 
-	# Redict stdout to the log file in local SSD
-	fn = "%s/%s/cloud-init" % (dn, Ec2InitUtil.GetEc2Tag("name").replace("server", "s").replace("client", "c"))
-	Cons.P("Redirecting stdout to %s" % fn)
+		# Redict stdout to the log file in local SSD
+		fn = "%s/cloud-init" % dn
+		Cons.P("Redirecting stdout to %s" % fn)
 
-	fo = open(fn, "a")
-	sys.stdout = fo
-	Cons.SetStdout(fo)
-
-
+		# buffering to 1, "line buffered"
+		fo = open(fn, "a", 1)
+		sys.stdout = fo
+		Cons.SetStdout(fo)

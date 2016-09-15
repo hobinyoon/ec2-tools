@@ -16,6 +16,7 @@ import Util
 sys.path.insert(0, "%s/../lib" % os.path.dirname(__file__))
 import BotoClient
 
+sys.path.insert(0, "%s" % os.path.dirname(__file__))
 import Ec2InitUtil
 
 

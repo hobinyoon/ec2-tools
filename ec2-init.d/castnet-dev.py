@@ -11,6 +11,7 @@ sys.path.insert(0, "%s/../lib/util" % os.path.dirname(__file__))
 import Cons
 import Util
 
+sys.path.insert(0, "%s" % os.path.dirname(__file__))
 import Ec2InitUtil
 
 
@@ -27,7 +28,7 @@ def main(argv):
 		Ec2InitUtil.SyncTime()
 		MountAndFormatLocalSSDs()
 		Ec2InitUtil.ChangeLogOutput()
-		CloneSrcAndBuild()
+		CloneSrcBuildRunYcsb()
 
 		# This is a dev node, which is not terminated automatically.
 	except Exception as e:
@@ -129,7 +130,7 @@ def MountAndFormatLocalSSDs():
 			Util.RunSubp("sudo chown -R ubuntu /mnt/%s" % dir_name)
 
 
-def CloneSrcAndBuild():
+def CloneSrcBuildRunYcsb():
 	with Cons.MT("Cloning src and build ..."):
 		# Git clone
 		Util.RunSubp("rm -rf /mnt/local-ssd0/castnet")
@@ -146,7 +147,7 @@ def CloneSrcAndBuild():
 		Util.RunSubp("ln -s /mnt/local-ssd0/castnet /home/ubuntu/work/castnet")
 
 		# Build to save time
-		Util.RunSubp("cd /home/ubuntu/work/castnet/simulator && ./build-and-run.sh > /dev/null 2>&1")
+		Util.RunSubp("cd /home/ubuntu/work/castnet/simulator && ./build-and-run.sh 2>&1")
 
 
 if __name__ == "__main__":
