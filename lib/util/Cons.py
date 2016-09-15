@@ -10,7 +10,14 @@ _ind = ""
 
 _print_lock = threading.Lock()
 
-def P(o, ind = 0, fo = sys.stdout, prefix = None):
+_stdout = sys.stdout
+
+def SetStdout(fo):
+	global _stdout
+	_stdout = fo
+
+
+def P(o, ind = 0, prefix = None):
 	with _print_lock:
 		global _ind_len, _ind
 		if ind > 0:
@@ -25,14 +32,14 @@ def P(o, ind = 0, fo = sys.stdout, prefix = None):
 				if (i == len(lines) - 1) and (len(lines[i]) == 0):
 					continue
 				if prefix is None:
-					fo.write(_ind + lines[i] + "\n")
+					_stdout.write(_ind + lines[i] + "\n")
 				else:
-					fo.write(prefix + _ind + lines[i] + "\n")
+					_stdout.write(prefix + _ind + lines[i] + "\n")
 		else:
 			if prefix is not None:
-				fo.write(prefix)
-			fo.write(str(o))
-			fo.write("\n")
+				_stdout.write(prefix)
+			_stdout.write(str(o))
+			_stdout.write("\n")
 
 		if ind > 0:
 			_ind_len -= ind
@@ -54,11 +61,11 @@ def Pnnl(o, ind = 0):
 			for i in range(len(lines)):
 				if (i == len(lines) - 1) and (len(lines[i]) == 0):
 					continue
-				sys.stdout.write(_ind + lines[i])
-				sys.stdout.flush()
+				_stdout.write(_ind + lines[i])
+				_stdout.flush()
 		else:
-			sys.stdout.write(o)
-			sys.stdout.flush()
+			_stdout.write(o)
+			_stdout.flush()
 
 		if ind > 0:
 			_ind_len -= ind
@@ -112,8 +119,8 @@ class MTnnl:
 
 def sys_stdout_write(msg):
 	with _print_lock:
-		sys.stdout.write(msg)
-		sys.stdout.flush()
+		_stdout.write(msg)
+		_stdout.flush()
 
 
 class Indent:

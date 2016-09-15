@@ -9,6 +9,7 @@ import imp
 import json
 import os
 import pprint
+import re
 import sys
 import threading
 import time
@@ -23,107 +24,182 @@ import Util
 sys.path.insert(0, "%s/../lib" % os.path.dirname(__file__))
 import GetIPs
 
-
-def _Log(msg):
-	Cons.P("%s: %s" % (time.strftime("%y%m%d-%H%M%S"), msg))
-
-
-_az = None
-_region = None
+sys.path.insert(0, "%s/work/mutants/ec2-tools/lib" % os.path.expanduser("~"))
+import BotoClient
 
 
-def _SetHostname():
-	# Hostname consists of availability zone name and launch req datetime
-	hn = "%s-%s-%s" % (_az, _job_id, _tags["name"].replace("server", "s").replace("client", "c"))
+# This is run under the user 'ubuntu'.
+def main(argv):
+	try:
+		if len(argv) != 3:
+			raise RuntimeError("Unexpected argv %s" % argv)
 
-	# http://askubuntu.com/questions/9540/how-do-i-change-the-computer-name
-	Util.RunSubp("sudo sh -c 'echo \"%s\" > /etc/hostname'" % hn)
-	# "c" command in sed is used to replace every line matches with the pattern
-	# or ranges with the new given line.
-	# - http://www.thegeekstuff.com/2009/11/unix-sed-tutorial-append-insert-replace-and-count-file-lines/?ref=driverlayer.com
-	Util.RunSubp("sudo sed -i '/^127.0.0.1 localhost.*/c\\127.0.0.1 localhost %s' /etc/hosts" % hn)
-	Util.RunSubp("sudo service hostname restart")
+		Params.Set(argv[1])
+		Ec2Tags.Set(argv[2])
+
+		SetHostname()
+		SyncTime()
+		MountAndFormatLocalSSDs()
+		ChangeLogOutput()
+		CloneSrcAndBuild()
+		WaitForServerNodes()
+		WaitForCassServers()
+		RunYcsb()
+
+		# TODO: UploadToS3()
+
+		# The client node requests termination of the job with the job_id. Job
+		# controller gets the requests and terminates all node with the job_id.
+		MayTerminateCluster()
+	except Exception as e:
+		msg = "Exception: %s\n%s" % (e, traceback.format_exc())
+		Cons.P(msg)
 
 
-def _SyncTime():
-	# Sync time. Important for Cassandra.
-	# http://askubuntu.com/questions/254826/how-to-force-a-clock-update-using-ntp
-	_Log("Synching time ...")
-	Util.RunSubp("sudo service ntp stop")
+class Params:
+	_p = None
 
-	# Fails with a rc 1 in the init script. Mask with true for now.
-	Util.RunSubp("sudo /usr/sbin/ntpd -gq || true")
+	@staticmethod
+	def Set(v):
+		Params._p = json.loads(base64.b64decode(v))
+		#Cons.P("Params._p: %s" % pprint.pformat(Params._p))
 
-	Util.RunSubp("sudo service ntp start")
-
-
-def _InstallPkgs():
-	Util.RunSubp("sudo apt-get update && sudo apt-get install -y pssh dstat")
+	@staticmethod
+	def Get(k):
+		return Params._p[k]
 
 
-def _MountAndFormatLocalSSDs():
-	# Make sure we are using the known machine types
-	inst_type = Util.RunSubp("curl -s http://169.254.169.254/latest/meta-data/instance-type", print_cmd = False, print_output = False)
+class Ec2Tags:
+	_t = None
 
-	# {dev_name: directory_name}
-	# ext4 label is the same as the directory_name
-	blk_devs = {}
+	@statidmethod
+	def Set(v):
+		Ec2Tags._t = json.loads(v)
+		Cons.P("Ec2Tags._t: %s" % pprint.pformat(Ec2Tags._t))
 
-	# All c3 types has 2 SSDs
-	if inst_type.startswith("c3."):
-		blk_devs = {
-				"xvdb": "local-ssd0"
-				, "xvdc": "local-ssd1"
-				}
-	elif inst_type in ["r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge"
-			, "i2.xlarge"]:
-		blk_devs = {
-				"xvdb": "local-ssd0"
-				}
-	else:
-		raise RuntimeError("Unexpected instance type %s" % inst_type)
+	@staticmethod
+	def Get(k):
+		return Ec2Tags._t[k]
 
-	# Init local SSDs
-	# - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/disk-performance.html
-	# - Client node probably won't need this -- YCSB won't get bottlenecked by
-	#   the local SSD --, but it needs to wait for the server, it might as well
-	#   do something.
-	if inst_type.startswith("c3."):
-		Util.RunSubp("sudo umount /dev/xvdb || true")
-		Util.RunSubp("sudo umount /dev/xvdc || true")
-		Util.RunSubp("sudo dd if=/dev/zero bs=1M of=/dev/xvdb || true", measure_time=True)
 
-	Util.RunSubp("sudo umount /mnt || true")
-	for dev_name, dir_name in blk_devs.iteritems():
-		_Log("Setting up %s ..." % dev_name)
-		Util.RunSubp("sudo umount /dev/%s || true" % dev_name)
-		Util.RunSubp("sudo mkdir -p /mnt/%s" % dir_name)
+def SetHostname():
+	with Cons.MT("Setting host name ..."):
+		# Hostname consists of availability zone name and launch req datetime
+		hn = "%s-%s-%s" % (GetAz(), Params.Get("extra")["job_id"], Ec2Tags.Get("name").replace("server", "s").replace("client", "c"))
 
-		# Prevent lazy Initialization
-		# - "When creating an Ext4 file system, the existing regions of the inode
-		#   tables must be cleaned (overwritten with nulls, or "zeroed"). The
-		#   "lazyinit" feature should significantly accelerate the creation of a
-		#   file system, because it does not immediately initialize all inode
-		#   tables, initializing them gradually instead during the initial mounting
-		#   process in background (from Kernel version 2.6.37)."
-		#   - https://www.thomas-krenn.com/en/wiki/Ext4_Filesystem
-		# - Default values are 1s, which do lazy init.
-		#   - man mkfs.ext4
-		#
-		# nodiscard is in the documentation
-		# - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ssd-instance-store.html
-		# - Without nodiscard, it takes about 80 secs for a 800GB SSD.
-		Util.RunSubp("time -p sudo mkfs.ext4 -m 0 -E nodiscard,lazy_itable_init=0,lazy_journal_init=0 -L %s /dev/%s"
-				% (dir_name, dev_name))
+		# http://askubuntu.com/questions/9540/how-do-i-change-the-computer-name
+		Util.RunSubp("sudo sh -c 'echo \"%s\" > /etc/hostname'" % hn)
+		# "c" command in sed is used to replace every line matches with the pattern
+		# or ranges with the new given line.
+		# - http://www.thegeekstuff.com/2009/11/unix-sed-tutorial-append-insert-replace-and-count-file-lines/?ref=driverlayer.com
+		Util.RunSubp("sudo sed -i '/^127.0.0.1 localhost.*/c\\127.0.0.1 localhost %s' /etc/hosts" % hn)
+		Util.RunSubp("sudo service hostname restart")
 
-		# Some are already mounted. I suspect /etc/fstab does the magic when the
-		# file system is created. Give it some time and umount
-		time.sleep(1)
-		Util.RunSubp("sudo umount /dev/%s || true" % dev_name)
 
-		# -o discard for TRIM
-		Util.RunSubp("sudo mount -t ext4 -o discard /dev/%s /mnt/%s" % (dev_name, dir_name))
-		Util.RunSubp("sudo chown -R ubuntu /mnt/%s" % dir_name)
+def SyncTime():
+	# Sync time. Not only important for Cassandra, it helps consistent analysis
+	# of logs across the server nodes and the client node.
+	# - http://askubuntu.com/questions/254826/how-to-force-a-clock-update-using-ntp
+	with Cons.MT("Synching time ..."):
+		Util.RunSubp("sudo service ntp stop")
+
+		# Fails with a rc 1 in the init script. Mask with true for now.
+		Util.RunSubp("sudo /usr/sbin/ntpd -gq || true")
+
+		Util.RunSubp("sudo service ntp start")
+
+
+#def _InstallPkgs():
+#	with Cons.MT("Installing packages ..."):
+#		Util.RunSubp("sudo apt-get update && sudo apt-get install -y pssh dstat")
+
+
+def MountAndFormatLocalSSDs():
+	with Cons.MT("Mount and format block storage devices ..."):
+		# Make sure we are using the known machine types
+		inst_type = Util.RunSubp("curl -s http://169.254.169.254/latest/meta-data/instance-type", print_cmd = False, print_output = False)
+
+		# {dev_name: directory_name}
+		# ext4 label is the same as the directory_name
+		blk_devs = {}
+
+		# All c3 types has 2 SSDs
+		if inst_type.startswith("c3."):
+			blk_devs = {
+					"xvdb": "local-ssd0"
+					, "xvdc": "local-ssd1"
+					}
+		elif inst_type in ["r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge"
+				, "i2.xlarge"]:
+			blk_devs = {
+					"xvdb": "local-ssd0"
+					}
+		else:
+			raise RuntimeError("Unexpected instance type %s" % inst_type)
+
+		# Init local SSDs
+		# - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/disk-performance.html
+		# - Client node probably won't need this -- YCSB won't get bottlenecked by
+		#   the local SSD --, but it needs to wait for the server, it might as well
+		#   do something.
+		if inst_type.startswith("c3."):
+			Util.RunSubp("sudo umount /dev/xvdb || true")
+			Util.RunSubp("sudo umount /dev/xvdc || true")
+			Util.RunSubp("sudo dd if=/dev/zero bs=1M of=/dev/xvdb || true", measure_time=True)
+
+		Util.RunSubp("sudo umount /mnt || true")
+		for dev_name, dir_name in blk_devs.iteritems():
+			Cons.P("Setting up %s ..." % dev_name)
+			Util.RunSubp("sudo umount /dev/%s || true" % dev_name)
+			Util.RunSubp("sudo mkdir -p /mnt/%s" % dir_name)
+
+			# Prevent lazy Initialization
+			# - "When creating an Ext4 file system, the existing regions of the inode
+			#   tables must be cleaned (overwritten with nulls, or "zeroed"). The
+			#   "lazyinit" feature should significantly accelerate the creation of a
+			#   file system, because it does not immediately initialize all inode
+			#   tables, initializing them gradually instead during the initial mounting
+			#   process in background (from Kernel version 2.6.37)."
+			#   - https://www.thomas-krenn.com/en/wiki/Ext4_Filesystem
+			# - Default values are 1s, which do lazy init.
+			#   - man mkfs.ext4
+			#
+			# nodiscard is in the documentation
+			# - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ssd-instance-store.html
+			# - Without nodiscard, it takes about 80 secs for a 800GB SSD.
+			Util.RunSubp("time -p sudo mkfs.ext4 -m 0 -E nodiscard,lazy_itable_init=0,lazy_journal_init=0 -L %s /dev/%s"
+					% (dir_name, dev_name))
+
+			# Some are already mounted. I suspect /etc/fstab does the magic when the
+			# file system is created. Give it some time and umount
+			time.sleep(1)
+			Util.RunSubp("sudo umount /dev/%s || true" % dev_name)
+
+			# -o discard for TRIM
+			Util.RunSubp("sudo mount -t ext4 -o discard /dev/%s /mnt/%s" % (dev_name, dir_name))
+			Util.RunSubp("sudo chown -R ubuntu /mnt/%s" % dir_name)
+
+
+def ChangeLogOutput():
+	dn_log_ssd0 = "/mnt/local-ssd0/mutants/log"
+	dn_log = "/home/ubuntu/work/mutants/log"
+
+	Util.RunSubp("mkdir -p %s" % dn_log_ssd0)
+
+	# Create a symlink
+	Util.RunSubp("rm %s || true" % dn_log)
+	Util.RunSubp("ln -s %s %s" % (dn_log_ssd0, dn_log))
+
+	dn = "%s/%s" % (dn_log, Params.Get("extra")["job_id"])
+	Util.RunSubp("mkdir -p %s" % dn)
+
+	# Redict stdout to the log file in local SSD
+	fn = "%s/%s/cloud-init" % (dn, Ec2Tags.Get("name").replace("server", "s").replace("client", "c"))
+	Cons.P("Redirecting stdout to %s" % fn)
+
+	fo = open(fn, "a")
+	sys.stdout = fo
+	Cons.SetStdout(fo)
 
 
 # I'm not sure if you'll need this here. The YCSB script will restart dstat.
@@ -137,7 +213,7 @@ def _StartSystemLogging():
 	Util.RunSubp("rm %s || true" % dn_log)
 	Util.RunSubp("ln -s %s %s" % (dn_log_ssd0, dn_log))
 
-	dn_log_dstat = "%s/%s/dstat" % (dn_log, _job_id)
+	dn_log_dstat = "%s/%s/dstat" % (dn_log, Params.Get("extra")["job_id"])
 	Util.RunSubp("mkdir -p %s" % dn_log_dstat)
 
 	# dstat parameters
@@ -152,16 +228,17 @@ def _StartSystemLogging():
 			% (dn_log_dstat, datetime.datetime.now().strftime("%y%m%d-%H%M%S")))
 
 
-def _CloneSrcAndBuild():
-	# Make parent
-	Util.RunSubp("mkdir -p /mnt/local-ssd0/mutants")
+def CloneSrcAndBuild():
+	with Cons.MT("Cloning src and build ..."):
+		# Make parent
+		Util.RunSubp("mkdir -p /mnt/local-ssd0/mutants")
 
-	__CloneAndBuildCassandra()
-	__CloneAndBuildMisc()
-	__CloneAndBuildYcsb()
+		_CloneAndBuildCassandra()
+		_CloneMisc()
+		_CloneAndBuildYcsb()
 
 
-def __CloneAndBuildCassandra():
+def _CloneAndBuildCassandra():
 	# Git clone
 	Util.RunSubp("rm -rf /mnt/local-ssd0/mutants/cassandra")
 	Util.RunSubp("git clone https://github.com/hobinyoon/mutants-cassandra-3.9 /mnt/local-ssd0/mutants/cassandra")
@@ -180,7 +257,7 @@ def __CloneAndBuildCassandra():
 			"/g' %s" % "~/work/mutants/cassandra/.git/config")
 
 
-def __CloneAndBuildMisc():
+def _CloneMisc():
 	# Git clone
 	Util.RunSubp("rm -rf /mnt/local-ssd0/mutants/misc")
 	Util.RunSubp("git clone https://github.com/hobinyoon/mutants-misc /mnt/local-ssd0/mutants/misc")
@@ -196,7 +273,7 @@ def __CloneAndBuildMisc():
 			"/g' %s" % "~/work/mutants/misc/.git/config")
 
 
-def __CloneAndBuildYcsb():
+def _CloneAndBuildYcsb():
 	# Git clone
 	Util.RunSubp("rm -rf /mnt/local-ssd0/mutants/YCSB")
 	Util.RunSubp("git clone https://github.com/hobinyoon/YCSB /mnt/local-ssd0/mutants/YCSB")
@@ -215,119 +292,151 @@ def __CloneAndBuildYcsb():
 			"/g' %s" % "~/work/mutants/YCSB/.git/config")
 
 
-def _GenCassServerIpFile():
-	_Log("Getting IP addrs of all running instances of servers with job_id %s ..." % _job_id)
-	ips = GetIPs.GetServerPubIpsByJobId(_job_id)
-	_Log("Server public addrs: %s" % " ".join(ips))
+_nm_ip = None
+def WaitForServerNodes():
+	# Wait for all the server nodes to be up
+	server_num_nodes_expected = int(Params.Get("server")["num_nodes"])
+	with Cons.MTnnl("Waiting for %d server node(s) " % server_num_nodes_expected):
+		global _nm_ip
+		_nm_ip = None
+		while True:
+			_nm_ip = {}
+			r = BotoClient.Get(GetRegion()).describe_instances(
+					Filters=[ { "Name": "tag:job_id", "Values": [ Params.Get("extra")["job_id"], ] }, ],
+					)
+			for r0 in r["Reservations"]:
+				for i in r0["Instances"]:
+					#Cons.P(pprint.pformat(i))
+					pub_ip = i["PublicIpAddress"]
+					for t in i["Tags"]:
+						if t["Key"] == "name":
+							name = t["Value"]
+							if name.startswith("s"):
+								_nm_ip[name] = pub_ip
+			#Cons.P(pprint.pformat(_nm_ip))
+			if len(_nm_ip) == server_num_nodes_expected:
+				break
 
-	Util.RunSubp("mkdir -p /mnt/local-ssd0/mutants/.run")
-	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/.run /home/ubuntu/work/mutants/.run")
-	fn = "/home/ubuntu/work/mutants/.run/cassandra-server-ips"
-	with open(fn, "w") as fo:
-		fo.write(" ".join(ips))
+			# Log progress. By now, the log file is in the local EBS.
+			sys.stdout.write(".")
+			sys.stdout.flush()
+			time.sleep(1)
+		sys.stdout.write(" all up.\n")
 
-
-# Note: This will be the YCSB configuration file
-#_fn_acorn_youtube_yaml = "/home/ubuntu/work/acorn/acorn/clients/youtube/acorn-youtube.yaml"
-#
-#def _EditMutantsClientConf():
-#	_Log("Editing %s ..." % _fn_acorn_youtube_yaml)
-#	for k, v in _tags.iteritems():
-#		if k.startswith("acorn-youtube."):
-#			#              01234567890123
-#			k1 = k[14:]
-#			Util.RunSubp("sed -i 's/" \
-#					"^%s:.*" \
-#					"/%s: %s" \
-#					"/g' %s" % (k1, k1, v, _fn_acorn_youtube_yaml))
-
-
-def _RunCass():
-	_Log("Running Cassandra ...")
-	Util.RunSubp("rm -rf ~/work/mutants/cassandra/data")
-	Util.RunSubp("/home/ubuntu/work/mutants/cassandra/bin/cassandra")
-
-
-# TODO: get the number of servers from the json parameter
-#
-# How does a client node know that the servers are ready? It can query
-# system.peers and system.local with cqlsh.
-#
-#def _WaitUntilYouSeeAllCassNodes():
-#	_Log("Wait until all Cassandra nodes are up ...")
-#	# Keep checking until you see all nodes are up -- "UN" status.
-#	while True:
-#		# Get all IPs with the tags. Hope every node sees all other nodes by this
-#		# time.
-#		num_nodes = Util.RunSubp("/home/ubuntu/work/mutants/cassandra/bin/nodetool status | grep \"^UN \" | wc -l", shell = True)
-#		num_nodes = int(num_nodes)
-#
-#		# The number of regions (_num_regions) needs to be explicitly passed. When
-#		# a data center goes over capacity, it doesn't even get to the point where
-#		# a node is tagged, making the cluster think it has less nodes.
-#
-#		#if num_nodes == _num_regions:
-#		#	break
-#		time.sleep(2)
+		Util.RunSubp("mkdir -p /mnt/local-ssd0/mutants/.run", )
+		Util.RunSubp("rm /home/ubuntu/work/mutants/.run || true")
+		Util.RunSubp("ln -s /mnt/local-ssd0/mutants/.run /home/ubuntu/work/mutants/.run")
+		fn = "/home/ubuntu/work/mutants/.run/cassandra-server-ips"
+		with open(fn, "w") as fo:
+			fo.write(" ".join(v for k, v in _nm_ip.iteritems()))
+		Cons.P("Created %s %d" % (fn, os.path.getsize(fn)))
+		# Note: Will need to to round-robin the server nodes when there are multiple of them.
 
 
-# Note: Some of these will be needed for batch experiments
-#_jr_sqs_url = None
-#_jr_sqs_msg_receipt_handle = None
+def WaitForCassServers():
+	with Cons.MTnnl("Wating for %d Cassandra server(s) " % len(_nm_ip)):
+		# Query the first server node in the dict
+		server_ip = _nm_ip.itervalues().next()
 
-_params = None
-_tags = {}
+		# Can you just use nodetool? Yes, but needs additional authentication step
+		# to prevent anyone from checking on that. cqlsh is already open to
+		# everyone.  Better keep the number of open services minimal.
+		# - http://stackoverflow.com/questions/15299302/cassandra-nodetool-connection-timed-out
 
-_job_id = None
+		while True:
+			lines = Util.RunSubp("cqlsh -e \"select count(*) from system.peers\" %s || true" % server_ip
+					, print_cmd=False, print_output=False)
+			if lines.startswith("Connection error:"):
+				time.sleep(1)
+				sys.stdout.write(".")
+				sys.stdout.flush()
+				continue
+
+			#   count
+			#  -------
+			#       0
+			#  (1 rows)
+			#  Warnings :
+			#  Aggregation query used without partition key
+			m = re.match(r"\n\s+count\n-+\n\s*(?P<count>\d+)\n.*", lines)
+			if m is None:
+				raise RuntimeError("Unexpected [%s]" % lines)
+			if len(_nm_ip) == (1 + int(m.group("count"))):
+				break
+
+			time.sleep(1)
+			sys.stdout.write(".")
+			sys.stdout.flush()
+			continue
+
+		sys.stdout.write("all up\n")
 
 
-# TODO: Don't let the logs to go out to stdout, unless it's an exception. It
-# goes to cloud-init-output.log, which eats up EBS gp2 volume IO credit.
+def RunYcsb():
+	with Cons.MT("Running YCSB ..."):
+		cmd = "%s/work/mutants/YCSB/mutants/restart-dstat-run-workload.py \"%s\"" \
+				% (os.path.expanduser("~")
+						, Params.Get("client")["ycsb"]["workload_type"]
+						, Params.Get("client")["ycsb"]["params"])
 
-def main(argv):
-	try:
-		# This script is run under the user 'ubuntu'.
 
-		if len(argv) != 3:
-			raise RuntimeError("Unexpected argv %s" % argv)
+def MayTerminateCluster():
+	if "terminate_cluster_when_done" in Params.Get("client"):
+		if Params.Get("client")["terminate_cluster_when_done"] == "true":
+			pass
+			# TODO: make a termination request
 
-		params_encoded = argv[1]
-		tags_json = argv[2]
+			# Note: Some of these will be needed for batch experiments
+			#_jr_sqs_url = None
+			#_jr_sqs_msg_receipt_handle = None
 
-		global _params
-		_params = json.loads(base64.b64decode(params_encoded))
 
-		global _tags
-		_tags = json.loads(tags_json)
-		_Log("_tags: %s" % pprint.pformat(_tags))
+_ec2_tags = None
+def GetEc2Tags():
+	global _ec2_tags
+	if _ec2_tags is not None:
+		return _ec2_tags
 
-		global _job_id
-		_job_id = _params["extra"]["job_id"]
+	r = BotoClient.Get(GetRegion()).describe_tags()
+	#Cons.P(pprint.pformat(r, indent=2, width=100))
+	_ec2_tags = {}
+	for r0 in r["Tags"]:
+		res_id = r0["ResourceId"]
+		if InstId() != res_id:
+			continue
+		_ec2_tags[r0["Key"]] = r0["Value"]
+	return _ec2_tags
 
-		global _az, _region
-		_az = Util.RunSubp("curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone", print_cmd = False, print_output = False)
-		_region = _az[:-1]
 
-		_SetHostname()
-		_SyncTime()
-		#_InstallPkgs()
-		_MountAndFormatLocalSSDs()
-		_CloneSrcAndBuild()
-		_GenCassServerIpFile()
+_az = None
+_region = None
+def GetAz():
+	global _az, _region
+	if _az is not None:
+		return _az
 
-		# TODO: _EditMutantsClientConf()
+	_az = Util.RunSubp("curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone", print_cmd = False, print_output = False)
+	_region = _az[:-1]
+	return _az
 
-		# TODO: Only the client node need this. Server nodes don't need this.
-		#_WaitUntilYouSeeAllCassNodes()
+def GetRegion():
+	global _az, _region
+	if _region is not None:
+		return _region
 
-		# TODO: Let the client do the house keeping: Uploading the result to S3 and
-		# notifying that the job is done.
+	_az = Util.RunSubp("curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone", print_cmd = False, print_output = False)
+	_region = _az[:-1]
+	return _region
 
-		# The client node requests termination of the nodes with the same job_id.
-		# Dev nodes are not terminated automatically.
-	except Exception as e:
-		msg = "Exception: %s\n%s" % (e, traceback.format_exc())
-		_Log(msg)
+
+_inst_id = None
+def InstId():
+	global _inst_id
+	if _inst_id is not None:
+		return _inst_id
+
+	_inst_id  = Util.RunSubp("curl -s http://169.254.169.254/latest/meta-data/instance-id", print_cmd = False, print_output = False)
+	return _inst_id
 
 
 if __name__ == "__main__":

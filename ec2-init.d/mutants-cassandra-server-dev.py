@@ -383,30 +383,12 @@ def _EditCassConf():
 def _RunCass():
 	_Log("Running Cassandra ...")
 	Util.RunSubp("rm -rf ~/work/mutants/cassandra/data")
+
+	# TODO: run the mutants cassandra restart script
+
+	# TODO: YCSB clients waits for the server ready
+
 	Util.RunSubp("/home/ubuntu/work/mutants/cassandra/bin/cassandra")
-
-
-# TODO: get the number of servers from the json parameter
-#
-# How does a client node know that the servers are ready? It can query
-# system.peers and system.local with cqlsh.
-#
-#def _WaitUntilYouSeeAllCassNodes():
-#	_Log("Wait until all Cassandra nodes are up ...")
-#	# Keep checking until you see all nodes are up -- "UN" status.
-#	while True:
-#		# Get all IPs with the tags. Hope every node sees all other nodes by this
-#		# time.
-#		num_nodes = Util.RunSubp("/home/ubuntu/work/mutants/cassandra/bin/nodetool status | grep \"^UN \" | wc -l", shell = True)
-#		num_nodes = int(num_nodes)
-#
-#		# The number of regions (_num_regions) needs to be explicitly passed. When
-#		# a data center goes over capacity, it doesn't even get to the point where
-#		# a node is tagged, making the cluster think it has less nodes.
-#
-#		#if num_nodes == _num_regions:
-#		#	break
-#		time.sleep(2)
 
 
 # Note: Some of these will be needed for batch experiments
