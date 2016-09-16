@@ -6,7 +6,7 @@ region_ami:
     us-east-1: ami-f2acdee5
 
   castnet:
-    us-east-1: ami-67a9d970
+    us-east-1: ami-99fd808e
 
   acorn-server:
     ap-northeast-1: ami-7352af12
