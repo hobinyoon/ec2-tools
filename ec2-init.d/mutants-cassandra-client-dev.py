@@ -34,8 +34,7 @@ def main(argv):
 		MountAndFormatLocalSSDs()
 		Ec2InitUtil.ChangeLogOutput()
 		CloneSrcAndBuild()
-		WaitForServerNodes()
-		WaitForCassServers()
+		WaitForServers()
 		RunYcsb()
 
 		# TODO: UploadToS3()
@@ -226,8 +225,12 @@ def _CloneAndBuildYcsb():
 			"/g' %s" % "~/work/mutants/YCSB/.git/config")
 
 
+def WaitForServers():
+	_WaitForServerNodes()
+	_WaitForCassServers()
+
 _nm_ip = None
-def WaitForServerNodes():
+def _WaitForServerNodes():
 	# Wait for all the server nodes to be up
 	server_num_nodes_expected = int(Ec2InitUtil.GetParam("server")["num_nodes"])
 	with Cons.MTnnl("Waiting for %d server node(s) with job_id %s"
@@ -268,7 +271,7 @@ def WaitForServerNodes():
 	# Note: Will need to to round-robin the server nodes when there are multiple of them.
 
 
-def WaitForCassServers():
+def _WaitForCassServers():
 	with Cons.MTnnl("Wating for %d Cassandra server(s) " % len(_nm_ip)):
 		# Query the first server node in the dict
 		server_ip = _nm_ip.itervalues().next()
@@ -279,8 +282,9 @@ def WaitForCassServers():
 		# - http://stackoverflow.com/questions/15299302/cassandra-nodetool-connection-timed-out
 
 		while True:
-			lines = Util.RunSubp("cqlsh -e \"select count(*) from system.peers\" %s || true" % server_ip
-					, print_cmd=False, print_output=False)
+			cqlsh = "%s/work/mutants/cassandra/bin/cqlsh" % os.path.expanduser("~")
+			lines = Util.RunSubp("%s -e \"select count(*) from system.peers\" %s || true" \
+					% (cqlsh, server_ip), print_cmd=False, print_output=False)
 			if lines.startswith("Connection error:"):
 				time.sleep(1)
 				sys.stdout.write(".")
@@ -309,7 +313,7 @@ def WaitForCassServers():
 
 def RunYcsb():
 	with Cons.MT("Running YCSB ..."):
-		cmd = "%s/work/mutants/YCSB/mutants/restart-dstat-run-workload.py \"%s\"" \
+		cmd = "%s/work/mutants/YCSB/mutants/restart-dstat-run-workload.py %s %s" \
 				% (os.path.expanduser("~")
 						, Ec2InitUtil.GetParam("client")["ycsb"]["workload_type"]
 						, Ec2InitUtil.GetParam("client")["ycsb"]["params"])
