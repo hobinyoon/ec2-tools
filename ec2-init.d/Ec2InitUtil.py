@@ -66,6 +66,16 @@ def InstId():
 	return _inst_id
 
 
+_pub_ip = None
+def GetPubIp():
+	global _pub_ip
+	if _pub_ip is not None:
+		return _pub_ip
+
+	_pub_ip = Util.RunSubp("curl -s http://169.254.169.254/latest/meta-data/public-ipv4", print_cmd = False, print_output = False)
+	return _pub_ip
+
+
 def SyncTime():
 	# Sync time. Not only important for Cassandra, it helps consistent analysis
 	# of logs across the server nodes and the client node.

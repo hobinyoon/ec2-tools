@@ -355,7 +355,7 @@ def EditCassConf():
 	Util.RunSubp("sed -i 's/" \
 			"^\(# \|\)broadcast_address: .*" \
 			"/broadcast_address: %s" \
-			"/g' %s" % (GetPubIp(), fn_cass_yaml))
+			"/g' %s" % (Ec2InitUtil.GetPubIp(), fn_cass_yaml))
 
 	Util.RunSubp("sed -i 's/" \
 			"^rpc_address: localhost" \
@@ -370,7 +370,7 @@ def EditCassConf():
 	Util.RunSubp("sed -i 's/" \
 			"^\(# \|\)broadcast_rpc_address: .*" \
 			"/broadcast_rpc_address: %s" \
-			"/g' %s" % (GetPubIp(), fn_cass_yaml))
+			"/g' %s" % (Ec2InitUtil.GetPubIp(), fn_cass_yaml))
 
 	# No need for a single data center deployment
 	#Util.RunSubp("sed -i 's/" \
