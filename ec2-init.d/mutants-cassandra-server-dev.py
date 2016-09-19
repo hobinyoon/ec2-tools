@@ -391,6 +391,9 @@ def EditCassConf():
 
 def RunCassandra():
 	with Cons.MT("Running Cassandra ..."):
+		# Run Cassandra as a non-daemon. The cloud-init script never ends but it's
+		# okay for now.  You can see the Cassandra log in the log file
+		# ~/work/mutants/log/..., so that's a plus.
 		cmd = "%s/work/mutants/cassandra/mutants/restart-dstat-run-cass.py" \
 				% os.path.expanduser("~")
 		Util.RunSubp(cmd)
