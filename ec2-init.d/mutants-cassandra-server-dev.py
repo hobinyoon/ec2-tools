@@ -100,7 +100,10 @@ def MountAndFormatLocalSSDs():
 			Util.RunSubp("sudo umount /dev/xvdc || true")
 			# tee has a problem of not stopping. For now, you can give up on ssd1.
 			# - https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=89224
-			#Util.RunSubp("sudo sh -c \"dd if=/dev/zero bs=1M | tee /dev/xvdb > /dev/xvdc\"", measure_time=True)
+			#
+			# "count" one less than what it says below: 81909 - 1
+			Util.RunSubp("sudo sh -c \"dd if=/dev/zero bs=1M count=81908 | tee /dev/xvdb > /dev/xvdc\"", measure_time=True)
+
 			#
 			# sudo dd if=/dev/zero bs=1M of=/dev/xvdb || true
 			#   dd: error writing '/dev/xvdb': No space left on device
@@ -108,7 +111,7 @@ def MountAndFormatLocalSSDs():
 			#   81909+0 records out
 			#   85887811584 bytes (86 GB) copied, 1394.5 s, 61.6 MB/s
 			#   1394510 ms = 23 mins
-			Util.RunSubp("sudo dd if=/dev/zero bs=1M of=/dev/xvdb || true", measure_time=True)
+			#Util.RunSubp("sudo dd if=/dev/zero bs=1M of=/dev/xvdb || true", measure_time=True)
 
 			# Test with virtual block devices
 			#   $ sudo dd if=/dev/zero of=/run/dev0-backstore bs=1M count=100
@@ -399,15 +402,22 @@ def EditCassConf():
 			"/memtable_flush_writers: %d" \
 			"/g' %s" % (multiprocessing.cpu_count(), fn_cass_yaml))
 
-	# Set to the 2nd SSD, ssd1. It might be better to leave it to the default
-	# value (the first SSD) and set the data directory, but ssd0 is already
-	# initialized and didn't want to spend more time to initialize ssd1.
-	dn_cl = "/mnt/local-ssd1/cassandra-commitlog"
+	# data_file_directories:
+	# - Double quotes in single quotes. Hope it's working.
+	dn_cl = "/mnt/local-ssd1/cassandra-data"
 	Util.MkDirs(dn_cl)
 	Util.RunSubp("sed -i 's/" \
-			"^\(# \|\)commitlog_directory: .*" \
-			"/commitlog_directory: %s" \
+			"^\(# \|\)data_file_directories: .*" \
+			"/data_file_directories: [\"%s\"]" \
 			"/g' %s" % (dn_cl.replace("/", "\/"), fn_cass_yaml))
+
+	# Let the commit logs go to the default directory, local-ssd0.
+	#dn_cl = "/mnt/local-ssd1/cassandra-commitlog"
+	#Util.MkDirs(dn_cl)
+	#Util.RunSubp("sed -i 's/" \
+	#		"^\(# \|\)commitlog_directory: .*" \
+	#		"/commitlog_directory: %s" \
+	#		"/g' %s" % (dn_cl.replace("/", "\/"), fn_cass_yaml))
 
 	# No need for a single data center deployment
 	#Util.RunSubp("sed -i 's/" \
