@@ -31,7 +31,7 @@ def main(argv):
 
 		SetHostname()
 		Ec2InitUtil.SyncTime()
-		MountAndFormatLocalSSDs()
+		PrepareBlockDevs()
 		Ec2InitUtil.ChangeLogOutput()
 		CloneSrcAndBuild()
 		EditCassConf()
@@ -64,8 +64,8 @@ def SetHostname():
 #		Util.RunSubp("sudo apt-get update && sudo apt-get install -y pssh dstat")
 
 
-def MountAndFormatLocalSSDs():
-	with Cons.MT("Mount and format block storage devices ..."):
+def PrepareBlockDevs():
+	with Cons.MT("Prepare block storage devices ..."):
 		# Make sure we are using the known machine types
 		inst_type = Util.RunSubp("curl -s http://169.254.169.254/latest/meta-data/instance-type", print_cmd = False, print_output = False)
 
@@ -102,6 +102,11 @@ def MountAndFormatLocalSSDs():
 			# - https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=89224
 			#
 			# "count" one less than what it says below: 81909 - 1
+			#
+			# 81908+0 records in
+			# 81908+0 records out
+			# 85886763008 bytes (86 GB) copied, 1631.16 s, 52.7 MB/s
+			# 1683187 ms = 28 mins
 			Util.RunSubp("sudo sh -c \"dd if=/dev/zero bs=1M count=81908 | tee /dev/xvdb > /dev/xvdc\"", measure_time=True)
 
 			#
