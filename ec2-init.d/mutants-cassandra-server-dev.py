@@ -4,6 +4,7 @@ import datetime
 import multiprocessing
 import os
 import pprint
+import re
 import sys
 import time
 import traceback
@@ -321,124 +322,155 @@ def _CloneAndBuildYcsb():
 
 _nm_ip = None
 def EditCassConf():
-	# Wait for all the server nodes to be up
-	server_num_nodes_expected = int(Ec2InitUtil.GetParam("server")["num_nodes"])
-	with Cons.MTnnl("Waiting for %d server node(s) with job_id %s"
-			% (server_num_nodes_expected, Ec2InitUtil.GetJobId())):
-		global _nm_ip
-		_nm_ip = None
-		while True:
-			_nm_ip = {}
-			r = BotoClient.Get(Ec2InitUtil.GetRegion()).describe_instances(
-					Filters=[ { "Name": "tag:job_id", "Values": [ Ec2InitUtil.GetJobId() ] }, ],
-					)
-			for r0 in r["Reservations"]:
-				for i in r0["Instances"]:
-					#Cons.P(pprint.pformat(i))
-					pub_ip = i["PublicIpAddress"]
-					for t in i["Tags"]:
-						if t["Key"] == "name":
-							name = t["Value"]
-							if name.startswith("s"):
-								_nm_ip[name] = pub_ip
-			#Cons.P(pprint.pformat(_nm_ip))
-			if len(_nm_ip) == server_num_nodes_expected:
-				break
-
-			# Log progress. By now, the log file is in the local EBS.
-			sys.stdout.write(".")
-			sys.stdout.flush()
-			time.sleep(1)
-		sys.stdout.write(" all up.\n")
-
 	fn_cass_yaml = "/home/ubuntu/work/mutants/cassandra/conf/cassandra.yaml"
-	Cons.P("Editing %s ..." % fn_cass_yaml)
+	with Cons.MT("Editing %s ..." % fn_cass_yaml):
+		# Wait for all the server nodes to be up
+		server_num_nodes_expected = int(Ec2InitUtil.GetParam("server")["num_nodes"])
+		with Cons.MTnnl("Waiting for %d server node(s) with job_id %s"
+				% (server_num_nodes_expected, Ec2InitUtil.GetJobId())):
+			global _nm_ip
+			_nm_ip = None
+			while True:
+				_nm_ip = {}
+				r = BotoClient.Get(Ec2InitUtil.GetRegion()).describe_instances(
+						Filters=[ { "Name": "tag:job_id", "Values": [ Ec2InitUtil.GetJobId() ] }, ],
+						)
+				for r0 in r["Reservations"]:
+					for i in r0["Instances"]:
+						#Cons.P(pprint.pformat(i))
+						pub_ip = i["PublicIpAddress"]
+						for t in i["Tags"]:
+							if t["Key"] == "name":
+								name = t["Value"]
+								if name.startswith("s"):
+									_nm_ip[name] = pub_ip
+				#Cons.P(pprint.pformat(_nm_ip))
+				if len(_nm_ip) == server_num_nodes_expected:
+					break
 
-	# Update cassandra cluster name if specified. No need to.
-	#if "cass_cluster_name" in _tags:
-	#	# http://stackoverflow.com/questions/7517632/how-do-i-escape-double-and-single-quotes-in-sed-bash
-	#	Util.RunSubp("sed -i 's/^cluster_name: .*/cluster_name: '\"'\"'%s'\"'\"'/g' %s"
-	#			% (_tags["cass_cluster_name"], fn_cass_yaml))
+				# Log progress. By now, the log file is in the local EBS.
+				sys.stdout.write(".")
+				sys.stdout.flush()
+				time.sleep(1)
+			sys.stdout.write(" all up.\n")
 
-	Util.RunSubp("sed -i 's/" \
-			"^          - seeds: .*" \
-			"/          - seeds: \"%s\"" \
-			"/g' %s" % (",".join(v for k, v in _nm_ip.items()), fn_cass_yaml))
+		# Update cassandra cluster name if specified. No need to.
+		#if "cass_cluster_name" in _tags:
+		#	# http://stackoverflow.com/questions/7517632/how-do-i-escape-double-and-single-quotes-in-sed-bash
+		#	Util.RunSubp("sed -i 's/^cluster_name: .*/cluster_name: '\"'\"'%s'\"'\"'/g' %s"
+		#			% (_tags["cass_cluster_name"], fn_cass_yaml))
 
-	Util.RunSubp("sed -i 's/" \
-			"^listen_address: localhost" \
-			"/#listen_address: localhost" \
-			"/g' %s" % fn_cass_yaml)
+		Util.RunSubp("sed -i 's/" \
+				"^          - seeds: .*" \
+				"/          - seeds: \"%s\"" \
+				"/g' %s" % (",".join(v for k, v in _nm_ip.items()), fn_cass_yaml))
 
-	Util.RunSubp("sed -i 's/" \
-			"^# listen_interface: eth0" \
-			"/listen_interface: eth0" \
-			"/g' %s" % fn_cass_yaml)
+		Util.RunSubp("sed -i 's/" \
+				"^listen_address: localhost" \
+				"/#listen_address: localhost" \
+				"/g' %s" % fn_cass_yaml)
 
-	# sed doesn't support "?"
-	#   http://stackoverflow.com/questions/4348166/using-with-sed
-	Util.RunSubp("sed -i 's/" \
-			"^\(# \|\)broadcast_address: .*" \
-			"/broadcast_address: %s" \
-			"/g' %s" % (Ec2InitUtil.GetPubIp(), fn_cass_yaml))
+		Util.RunSubp("sed -i 's/" \
+				"^# listen_interface: eth0" \
+				"/listen_interface: eth0" \
+				"/g' %s" % fn_cass_yaml)
 
-	Util.RunSubp("sed -i 's/" \
-			"^rpc_address: localhost" \
-			"/#rpc_address: localhost" \
-			"/g' %s" % fn_cass_yaml)
+		# sed doesn't support "?"
+		#   http://stackoverflow.com/questions/4348166/using-with-sed
+		Util.RunSubp("sed -i 's/" \
+				"^\(# \|\)broadcast_address: .*" \
+				"/broadcast_address: %s" \
+				"/g' %s" % (Ec2InitUtil.GetPubIp(), fn_cass_yaml))
 
-	Util.RunSubp("sed -i 's/" \
-			"^# rpc_interface: eth1" \
-			"/rpc_interface: eth0" \
-			"/g' %s" % fn_cass_yaml)
+		Util.RunSubp("sed -i 's/" \
+				"^rpc_address: localhost" \
+				"/#rpc_address: localhost" \
+				"/g' %s" % fn_cass_yaml)
 
-	Util.RunSubp("sed -i 's/" \
-			"^\(# \|\)broadcast_rpc_address: .*" \
-			"/broadcast_rpc_address: %s" \
-			"/g' %s" % (Ec2InitUtil.GetPubIp(), fn_cass_yaml))
+		Util.RunSubp("sed -i 's/" \
+				"^# rpc_interface: eth1" \
+				"/rpc_interface: eth0" \
+				"/g' %s" % fn_cass_yaml)
 
-	Util.RunSubp("sed -i 's/" \
-			"^\(# \|\)concurrent_compactors: .*" \
-			"/concurrent_compactors: %d" \
-			"/g' %s" % (multiprocessing.cpu_count(), fn_cass_yaml))
+		Util.RunSubp("sed -i 's/" \
+				"^\(# \|\)broadcast_rpc_address: .*" \
+				"/broadcast_rpc_address: %s" \
+				"/g' %s" % (Ec2InitUtil.GetPubIp(), fn_cass_yaml))
 
-	Util.RunSubp("sed -i 's/" \
-			"^\(# \|\)memtable_flush_writers: .*" \
-			"/memtable_flush_writers: %d" \
-			"/g' %s" % (multiprocessing.cpu_count(), fn_cass_yaml))
+		Util.RunSubp("sed -i 's/" \
+				"^\(#\|\)concurrent_compactors: .*" \
+				"/concurrent_compactors: %d" \
+				"/g' %s" % (multiprocessing.cpu_count(), fn_cass_yaml))
 
-	# data_file_directories:
-	# - Double quotes in single quotes. Hope it's working.
-	dn_cl = "/mnt/local-ssd1/cassandra-data"
-	Util.MkDirs(dn_cl)
-	Util.RunSubp("sed -i 's/" \
-			"^\(# \|\)data_file_directories: .*" \
-			"/data_file_directories: [\"%s\"]" \
-			"/g' %s" % (dn_cl.replace("/", "\/"), fn_cass_yaml))
+		Util.RunSubp("sed -i 's/" \
+				"^\(#\|\)memtable_flush_writers: .*" \
+				"/memtable_flush_writers: %d" \
+				"/g' %s" % (multiprocessing.cpu_count(), fn_cass_yaml))
 
-	# Let the commit logs go to the default directory, local-ssd0.
-	#dn_cl = "/mnt/local-ssd1/cassandra-commitlog"
-	#Util.MkDirs(dn_cl)
-	#Util.RunSubp("sed -i 's/" \
-	#		"^\(# \|\)commitlog_directory: .*" \
-	#		"/commitlog_directory: %s" \
-	#		"/g' %s" % (dn_cl.replace("/", "\/"), fn_cass_yaml))
+		_EditCassConfDataFileDir(fn_cass_yaml)
 
-	# No need for a single data center deployment
-	#Util.RunSubp("sed -i 's/" \
-	#		"^endpoint_snitch:.*" \
-	#		"/endpoint_snitch: Ec2MultiRegionSnitch" \
-	#		"/g' %s" % fn_cass_yaml)
+		#Util.RunSubp("sed -i 's/" \
+		#		"^\(# \|\)data_file_directories: .*" \
+		#		"/data_file_directories: \[\"%s\"\]" \
+		#		"/g' %s" % (dn_cl.replace("/", "\/"), fn_cass_yaml))
 
-	# Note: Edit additional mutants options specified from the job submission client
-	#for k, v in _tags.iteritems():
-	#	if k.startswith("mutants_options."):
-	#		#              0123456789012345
-	#		k1 = k[16:]
-	#		Util.RunSubp("sed -i 's/" \
-	#				"^    %s:.*" \
-	#				"/    %s: %s" \
-	#				"/g' %s" % (k1, k1, v, fn_cass_yaml))
+		# Let the commit logs go to the default directory, local-ssd0.
+		#dn_cl = "/mnt/local-ssd1/cassandra-commitlog"
+		#Util.MkDirs(dn_cl)
+		#Util.RunSubp("sed -i 's/" \
+		#		"^\(# \|\)commitlog_directory: .*" \
+		#		"/commitlog_directory: %s" \
+		#		"/g' %s" % (dn_cl.replace("/", "\/"), fn_cass_yaml))
+
+		# No need for a single data center deployment
+		#Util.RunSubp("sed -i 's/" \
+		#		"^endpoint_snitch:.*" \
+		#		"/endpoint_snitch: Ec2MultiRegionSnitch" \
+		#		"/g' %s" % fn_cass_yaml)
+
+		# Note: Edit additional mutants options specified from the job submission client
+		#for k, v in _tags.iteritems():
+		#	if k.startswith("mutants_options."):
+		#		#              0123456789012345
+		#		k1 = k[16:]
+		#		Util.RunSubp("sed -i 's/" \
+		#				"^    %s:.*" \
+		#				"/    %s: %s" \
+		#				"/g' %s" % (k1, k1, v, fn_cass_yaml))
+
+
+def _EditCassConfDataFileDir(fn):
+	with Cons.MT("Edit data_file_directories ..."):
+		# data_file_directories:
+		# - Can't get the bracket notation working. Go for the dash one.
+		dn_cl = "/mnt/local-ssd1/cassandra-data"
+		Util.MkDirs(dn_cl)
+		lines_new = []
+		with open(fn) as fo:
+			lines = fo.readlines()
+			i = 0
+			while i < len(lines):
+				line = lines[i].rstrip()
+				#Cons.P("line=[%s]" % line)
+				if re.match(r"(# )?data_file_directories:", line):
+					# Remove all following lines with -, which is a list item
+					while i < len(lines) - 1:
+						i += 1
+						line = lines[i].rstrip()
+						# #     - /var/lib/cassandra/data
+						if re.match(r"\#? +- .+", line) is None:
+							break
+					# Insert new one
+					lines_new.append("data_file_directories:")
+					lines_new.append("    - %s" % dn_cl)
+				else:
+					lines_new.append(line)
+					i += 1
+
+			# Save lines_new back to the file
+			with open(fn, "w") as fo:
+				for l in lines_new:
+					fo.write("%s\n" % l)
 
 
 def RunCassandra():
