@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import datetime
+import multiprocessing
 import os
 import pprint
 import sys
@@ -72,12 +73,11 @@ def MountAndFormatLocalSSDs():
 		# ext4 label is the same as the directory_name
 		blk_devs = {}
 
-		# All c3 types has 2 SSDs
+		# All c3 types have 2 SSDs
 		if inst_type.startswith("c3."):
 			blk_devs = {
 					"xvdb": "local-ssd0"
-					# Not needed for now
-					#, "xvdc": "local-ssd1"
+					, "xvdc": "local-ssd1"
 					, "xvdd": "ebs-gp2"
 					, "xvde": "ebs-st1"
 					, "xvdf": "ebs-sc1"
@@ -388,6 +388,26 @@ def EditCassConf():
 			"^\(# \|\)broadcast_rpc_address: .*" \
 			"/broadcast_rpc_address: %s" \
 			"/g' %s" % (Ec2InitUtil.GetPubIp(), fn_cass_yaml))
+
+	Util.RunSubp("sed -i 's/" \
+			"^\(# \|\)concurrent_compactors: .*" \
+			"/concurrent_compactors: %d" \
+			"/g' %s" % (multiprocessing.cpu_count(), fn_cass_yaml))
+
+	Util.RunSubp("sed -i 's/" \
+			"^\(# \|\)memtable_flush_writers: .*" \
+			"/memtable_flush_writers: %d" \
+			"/g' %s" % (multiprocessing.cpu_count(), fn_cass_yaml))
+
+	# Set to the 2nd SSD, ssd1. It might be better to leave it to the default
+	# value (the first SSD) and set the data directory, but ssd0 is already
+	# initialized and didn't want to spend more time to initialize ssd1.
+	dn_cl = "/mnt/local-ssd1/cassandra-commitlog"
+	Util.MkDirs(dn_cl)
+	Util.RunSubp("sed -i 's/" \
+			"^\(# \|\)commitlog_directory: .*" \
+			"/commitlog_directory: %s" \
+			"/g' %s" % (dn_cl.replace("/", "\/"), fn_cass_yaml))
 
 	# No need for a single data center deployment
 	#Util.RunSubp("sed -i 's/" \
