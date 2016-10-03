@@ -206,11 +206,11 @@ sudo -i -u ubuntu /home/ubuntu/work/mutants/ec2-tools/lib/ec2-init.py {0}
 
 		user_data = _Req.user_data.format(self.req_msg.Serialize({"job_id": self.job_id, "type": "server"}))
 		req_msg_server = self.req_msg.msg_body["server"]
-		ami_name = self.req_msg_server["ami_name"]
-		server_num_nodes = self.req_msg_server["num_nodes"]
+		ami_name = req_msg_server["ami_name"]
+		server_num_nodes = req_msg_server["num_nodes"]
 
 		block_dev_mappings = []
-		for b in self.req_msg_server["block_storage_devs"]:
+		for b in req_msg_server["block_storage_devs"]:
 			block_dev_mappings.append({
 				"DeviceName": "/dev/sd%s" % b["DeviceName"]
 				, "Ebs": {
