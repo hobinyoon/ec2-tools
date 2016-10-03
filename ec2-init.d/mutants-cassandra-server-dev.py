@@ -57,6 +57,12 @@ def SetHostname():
 		# or ranges with the new given line.
 		# - http://www.thegeekstuff.com/2009/11/unix-sed-tutorial-append-insert-replace-and-count-file-lines/?ref=driverlayer.com
 		Util.RunSubp("sudo sed -i '/^127.0.0.1 localhost.*/c\\127.0.0.1 localhost %s' /etc/hosts" % hn)
+
+		# "sudo service hostname restart" on Ubuntu 16.04
+		#   Failed to restart hostname.service: Unit hostname.service is masked.
+		#   http://forums.debian.net/viewtopic.php?f=5&t=126007
+		Util.RunSubp("sudo rm /lib/systemd/system/hostname.service || true")
+		Util.RunSubp("sudo systemctl unmask hostname.service")
 		Util.RunSubp("sudo service hostname restart")
 
 
@@ -66,7 +72,7 @@ def SetHostname():
 
 
 def PrepareBlockDevs():
-	with Cons.MT("Prepare block storage devices ..."):
+	with Cons.MT("Preparing block storage devices ..."):
 		# Make sure we are using the known machine types
 		inst_type = Util.RunSubp("curl -s http://169.254.169.254/latest/meta-data/instance-type", print_cmd = False, print_output = False)
 

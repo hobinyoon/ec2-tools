@@ -26,9 +26,9 @@ def main(argv):
 
 		SetHostname()
 		Ec2InitUtil.SyncTime()
-		MountAndFormatLocalSSDs()
+		PrepareBlockDevs()
 		Ec2InitUtil.ChangeLogOutput()
-		CloneSrcBuildRunYcsb()
+		CloneSrcAndBuild()
 
 		# This is a dev node, which is not terminated automatically.
 	except Exception as e:
@@ -62,40 +62,34 @@ def SetHostname():
 #		Util.RunSubp("sudo apt-get update && sudo apt-get install -y pssh dstat")
 
 
-def MountAndFormatLocalSSDs():
-	with Cons.MT("Mount and format block storage devices ..."):
+def PrepareBlockDevs():
+	with Cons.MT("Preparing block storage devices ..."):
 		# Make sure we are using the known machine types
 		inst_type = Util.RunSubp("curl -s http://169.254.169.254/latest/meta-data/instance-type", print_cmd = False, print_output = False)
 
 		# {dev_name: directory_name}
 		# ext4 label is the same as the directory_name
-		blk_devs = {}
-
-		# All c3 types has 2 SSDs
+		blk_devs = {"xvdb": "local-ssd0"}
+		# All c3 types have 2 SSDs
 		if inst_type.startswith("c3."):
-			blk_devs = {
-					"xvdb": "local-ssd0"
-					# Not needed for now
-					#, "xvdc": "local-ssd1"
-					}
+			# Not needed for now
+			#blk_devs["xvdc"] = "local-ssd1"
+			pass
 		elif inst_type in ["r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge"
 				, "i2.xlarge"]:
-			blk_devs = {
-					"xvdb": "local-ssd0"
-					}
+			pass
 		else:
 			raise RuntimeError("Unexpected instance type %s" % inst_type)
+		if os.path.exists("/dev/xvdd"):
+			blk_devs["xvdd"] = "ebs-gp2"
+		if os.path.exists("/dev/xvde"):
+			blk_devs["xvde"] = "ebs-st1"
+		if os.path.exists("/dev/xvdf"):
+			blk_devs["xvdf"] = "ebs-sc1"
 
 		# Init local SSDs
 		# - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/disk-performance.html
-		# - Client node probably won't need this -- YCSB won't get bottlenecked by
-		#   the local SSD --, but it needs to wait for the server, it might as well
-		#   do something.
 		# - Skip for Castnet, in which local SSD speed doesn't matter.
-		#if inst_type.startswith("c3."):
-		#	Util.RunSubp("sudo umount /dev/xvdb || true")
-		#	Util.RunSubp("sudo umount /dev/xvdc || true")
-		#	Util.RunSubp("sudo dd if=/dev/zero bs=1M of=/dev/xvdb || true", measure_time=True)
 
 		Util.RunSubp("sudo umount /mnt || true")
 		for dev_name, dir_name in blk_devs.iteritems():
@@ -130,7 +124,7 @@ def MountAndFormatLocalSSDs():
 			Util.RunSubp("sudo chown -R ubuntu /mnt/%s" % dir_name)
 
 
-def CloneSrcBuildRunYcsb():
+def CloneSrcAndBuild():
 	with Cons.MT("Cloning src and build ..."):
 		# Git clone
 		Util.RunSubp("rm -rf /mnt/local-ssd0/castnet")
