@@ -58,35 +58,59 @@ def _GetQ():
 
 def Job_MutantsDevS1C1():
 	_EnqReq(
-			{"region": "us-east-1"
+			{
+				# The server and the client are in the same AZ.
+				"region": "us-east-1"
+
 				# Client uses the same instance type as the server, cause it generates
 				# all requests for a cluster of servers.
 				#
 				#            vCPU ECU Memory (GiB) Instance Storage (GB) Linux/UNIX Usage
-				# c3.2xlarge    8  28           15            2 x 80 SSD  $0.42  per Hour
-				# r3.xlarge     4  13         30.5            1 x 80 SSD  $0.333 per Hour.
+				# c3.2xlarge    8  28           15            2 x 80 SSD  $0.42  per Hour.
+				# r3.xlarge     4  13         30.5            1 x 80 SSD  $0.333 per Hour
 				#
 				# r3 types don't need local SSD initialization. However, even after
 				# init, it's still slower(86 MB/s) than c3 (372 MB/s).
 				#
+				# c3.2xlarge is a better fit for Cassandra with the YCSB "read latest"
+				# workload. The workload is quite computation heavy.
 				, "spot_req": {"inst_type": "c3.2xlarge", "max_price": 2.0}
-				#, "spot_req": {"inst_type": "r3.xlarge", "max_price": 2.0}
 
 				, "server": {
-					# We'll see if the AMIs need to be separated by DBs.
+					# Note: We'll see if the AMIs need to be separated by DBs. May want
+					# to upgrade to 16.04.
 					"init_script": "mutants-cassandra-server-dev"
 					, "ami_name": "mutants-cassandra-server"
 					, "num_nodes": "1"
+
+					# The storage cost is higher than the VM spot price, which is around
+					# $0.1/hour. You will want to be careful.
+					#                             $/GB-month     $/hour
+					#                                 size_in_GB
+					#   EBS gp2                        0.100  80 0.0110
+					#   EBS st1 (throughput optimized) 0.045 500 0.0308
+					#   EBS sc1 (cold HDD)             0.025 500 0.0171
+					#
+					#   calc "0.100 *  80 / (365.25/12*24)"
+					#   calc "0.045 * 500 / (365.25/12*24)"
+					#   calc "0.025 * 500 / (365.25/12*24)"
+					#
+					# For st1 and sc1, 500 GB is the minimum size.
+					, "block_storage_devs": [
+						{"VolumeType": "gp2", "VolumeSize": 80, "DeviceName": "d"}
+						#, {"VolumeType": "st1", "VolumeSize": 500, "DeviceName": "e"}
+						#, {"VolumeType": "sc1", "VolumeSize": 500, "DeviceName": "f"}
+						]
 					}
 
-				# The client needs to be in the same AZ.
 				, "client" : {
 					"init_script": "mutants-cassandra-client-dev"
 					, "ami_name": "mutants-client"
 					, "ycsb": {
 						"workload_type": "d"
 						, "params" : "-p recordcount=1000" \
-								" -p operationcount=50000000" \
+								#" -p operationcount=50000000" \
+								" -p operationcount=100000" \
 								" -p status.interval=1" \
 								" -p fieldcount=10" \
 								" -p fieldlength=2000" \

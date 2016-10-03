@@ -72,27 +72,21 @@ def PrepareBlockDevs():
 
 		# {dev_name: directory_name}
 		# ext4 label is the same as the directory_name
-		blk_devs = {}
-
+		blk_devs = {"xvdb": "local-ssd0"}
 		# All c3 types have 2 SSDs
 		if inst_type.startswith("c3."):
-			blk_devs = {
-					"xvdb": "local-ssd0"
-					, "xvdc": "local-ssd1"
-					, "xvdd": "ebs-gp2"
-					, "xvde": "ebs-st1"
-					, "xvdf": "ebs-sc1"
-					}
+			blk_devs["xvdc"] = "local-ssd1"
 		elif inst_type in ["r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge"
 				, "i2.xlarge"]:
-			blk_devs = {
-					"xvdb": "local-ssd0"
-					, "xvdd": "ebs-gp2"
-					, "xvde": "ebs-st1"
-					, "xvdf": "ebs-sc1"
-					}
+			pass
 		else:
 			raise RuntimeError("Unexpected instance type %s" % inst_type)
+		if os.path.exists("/dev/xvdd"):
+			blk_devs["xvdd"] = "ebs-gp2"
+		if os.path.exists("/dev/xvde"):
+			blk_devs["xvde"] = "ebs-st1"
+		if os.path.exists("/dev/xvdf"):
+			blk_devs["xvdf"] = "ebs-sc1"
 
 		# Init local SSDs
 		# - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/disk-performance.html

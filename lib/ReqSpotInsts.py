@@ -205,8 +205,20 @@ sudo -i -u ubuntu /home/ubuntu/work/mutants/ec2-tools/lib/ec2-init.py {0}
 			return
 
 		user_data = _Req.user_data.format(self.req_msg.Serialize({"job_id": self.job_id, "type": "server"}))
-		ami_name = self.req_msg.msg_body["server"]["ami_name"]
-		server_num_nodes = self.req_msg.msg_body["server"]["num_nodes"]
+		req_msg_server = self.req_msg.msg_body["server"]
+		ami_name = self.req_msg_server["ami_name"]
+		server_num_nodes = self.req_msg_server["num_nodes"]
+
+		block_dev_mappings = []
+		for b in self.req_msg_server["block_storage_devs"]:
+			block_dev_mappings.append({
+				"DeviceName": "/dev/sd%s" % b["DeviceName"]
+				, "Ebs": {
+					"VolumeSize": b["VolumeSize"]
+					, "DeleteOnTermination": True
+					, "VolumeType": b["VolumeType"]
+					}
+				})
 
 		ls = {'ImageId': GetLatestAmiId(self.region, ami_name)
 				#, 'KeyName': 'string'
@@ -216,45 +228,7 @@ sudo -i -u ubuntu /home/ubuntu/work/mutants/ec2-tools/lib/ec2-init.py {0}
 				, 'InstanceType': self.inst_type
 				, 'EbsOptimized': True
 				, 'Placement': {'AvailabilityZone': self.az}
-				# You need to be careful. The storage cost is higher than the VM spot
-				# price, which is around $0.1/hour.
-				#                             $/GB-month     $/hour
-				#                                 size_in_GB
-				#   EBS gp2                        0.100  80 0.0110
-				#   EBS st1 (throughput optimized) 0.045 500 0.0308
-				#   EBS sc1 (cold HDD)             0.025 500 0.0171
-				#
-				#   calc "0.100 *  80 / (365.25/12*24)"
-				#   calc "0.045 * 500 / (365.25/12*24)"
-				#   calc "0.025 * 500 / (365.25/12*24)"
-				, 'BlockDeviceMappings': [
-					{
-						'DeviceName': '/dev/sdd',
-						'Ebs': {
-							'VolumeSize': 80,
-							'DeleteOnTermination': True,
-							'VolumeType': 'gp2'
-							},
-						}
-					# TODO: may want to specify these 2 selectively to reduce cost
-					, {
-						'DeviceName': '/dev/sde',
-						'Ebs': {
-							# sc1 and st1 should have a minimum size of 500 GB
-							'VolumeSize': 500,
-							'DeleteOnTermination': True,
-							'VolumeType': 'st1'
-							},
-						}
-					, {
-						'DeviceName': '/dev/sdf',
-						'Ebs': {
-							'VolumeSize': 500,
-							'DeleteOnTermination': True,
-							'VolumeType': 'sc1',
-							},
-						}
-					],
+				, 'BlockDeviceMappings': block_dev_mappings
 				}
 
 		while True:
