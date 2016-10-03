@@ -192,53 +192,6 @@ def PrepareBlockDevs():
 # Cassandra data and log goes under its own directory.
 
 
-# You don't need dstat logging here. The Cassandra restart script will restart dstat.
-#def StartDstatLogging():
-#	dn_log_ssd0 = "/mnt/local-ssd0/mutants/log"
-#	dn_log = "/home/ubuntu/work/mutants/log"
-#
-#	Util.RunSubp("mkdir -p %s" % dn_log_ssd0)
-#
-#	# Create a symlink
-#	Util.RunSubp("rm %s || true" % dn_log)
-#	Util.RunSubp("ln -s %s %s" % (dn_log_ssd0, dn_log))
-#
-#	dn_log_dstat = "%s/%s/dstat" % (dn_log, Ec2InitUtil.GetJobId())
-#	Util.RunSubp("mkdir -p %s" % dn_log_dstat)
-#
-#	# dstat parameters
-#	#   -d, --disk
-#	#     enable disk stats (read, write)
-#	#   -r, --io
-#	#     enable I/O request stats (read, write requests)
-#	#   -t, --time
-#	#     enable time/date output
-#	#   -tdrf
-#	#
-#	# xvdb  80G /mnt/local-ssd0
-#	# xvdd  80G /mnt/ebs-gp2
-#	# xvde 500G /mnt/ebs-st1
-#	# xvdf 500G /mnt/ebs-sc1
-#	Util.RunDaemon("dstat -cdn -C total -D xvda,xvdb,xvdd,xvde,xvdf -r --output %s/%s.csv"
-#			% (dn_log_dstat, datetime.datetime.now().strftime("%y%m%d-%H%M%S")))
-#
-# How do you know the average IOPS of a disk from the system boot? dtat shows
-# it only once in the beginning.
-# - cat /sys/block/xvda/stat
-#   - It has the number of read IOs and write IOs processed
-#   - https://www.kernel.org/doc/Documentation/block/stat.txt
-#
-# File system IOs can be inflated or deflated (e.g., from read caching or write
-# buffering) when translated to block device IOs.
-#
-# IOPS vs TPS (transactions per second)? T is a single IO command written to
-# the raw disk. IOPS includes the requests absorbed by caches. At which
-# level? Probably at the block device level.
-#   dstat --disk-tps
-#     per disk transactions per second (tps) stats
-#   http://serverfault.com/questions/558523/relation-between-disk-iops-and-sar-tps
-
-
 def CloneSrcAndBuild():
 	with Cons.MT("Cloning src and build ..."):
 		# Make parent

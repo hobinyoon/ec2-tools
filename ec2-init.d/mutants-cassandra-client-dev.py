@@ -31,7 +31,7 @@ def main(argv):
 
 		SetHostname()
 		Ec2InitUtil.SyncTime()
-		MountAndFormatLocalSSDs()
+		PrepareBlockDevs()
 		Ec2InitUtil.ChangeLogOutput()
 		CloneSrcAndBuild()
 		WaitForServers()
@@ -59,6 +59,12 @@ def SetHostname():
 		# or ranges with the new given line.
 		# - http://www.thegeekstuff.com/2009/11/unix-sed-tutorial-append-insert-replace-and-count-file-lines/?ref=driverlayer.com
 		Util.RunSubp("sudo sed -i '/^127.0.0.1 localhost.*/c\\127.0.0.1 localhost %s' /etc/hosts" % hn)
+
+		# "sudo service hostname restart" on Ubuntu 16.04
+		#   Failed to restart hostname.service: Unit hostname.service is masked.
+		#   http://forums.debian.net/viewtopic.php?f=5&t=126007
+		Util.RunSubp("sudo rm /lib/systemd/system/hostname.service || true")
+		Util.RunSubp("sudo systemctl unmask hostname.service")
 		Util.RunSubp("sudo service hostname restart")
 
 
@@ -67,8 +73,8 @@ def SetHostname():
 #		Util.RunSubp("sudo apt-get update && sudo apt-get install -y pssh dstat")
 
 
-def MountAndFormatLocalSSDs():
-	with Cons.MT("Mount and format block storage devices ..."):
+def PrepareBlockDevs():
+	with Cons.MT("Preparing block storage devices ..."):
 		# Make sure we are using the known machine types
 		inst_type = Util.RunSubp("curl -s http://169.254.169.254/latest/meta-data/instance-type", print_cmd = False, print_output = False)
 
@@ -133,33 +139,6 @@ def MountAndFormatLocalSSDs():
 			# -o discard for TRIM
 			Util.RunSubp("sudo mount -t ext4 -o discard /dev/%s /mnt/%s" % (dev_name, dir_name))
 			Util.RunSubp("sudo chown -R ubuntu /mnt/%s" % dir_name)
-
-
-# You don't need dstat logging here. The YCSB script will restart it.
-# You don't need dstat logging here. The YCSB script will restart dstat.
-#def StartDstatLogging():
-#	dn_log_ssd0 = "/mnt/local-ssd0/mutants/log"
-#	dn_log = "/home/ubuntu/work/mutants/log"
-#
-#	Util.RunSubp("mkdir -p %s" % dn_log_ssd0)
-#
-#	# Create a symlink
-#	Util.RunSubp("rm %s || true" % dn_log)
-#	Util.RunSubp("ln -s %s %s" % (dn_log_ssd0, dn_log))
-#
-#	dn_log_dstat = "%s/%s/dstat" % (dn_log, Ec2InitUtil.GetJobId())
-#	Util.RunSubp("mkdir -p %s" % dn_log_dstat)
-#
-#	# dstat parameters
-#	#   -d, --disk
-#	#     enable disk stats (read, write)
-#	#   -r, --io
-#	#     enable I/O request stats (read, write requests)
-#	#   -t, --time
-#	#     enable time/date output
-#	#   -tdrf
-#	Util.RunDaemon("dstat -cdn -C total -D xvda,xvdb -r --output %s/%s.csv"
-#			% (dn_log_dstat, datetime.datetime.now().strftime("%y%m%d-%H%M%S")))
 
 
 def CloneSrcAndBuild():
