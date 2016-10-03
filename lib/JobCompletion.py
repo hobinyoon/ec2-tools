@@ -96,7 +96,7 @@ def _Poll(jc_q):
 
 
 class Msg:
-	msg_body_jc = "mutants-job-completion"
+	msg_body_jc = "mutant-job-completion"
 
 	def __init__(self, msg):
 		if msg.body != Msg.msg_body_jc:
@@ -118,7 +118,7 @@ class Msg:
 
 
 def _GetQ():
-	sqs_q_name_jc = "mutants-jobs-completed"
+	sqs_q_name_jc = "mutant-jobs-completed"
 
 	# Get the queue. Create one if not exists.
 	try:
@@ -127,7 +127,7 @@ def _GetQ():
 				# QueueOwnerAWSAccountId='string'
 				)
 		#Cons.P(pprint.pformat(vars(queue), indent=2))
-		#{ '_url': 'https://queue.amazonaws.com/998754746880/mutants-exps',
+		#{ '_url': 'https://queue.amazonaws.com/998754746880/mutant-exps',
 		#		  'meta': ResourceMeta('sqs', identifiers=[u'url'])}
 		return queue
 	except botocore.exceptions.ClientError as e:

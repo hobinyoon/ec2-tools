@@ -34,7 +34,7 @@ def PollBackground(jr_q):
 	_thr_poll.start()
 
 
-sqs_q_name = "mutants-jobs-requested"
+sqs_q_name = "mutant-jobs-requested"
 
 def DeleteQ():
 	_Init()
@@ -85,7 +85,7 @@ def Process(msg, job_controller_gm_q):
 	# cluster_name for Cassandra. It's ok for multiple clusters to have the
 	# same name as long as they don't see each other through the gossip
 	# protocol.  It's even okay to use the default one: test-cluster
-	#msg.attrs["cass_cluster_name"] = "mutants"
+	#msg.attrs["cass_cluster_name"] = "mutant"
 
 	# Request a Cassandra cluster and a client node
 	ReqSpotInsts.Req(
@@ -198,7 +198,7 @@ def _GetQ():
 				# QueueOwnerAWSAccountId='string'
 				)
 		#Cons.P(pprint.pformat(vars(queue), indent=2))
-		#{ '_url': 'https://queue.amazonaws.com/998754746880/mutants-exps',
+		#{ '_url': 'https://queue.amazonaws.com/998754746880/mutant-exps',
 		#		  'meta': ResourceMeta('sqs', identifiers=[u'url'])}
 		return queue
 	except botocore.exceptions.ClientError as e:

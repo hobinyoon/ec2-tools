@@ -51,12 +51,12 @@ def _GetQ():
 				# QueueOwnerAWSAccountId='string'
 				)
 		#Cons.P(pprint.pformat(vars(_sqs_q), indent=2))
-		#{ '_url': 'https://queue.amazonaws.com/998754746880/mutants-exps',
+		#{ '_url': 'https://queue.amazonaws.com/998754746880/mutant-exps',
 		#		  'meta': ResourceMeta('sqs', identifiers=[u'url'])}
 	return _sqs_q
 
 
-def Job_MutantsDevS1C1():
+def Job_MutantDevS1C1():
 	_EnqReq(
 			{
 				# The server and the client are in the same AZ.
@@ -79,8 +79,8 @@ def Job_MutantsDevS1C1():
 				, "server": {
 					# Note: We'll see if the AMIs need to be separated by DBs. May want
 					# to upgrade to 16.04.
-					"init_script": "mutants-cassandra-server-dev"
-					, "ami_name": "mutants-cassandra-server"
+					"init_script": "mutant-cassandra-server-dev"
+					, "ami_name": "mutant-cassandra-server"
 					, "num_nodes": "1"
 
 					# The storage cost is higher than the VM spot price, which is around
@@ -104,8 +104,8 @@ def Job_MutantsDevS1C1():
 					}
 
 				, "client" : {
-					"init_script": "mutants-cassandra-client-dev"
-					, "ami_name": "mutants-client"
+					"init_script": "mutant-cassandra-client-dev"
+					, "ami_name": "mutant-client"
 					, "ycsb": {
 						"workload_type": "d"
 						, "params" : "-p recordcount=1000" \
@@ -122,7 +122,7 @@ def Job_MutantsDevS1C1():
 			)
 
 
-def Job_MutantsDevS1():
+def Job_MutantDevS1():
 	_EnqReq(
 			{"region": "us-east-1"
 				# Client uses the same instance type as the server, cause it generates
@@ -132,8 +132,8 @@ def Job_MutantsDevS1():
 
 				, "server": {
 					# We'll see if the AMIs need to be separated by DBs.
-					"init_script": "mutants-cassandra-server-dev"
-					, "ami_name": "mutants-cassandra-server"
+					"init_script": "mutant-cassandra-server-dev"
+					, "ami_name": "mutant-cassandra-server"
 					, "num_nodes": "1"
 					}
 				}
@@ -170,8 +170,8 @@ def _EnqReq(attrs):
 		attrs = attrs.copy()
 		Cons.P(pprint.pformat(attrs))
 
-		# A Mutants job req has too many attributes - well over 10. Pack then with
-		# a json format in the message body, not in the attributes.
+		# A Mutant job req has too many attributes - well over 10. Pack then with a
+		# json format in the message body, not in the attributes.
 		#
 		# "You can attach up to ten attributes to each of your messages. The entire
 		# message, including the body plus all names, types, and values, can be as

@@ -100,9 +100,9 @@ def main(argv):
 
 	# Edit the git source repository for easy development.
 	Util.RunSubp("sed -i 's/" \
-			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mutants-ec2-tools.git" \
-			"/\\turl = git@github.com:hobinyoon\/mutants-ec2-tools.git" \
-			"/g' %s" % "~/work/mutants/ec2-tools/.git/config")
+			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mutant-ec2-tools.git" \
+			"/\\turl = git@github.com:hobinyoon\/mutant-ec2-tools.git" \
+			"/g' %s" % "~/work/mutant/ec2-tools/.git/config")
 
 	_LogInstInfo()
 	_RunInitScript(argv[1])

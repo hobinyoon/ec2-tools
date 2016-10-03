@@ -182,11 +182,11 @@ def PrepareBlockDevs():
 #
 # ~
 # `-- work
-#     `-- mutants
+#     `-- mutant
 #         |-- ec2-tools
-#         |-- ycsb      (symlink to /mnt/local-ssd0/mutants/ycsb)
-#         |-- cassandra (symlink to /mnt/local-ssd0/mutants/cassandra)
-#         `-- log       (symlink to /mnt/local-ssd1/mutants/log)
+#         |-- ycsb      (symlink to /mnt/local-ssd0/mutant/ycsb)
+#         |-- cassandra (symlink to /mnt/local-ssd0/mutant/cassandra)
+#         `-- log       (symlink to /mnt/local-ssd1/mutant/log)
 #             `-- system
 #
 # Cassandra data and log goes under its own directory.
@@ -195,7 +195,7 @@ def PrepareBlockDevs():
 def CloneSrcAndBuild():
 	with Cons.MT("Cloning src and build ..."):
 		# Make parent
-		Util.RunSubp("mkdir -p /mnt/local-ssd0/mutants")
+		Util.RunSubp("mkdir -p /mnt/local-ssd0/mutant")
 
 		_CloneAndBuildCassandra()
 		_CloneCassandra2x()
@@ -205,77 +205,77 @@ def CloneSrcAndBuild():
 
 def _CloneAndBuildCassandra():
 	# Git clone
-	Util.RunSubp("rm -rf /mnt/local-ssd0/mutants/cassandra")
-	Util.RunSubp("git clone https://github.com/hobinyoon/mutants-cassandra-3.9 /mnt/local-ssd0/mutants/cassandra")
+	Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/cassandra")
+	Util.RunSubp("git clone https://github.com/hobinyoon/mutant-cassandra-3.9 /mnt/local-ssd0/mutant/cassandra")
 
 	# Symlink
-	Util.RunSubp("rm -rf /home/ubuntu/work/mutants/cassandra")
-	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/cassandra /home/ubuntu/work/mutants/cassandra")
+	Util.RunSubp("rm -rf /home/ubuntu/work/mutant/cassandra")
+	Util.RunSubp("ln -s /mnt/local-ssd0/mutant/cassandra /home/ubuntu/work/mutant/cassandra")
 
 	# Build
-	Util.RunSubp("cd /home/ubuntu/work/mutants/cassandra && ant")
+	Util.RunSubp("cd /home/ubuntu/work/mutant/cassandra && ant")
 
 	# Edit the git source repository for easy development.
 	Util.RunSubp("sed -i 's/" \
-			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mutants-cassandra-3.9" \
-			"/\\turl = git@github.com:hobinyoon\/mutants-cassandra-3.9.git" \
-			"/g' %s" % "~/work/mutants/cassandra/.git/config")
+			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mutant-cassandra-3.9" \
+			"/\\turl = git@github.com:hobinyoon\/mutant-cassandra-3.9.git" \
+			"/g' %s" % "~/work/mutant/cassandra/.git/config")
 
 
 def _CloneCassandra2x():
 	# Git clone
-	Util.RunSubp("rm -rf /mnt/local-ssd0/mutants/mutants-cassandra-2.2.3")
-	Util.RunSubp("git clone https://github.com/hobinyoon/mutants-cassandra-2.2.3 /mnt/local-ssd0/mutants/mutants-cassandra-2.2.3")
+	Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/mutant-cassandra-2.2.3")
+	Util.RunSubp("git clone https://github.com/hobinyoon/mutant-cassandra-2.2.3 /mnt/local-ssd0/mutant/mutant-cassandra-2.2.3")
 
 	# Symlink
-	Util.RunSubp("rm -rf /home/ubuntu/work/mutants/cassandra-2.2.3")
-	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/mutants-cassandra-2.2.3 /home/ubuntu/work/mutants/cassandra-2.2.3")
+	Util.RunSubp("rm -rf /home/ubuntu/work/mutant/cassandra-2.2.3")
+	Util.RunSubp("ln -s /mnt/local-ssd0/mutant/mutant-cassandra-2.2.3 /home/ubuntu/work/mutant/cassandra-2.2.3")
 
 	# Edit the git source repository for easy development.
 	Util.RunSubp("sed -i 's/" \
-			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mutants-cassandra-2.2.3" \
-			"/\\turl = git@github.com:hobinyoon\/mutants-cassandra-2.2.3.git" \
-			"/g' %s" % "~/work/mutants/cassandra-2.2.3/.git/config")
+			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mutant-cassandra-2.2.3" \
+			"/\\turl = git@github.com:hobinyoon\/mutant-cassandra-2.2.3.git" \
+			"/g' %s" % "~/work/mutant/cassandra-2.2.3/.git/config")
 
 
 def _CloneMisc():
 	# Git clone
-	Util.RunSubp("rm -rf /mnt/local-ssd0/mutants/misc")
-	Util.RunSubp("git clone https://github.com/hobinyoon/mutants-misc /mnt/local-ssd0/mutants/misc")
+	Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/misc")
+	Util.RunSubp("git clone https://github.com/hobinyoon/mutant-misc /mnt/local-ssd0/mutant/misc")
 
 	# Symlink
-	Util.RunSubp("rm -rf /home/ubuntu/work/mutants/misc")
-	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/misc /home/ubuntu/work/mutants/misc")
+	Util.RunSubp("rm -rf /home/ubuntu/work/mutant/misc")
+	Util.RunSubp("ln -s /mnt/local-ssd0/mutant/misc /home/ubuntu/work/mutant/misc")
 
 	# Edit the git source repository for easy development.
 	Util.RunSubp("sed -i 's/" \
-			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mutants-misc" \
-			"/\\turl = git@github.com:hobinyoon\/mutants-misc.git" \
-			"/g' %s" % "~/work/mutants/misc/.git/config")
+			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mutant-misc" \
+			"/\\turl = git@github.com:hobinyoon\/mutant-misc.git" \
+			"/g' %s" % "~/work/mutant/misc/.git/config")
 
 
 def _CloneAndBuildYcsb():
 	# Git clone
-	Util.RunSubp("rm -rf /mnt/local-ssd0/mutants/YCSB")
-	Util.RunSubp("git clone https://github.com/hobinyoon/YCSB /mnt/local-ssd0/mutants/YCSB")
+	Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/YCSB")
+	Util.RunSubp("git clone https://github.com/hobinyoon/YCSB /mnt/local-ssd0/mutant/YCSB")
 
 	# Symlink
-	Util.RunSubp("rm -rf /home/ubuntu/work/mutants/YCSB")
-	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/YCSB /home/ubuntu/work/mutants/YCSB")
+	Util.RunSubp("rm -rf /home/ubuntu/work/mutant/YCSB")
+	Util.RunSubp("ln -s /mnt/local-ssd0/mutant/YCSB /home/ubuntu/work/mutant/YCSB")
 
 	# Build
-	Util.RunSubp("cd /home/ubuntu/work/mutants/YCSB && mvn -pl com.yahoo.ycsb:cassandra-binding -am clean package -DskipTests >/dev/null 2>&1")
+	Util.RunSubp("cd /home/ubuntu/work/mutant/YCSB && mvn -pl com.yahoo.ycsb:cassandra-binding -am clean package -DskipTests >/dev/null 2>&1")
 
 	# Edit the git source repository for easy development.
 	Util.RunSubp("sed -i 's/" \
 			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/YCSB" \
 			"/\\turl = git@github.com:hobinyoon\/YCSB.git" \
-			"/g' %s" % "~/work/mutants/YCSB/.git/config")
+			"/g' %s" % "~/work/mutant/YCSB/.git/config")
 
 
 _nm_ip = None
 def EditCassConf():
-	fn_cass_yaml = "/home/ubuntu/work/mutants/cassandra/conf/cassandra.yaml"
+	fn_cass_yaml = "/home/ubuntu/work/mutant/cassandra/conf/cassandra.yaml"
 	with Cons.MT("Editing %s ..." % fn_cass_yaml):
 		# Wait for all the server nodes to be up
 		server_num_nodes_expected = int(Ec2InitUtil.GetParam("server")["num_nodes"])
@@ -381,9 +381,9 @@ def EditCassConf():
 		#		"/endpoint_snitch: Ec2MultiRegionSnitch" \
 		#		"/g' %s" % fn_cass_yaml)
 
-		# Note: Edit additional mutants options specified from the job submission client
+		# Note: Edit additional mutant options specified from the job submission client
 		#for k, v in _tags.iteritems():
-		#	if k.startswith("mutants_options."):
+		#	if k.startswith("mutant_options."):
 		#		#              0123456789012345
 		#		k1 = k[16:]
 		#		Util.RunSubp("sed -i 's/" \
@@ -430,8 +430,8 @@ def RunCassandra():
 	with Cons.MT("Running Cassandra ..."):
 		# Run Cassandra as a non-daemon. The cloud-init script never ends but it's
 		# okay for now.  You can see the Cassandra log in the log file
-		# ~/work/mutants/log/..., so that's a plus.
-		cmd = "%s/work/mutants/cassandra/mutants/restart-dstat-run-cass.py" \
+		# ~/work/mutant/log/..., so that's a plus.
+		cmd = "%s/work/mutant/cassandra/mutant/restart-dstat-run-cass.py" \
 				% os.path.expanduser("~")
 		Util.RunSubp(cmd)
 

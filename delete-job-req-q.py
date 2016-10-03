@@ -37,7 +37,7 @@ def GetQ():
 					# QueueOwnerAWSAccountId='string'
 					)
 			#Cons.P(pprint.pformat(vars(queue), indent=2))
-			#{ '_url': 'https://queue.amazonaws.com/998754746880/mutants-exps',
+			#{ '_url': 'https://queue.amazonaws.com/998754746880/mutant-exps',
 			#		  'meta': ResourceMeta('sqs', identifiers=[u'url'])}
 			return queue
 		except botocore.exceptions.ClientError as e:

@@ -144,7 +144,7 @@ def PrepareBlockDevs():
 def CloneSrcAndBuild():
 	with Cons.MT("Cloning src and build ..."):
 		# Make parent
-		Util.RunSubp("mkdir -p /mnt/local-ssd0/mutants")
+		Util.RunSubp("mkdir -p /mnt/local-ssd0/mutant")
 
 		_CloneAndBuildCassandra()
 		_CloneMisc()
@@ -153,56 +153,56 @@ def CloneSrcAndBuild():
 
 def _CloneAndBuildCassandra():
 	# Git clone
-	Util.RunSubp("rm -rf /mnt/local-ssd0/mutants/cassandra")
-	Util.RunSubp("git clone https://github.com/hobinyoon/mutants-cassandra-3.9 /mnt/local-ssd0/mutants/cassandra")
+	Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/cassandra")
+	Util.RunSubp("git clone https://github.com/hobinyoon/mutant-cassandra-3.9 /mnt/local-ssd0/mutant/cassandra")
 
 	# Symlink
-	Util.RunSubp("rm -rf /home/ubuntu/work/mutants/cassandra")
-	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/cassandra /home/ubuntu/work/mutants/cassandra")
+	Util.RunSubp("rm -rf /home/ubuntu/work/mutant/cassandra")
+	Util.RunSubp("ln -s /mnt/local-ssd0/mutant/cassandra /home/ubuntu/work/mutant/cassandra")
 
 	# Build. For cassandra-cli
-	Util.RunSubp("cd /home/ubuntu/work/mutants/cassandra && ant")
+	Util.RunSubp("cd /home/ubuntu/work/mutant/cassandra && ant")
 
 	# Edit the git source repository for easy development.
 	Util.RunSubp("sed -i 's/" \
-			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mutants-cassandra-3.9" \
-			"/\\turl = git@github.com:hobinyoon\/mutants-cassandra-3.9.git" \
-			"/g' %s" % "~/work/mutants/cassandra/.git/config")
+			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mutant-cassandra-3.9" \
+			"/\\turl = git@github.com:hobinyoon\/mutant-cassandra-3.9.git" \
+			"/g' %s" % "~/work/mutant/cassandra/.git/config")
 
 
 def _CloneMisc():
 	# Git clone
-	Util.RunSubp("rm -rf /mnt/local-ssd0/mutants/misc")
-	Util.RunSubp("git clone https://github.com/hobinyoon/mutants-misc /mnt/local-ssd0/mutants/misc")
+	Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/misc")
+	Util.RunSubp("git clone https://github.com/hobinyoon/mutant-misc /mnt/local-ssd0/mutant/misc")
 
 	# Symlink
-	Util.RunSubp("rm -rf /home/ubuntu/work/mutants/misc")
-	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/misc /home/ubuntu/work/mutants/misc")
+	Util.RunSubp("rm -rf /home/ubuntu/work/mutant/misc")
+	Util.RunSubp("ln -s /mnt/local-ssd0/mutant/misc /home/ubuntu/work/mutant/misc")
 
 	# Edit the git source repository for easy development.
 	Util.RunSubp("sed -i 's/" \
-			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mutants-misc" \
-			"/\\turl = git@github.com:hobinyoon\/mutants-misc.git" \
-			"/g' %s" % "~/work/mutants/misc/.git/config")
+			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mutant-misc" \
+			"/\\turl = git@github.com:hobinyoon\/mutant-misc.git" \
+			"/g' %s" % "~/work/mutant/misc/.git/config")
 
 
 def _CloneAndBuildYcsb():
 	# Git clone
-	Util.RunSubp("rm -rf /mnt/local-ssd0/mutants/YCSB")
-	Util.RunSubp("git clone https://github.com/hobinyoon/YCSB /mnt/local-ssd0/mutants/YCSB")
+	Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/YCSB")
+	Util.RunSubp("git clone https://github.com/hobinyoon/YCSB /mnt/local-ssd0/mutant/YCSB")
 
 	# Symlink
-	Util.RunSubp("rm -rf /home/ubuntu/work/mutants/YCSB")
-	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/YCSB /home/ubuntu/work/mutants/YCSB")
+	Util.RunSubp("rm -rf /home/ubuntu/work/mutant/YCSB")
+	Util.RunSubp("ln -s /mnt/local-ssd0/mutant/YCSB /home/ubuntu/work/mutant/YCSB")
 
 	# Build
-	Util.RunSubp("cd /home/ubuntu/work/mutants/YCSB && mvn -pl com.yahoo.ycsb:cassandra-binding -am clean package -DskipTests >/dev/null 2>&1")
+	Util.RunSubp("cd /home/ubuntu/work/mutant/YCSB && mvn -pl com.yahoo.ycsb:cassandra-binding -am clean package -DskipTests >/dev/null 2>&1")
 
 	# Edit the git source repository for easy development.
 	Util.RunSubp("sed -i 's/" \
 			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/YCSB" \
 			"/\\turl = git@github.com:hobinyoon\/YCSB.git" \
-			"/g' %s" % "~/work/mutants/YCSB/.git/config")
+			"/g' %s" % "~/work/mutant/YCSB/.git/config")
 
 
 def WaitForServers():
@@ -241,10 +241,10 @@ def _WaitForServerNodes():
 			time.sleep(1)
 		sys.stdout.write(" all up.\n")
 
-	Util.RunSubp("mkdir -p /mnt/local-ssd0/mutants/.run", )
-	Util.RunSubp("rm /home/ubuntu/work/mutants/.run || true")
-	Util.RunSubp("ln -s /mnt/local-ssd0/mutants/.run /home/ubuntu/work/mutants/.run")
-	fn = "/home/ubuntu/work/mutants/.run/cassandra-server-ips"
+	Util.RunSubp("mkdir -p /mnt/local-ssd0/mutant/.run", )
+	Util.RunSubp("rm /home/ubuntu/work/mutant/.run || true")
+	Util.RunSubp("ln -s /mnt/local-ssd0/mutant/.run /home/ubuntu/work/mutant/.run")
+	fn = "/home/ubuntu/work/mutant/.run/cassandra-server-ips"
 	with open(fn, "w") as fo:
 		fo.write(" ".join(v for k, v in _nm_ip.iteritems()))
 	Cons.P("Created %s %d" % (fn, os.path.getsize(fn)))
@@ -262,7 +262,7 @@ def _WaitForCassServers():
 		# - http://stackoverflow.com/questions/15299302/cassandra-nodetool-connection-timed-out
 
 		while True:
-			cqlsh = "%s/work/mutants/cassandra/bin/cqlsh" % os.path.expanduser("~")
+			cqlsh = "%s/work/mutant/cassandra/bin/cqlsh" % os.path.expanduser("~")
 			lines = Util.RunSubp("%s -e \"select count(*) from system.peers\" %s || true" \
 					% (cqlsh, server_ip), print_cmd=False, print_output=False)
 			if lines.startswith("Connection error:"):
@@ -293,7 +293,7 @@ def _WaitForCassServers():
 
 def RunYcsb():
 	with Cons.MT("Running YCSB ..."):
-		cmd = "%s/work/mutants/YCSB/mutants/restart-dstat-run-workload.py %s %s" \
+		cmd = "%s/work/mutant/YCSB/mutant/restart-dstat-run-workload.py %s %s" \
 				% (os.path.expanduser("~")
 						, Ec2InitUtil.GetParam("client")["ycsb"]["workload_type"]
 						, Ec2InitUtil.GetParam("client")["ycsb"]["params"])

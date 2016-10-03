@@ -6,11 +6,11 @@ import Util
 
 
 def Sync():
-	dn = "%s/work/mutants/exp-log" % os.path.expanduser("~")
+	dn = "%s/work/mutant/exp-log" % os.path.expanduser("~")
 	Util.MkDirs(dn)
 
 	# http://docs.aws.amazon.com/cli/latest/reference/s3/sync.html
-	Util.RunSubp("aws s3 sync s3://mutants-exp-log %s" % dn)
+	Util.RunSubp("aws s3 sync s3://mutant-exp-log %s" % dn)
 
 
 def Test():

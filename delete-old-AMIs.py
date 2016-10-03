@@ -24,8 +24,8 @@ import Ec2Region
 _AMI_prefix_to_keep_at_most_2 = [
 		"acorn-server"
 		, "castnet"
-		, "mutants-server"
-		, "mutants-client"]
+		, "mutant-server"
+		, "mutant-client"]
 
 def main(argv):
 	iscs = []

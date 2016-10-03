@@ -25,15 +25,14 @@ module.
 	- https://github.com/pypa/pip/issues/3165
 
 Clean up logs before making a new AMI. You may want to put something in /var/log
-	$ sudo rm -rf /var/log/mutants \
-	  && sudo rm /var/log/cloud-init*
+	$ sudo rm /var/log/cloud-init*
 
 $ sudo -H pip install boto3 PyYAML
 
 
 Done
 ----
-For Mutants, ClusterMonitor can be modified as JobMonitor. Each job consists of
+For Mutant, ClusterMonitor can be modified as JobMonitor. Each job consists of
 servers and clients (most probably a single client will do).
 
 When a cluster doesn't start in 6 mins, kill the instances. Spot requests don't

@@ -91,8 +91,8 @@ def SyncTime():
 
 def ChangeLogOutput():
 	with Cons.MT("Changing log output the local SSD ..."):
-		dn_log_ssd0 = "/mnt/local-ssd0/mutants/log"
-		dn_log = "/home/ubuntu/work/mutants/log"
+		dn_log_ssd0 = "/mnt/local-ssd0/mutant/log"
+		dn_log = "/home/ubuntu/work/mutant/log"
 
 		Util.RunSubp("mkdir -p %s" % dn_log_ssd0)
 

@@ -30,17 +30,17 @@ def MayClean(jobid_inst):
 	# jobid_inst: { job_id: {region: Inst} }
 
 	for job_id, v in jobid_inst.iteritems():
-		# Only clean mutants-server nodes. Dev nodes are not cleaned automatically.
-		is_mutants_server = False
+		# Only clean mutant-server nodes. Dev nodes are not cleaned automatically.
+		is_mutant_server = False
 		for region, i in v.iteritems():
 			if "init_script" in i.tags:
-				if i.tags["init_script"] == "mutants-server":
-					is_mutants_server = True
+				if i.tags["init_script"] == "mutant-server":
+					is_mutant_server = True
 					break
-		if not is_mutants_server:
+		if not is_mutant_server:
 			continue
 
-		# Note: modify below for mutants
+		# Note: modify below for mutant
 
 		# Count only "running" instances.
 		running_insts = []
