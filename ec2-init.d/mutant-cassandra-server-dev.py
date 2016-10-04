@@ -233,13 +233,19 @@ def _CloneAndBuildMongoDb():
 	Util.RunSubp("ln -s /mnt/local-ssd0/mutant/mongo /home/ubuntu/work/mutant/mongo")
 
 	# Build. May take a long time.
-	Util.RunSubp("cd /home/ubuntu/work/mutant/mongo && scons mongod -j8", measure_time=True)
+	Util.RunSubp("cd /home/ubuntu/work/mutant/mongo && scons mongod -j16", measure_time=True)
 
 	# Edit the git source repository for easy development.
 	Util.RunSubp("sed -i 's/" \
 			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mongo" \
 			"/\\turl = git@github.com:hobinyoon\/mongo.git" \
 			"/g' %s" % "~/work/mutant/mongo/.git/config")
+
+	# Create data and system log directories
+	dn = "/mnt/local-ssd1/mongo-data"
+	Util.RunSubp("sudo mkdir -p %s && sudo chown ubuntu %s" % (dn, dn))
+	dn = "/mnt/local-ssd0/mongo-log"
+	Util.RunSubp("sudo mkdir -p %s && sudo chown ubuntu %s" % (dn, dn))
 
 
 def _CloneCassandra2x():
@@ -385,7 +391,7 @@ def EditCassConf():
 		#Util.RunSubp("sed -i 's/" \
 		#		"^\(# \|\)data_file_directories: .*" \
 		#		"/data_file_directories: \[\"%s\"\]" \
-		#		"/g' %s" % (dn_cl.replace("/", "\/"), fn_cass_yaml))
+		#		"/g' %s" % (dn.replace("/", "\/"), fn_cass_yaml))
 
 		# Let the commit logs go to the default directory, local-ssd0.
 		#dn_cl = "/mnt/local-ssd1/cassandra-commitlog"
@@ -416,8 +422,8 @@ def _EditCassConfDataFileDir(fn):
 	with Cons.MT("Edit data_file_directories ..."):
 		# data_file_directories:
 		# - Can't get the bracket notation working. Go for the dash one.
-		dn_cl = "/mnt/local-ssd1/cassandra-data"
-		Util.MkDirs(dn_cl)
+		dn = "/mnt/local-ssd1/cassandra-data"
+		Util.MkDirs(dn)
 		lines_new = []
 		with open(fn) as fo:
 			lines = fo.readlines()
@@ -435,7 +441,7 @@ def _EditCassConfDataFileDir(fn):
 							break
 					# Insert new one
 					lines_new.append("data_file_directories:")
-					lines_new.append("    - %s" % dn_cl)
+					lines_new.append("    - %s" % dn)
 				else:
 					lines_new.append(line)
 					i += 1
