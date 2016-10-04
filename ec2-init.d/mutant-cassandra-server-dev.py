@@ -198,6 +198,7 @@ def CloneSrcAndBuild():
 		Util.RunSubp("mkdir -p /mnt/local-ssd0/mutant")
 
 		_CloneAndBuildCassandra()
+		_CloneAndBuildMongoDb()
 		_CloneCassandra2x()
 		_CloneMisc()
 		_CloneAndBuildYcsb()
@@ -220,6 +221,25 @@ def _CloneAndBuildCassandra():
 			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mutant-cassandra-3.9" \
 			"/\\turl = git@github.com:hobinyoon\/mutant-cassandra-3.9.git" \
 			"/g' %s" % "~/work/mutant/cassandra/.git/config")
+
+
+def _CloneAndBuildMongoDb():
+	# Git clone
+	Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/mongo")
+	Util.RunSubp("git clone https://github.com/hobinyoon/mongo /mnt/local-ssd0/mutant/mongo")
+
+	# Symlink
+	Util.RunSubp("rm -rf /home/ubuntu/work/mutant/mongo")
+	Util.RunSubp("ln -s /mnt/local-ssd0/mutant/mongo /home/ubuntu/work/mutant/mongo")
+
+	# Build. May take a long time.
+	Util.RunSubp("cd /home/ubuntu/work/mutant/mongo && scons mongod -j8", measure_time=True)
+
+	# Edit the git source repository for easy development.
+	Util.RunSubp("sed -i 's/" \
+			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mongo" \
+			"/\\turl = git@github.com:hobinyoon\/mongo.git" \
+			"/g' %s" % "~/work/mutant/mongo/.git/config")
 
 
 def _CloneCassandra2x():
