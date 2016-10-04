@@ -198,7 +198,8 @@ def CloneSrcAndBuild():
 		Util.RunSubp("mkdir -p /mnt/local-ssd0/mutant")
 
 		_CloneAndBuildCassandra()
-		_CloneAndBuildMongoDb()
+		#_CloneAndBuildMongoDb()
+		_CloneAndBuildRocksDb()
 		_CloneCassandra2x()
 		_CloneMisc()
 		_CloneAndBuildYcsb()
@@ -245,6 +246,29 @@ def _CloneAndBuildMongoDb():
 	dn = "/mnt/local-ssd1/mongo-data"
 	Util.RunSubp("sudo mkdir -p %s && sudo chown ubuntu %s" % (dn, dn))
 	dn = "/mnt/local-ssd0/mongo-log"
+	Util.RunSubp("sudo mkdir -p %s && sudo chown ubuntu %s" % (dn, dn))
+
+
+def _CloneAndBuildRocksDb():
+	# Git clone
+	Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/rocksdb")
+	Util.RunSubp("git clone https://github.com/hobinyoon/rocksdb /mnt/local-ssd0/mutant/rocksdb")
+
+	# Symlink
+	Util.RunSubp("rm -rf /home/ubuntu/work/mutant/rocksdb")
+	Util.RunSubp("ln -s /mnt/local-ssd0/mutant/rocksdb /home/ubuntu/work/mutant/rocksdb")
+
+	# Build. May take a long time.
+	Util.RunSubp("cd /home/ubuntu/work/mutant/rocksdb && scons mongod -j16", measure_time=True)
+
+	# Edit the git source repository for easy development.
+	Util.RunSubp("sed -i 's/" \
+			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/rocksdb" \
+			"/\\turl = git@github.com:hobinyoon\/rocksdb.git" \
+			"/g' %s" % "~/work/mutant/rocksdb/.git/config")
+
+	# Create data directory
+	dn = "/mnt/local-ssd1/rocksdb-data"
 	Util.RunSubp("sudo mkdir -p %s && sudo chown ubuntu %s" % (dn, dn))
 
 
