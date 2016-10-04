@@ -157,7 +157,7 @@ sudo -i -u ubuntu /home/ubuntu/work/mutant/ec2-tools/lib/ec2-init.py {0}
 
 		ls = {'ImageId': GetLatestAmiId(self.region, ami_name)
 				#, 'KeyName': 'string'
-				, 'SecurityGroups': ["cass-server"]
+				, 'SecurityGroups': ["mutant-server"]
 				, 'UserData': base64.b64encode(user_data)
 				#, 'AddressingType': 'string'
 				, 'InstanceType': self.inst_type
@@ -222,7 +222,7 @@ sudo -i -u ubuntu /home/ubuntu/work/mutant/ec2-tools/lib/ec2-init.py {0}
 
 		ls = {'ImageId': GetLatestAmiId(self.region, ami_name)
 				#, 'KeyName': 'string'
-				, 'SecurityGroups': ["cass-server"]
+				, 'SecurityGroups': ["mutant-server"]
 				, 'UserData': base64.b64encode(user_data)
 				#, 'AddressingType': 'string'
 				, 'InstanceType': self.inst_type
