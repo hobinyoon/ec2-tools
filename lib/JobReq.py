@@ -15,7 +15,7 @@ import Util
 
 sys.path.insert(0, "..")
 import ReqSpotInsts
-import RunAndMonitorEc2Inst
+import LaunchOnDemandInsts
 
 import JobContOutput
 
@@ -87,14 +87,20 @@ def Process(msg, job_controller_gm_q):
 	# protocol.  It's even okay to use the default one: test-cluster
 	#msg.attrs["cass_cluster_name"] = "mutant"
 
-	# Request a Cassandra cluster and a client node
-	ReqSpotInsts.Req(
-			job_id = job_id
-			, msg = msg
-			, job_controller_gm_q = job_controller_gm_q
-			)
-	# On-demand instances are too expensive.
-	#RunAndMonitorEc2Inst.Run()
+	if "spot_req" in msg.msg_body:
+		# Request spot instances
+		ReqSpotInsts.Req(
+				job_id = job_id
+				, msg = msg
+				, job_controller_gm_q = job_controller_gm_q
+				)
+	else:
+		# Launch On-demand instances
+		LaunchOnDemandInsts.Launch(
+				job_id = job_id
+				, msg = msg
+				, job_controller_gm_q = job_controller_gm_q
+				)
 
 	# Sleep a bit to make each request has unique job_id
 	time.sleep(1.1)
