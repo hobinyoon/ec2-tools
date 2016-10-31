@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import boto3
 import datetime
 import multiprocessing
 import os
@@ -476,13 +477,43 @@ def _EditCassConfDataFileDir(fn):
 
 
 def RunCassandra():
+	PrePopulateCassData()
+
 	with Cons.MT("Running Cassandra ..."):
-		# Run Cassandra as a non-daemon. The cloud-init script never ends but it's
-		# okay, for now. You can see the Cassandra log in the log file
-		# ~/work/mutant/log/..., so that's a plus.
+		# Run Cassandra as a non-daemon. Easier for debugging. The cloud-init
+		# script never ends but it's okay, for now. You can see the Cassandra log
+		# in the log file ~/work/mutant/log/..., so that's a plus.
 		cmd = "%s/work/mutant/cassandra/mutant/restart-dstat-run-cass.py" \
 				% os.path.expanduser("~")
 		Util.RunSubp(cmd)
+
+
+def PrePopulateCassData():
+	if not bool(Ec2InitUtil.GetParam("server")["pre_populate_db"]):
+		return
+
+	with Cons.MT("Pre-popularing Cassandra data ..."):
+		dn = "/mnt/local-ssd0/mutant/cassandra/data-stored"
+		Util.MkDirs(dn)
+		fn_tar = "%s/cass-data-data.tar" % dn
+
+		if os.path.isfile(fn_tar):
+			return
+
+		s3 = boto3.client("s3", region_name = "us-east-1")
+		with Cons.MT("downloading ..."):
+			# 20GB data
+			s3.download_file("mutants-cass-data-snapshots"
+					, "cass-data-data.tar"
+					, fn_tar)
+
+		# Un-tar
+		Util.RunSubp("rm -rf /mnt/local-ssd1/cassandra-data")
+		Util.RunSubp("tar xvf /mnt/local-ssd0/mutant/cassandra/data-stored/cass-data-data.tar -C /mnt/local-ssd1/"
+				, measure_time=True)
+
+		# It doesn't make much sense to compress the tar file since the records are
+		# randomly generated.
 
 
 if __name__ == "__main__":
