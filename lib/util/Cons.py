@@ -123,6 +123,11 @@ def sys_stdout_write(msg):
 		_stdout.flush()
 
 
+def ClearLine():
+	sys.stdout.write("\033[1K") # Clear to the beginning of line
+	sys.stdout.write("\033[1G") # Move the cursor to the beginning of the column
+
+
 class Indent:
 	def __init__(self, msg):
 		self.msg = msg
