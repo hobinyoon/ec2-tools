@@ -112,7 +112,7 @@ def Job_MutantDevS1C1():
 				#
 				# c3.2xlarge is a better fit for Cassandra with the YCSB "read latest"
 				# workload. The workload is quite computation heavy.
-				, "spot_req": {"inst_type": "c3.2xlarge", "max_price": 2.0}
+				, "spot_req": {"inst_type": "c3.2xlarge", "max_price": 3.0}
 
 				, "server": {
 					# Note: We'll see if the AMIs need to be separated by DBs. May want
