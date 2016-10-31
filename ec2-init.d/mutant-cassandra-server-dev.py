@@ -198,7 +198,6 @@ def CloneSrcAndBuild():
 		Util.RunSubp("mkdir -p /mnt/local-ssd0/mutant")
 
 		_CloneAndBuildCassandra()
-		#_CloneAndBuildMongoDb()
 		_CloneAndBuildRocksDb()
 		_CloneCassandra2x()
 		_CloneMisc()
@@ -224,29 +223,29 @@ def _CloneAndBuildCassandra():
 			"/g' %s" % "~/work/mutant/cassandra/.git/config")
 
 
-def _CloneAndBuildMongoDb():
-	# Git clone
-	Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/mongo")
-	Util.RunSubp("git clone https://github.com/hobinyoon/mongo /mnt/local-ssd0/mutant/mongo")
-
-	# Symlink
-	Util.RunSubp("rm -rf /home/ubuntu/work/mutant/mongo")
-	Util.RunSubp("ln -s /mnt/local-ssd0/mutant/mongo /home/ubuntu/work/mutant/mongo")
-
-	# Build. May take a long time.
-	Util.RunSubp("cd /home/ubuntu/work/mutant/mongo && scons mongod -j16", measure_time=True)
-
-	# Edit the git source repository for easy development.
-	Util.RunSubp("sed -i 's/" \
-			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mongo" \
-			"/\\turl = git@github.com:hobinyoon\/mongo.git" \
-			"/g' %s" % "~/work/mutant/mongo/.git/config")
-
-	# Create data and system log directories
-	dn = "/mnt/local-ssd1/mongo-data"
-	Util.RunSubp("sudo mkdir -p %s && sudo chown ubuntu %s" % (dn, dn))
-	dn = "/mnt/local-ssd0/mongo-log"
-	Util.RunSubp("sudo mkdir -p %s && sudo chown ubuntu %s" % (dn, dn))
+#def _CloneAndBuildMongoDb():
+#	# Git clone
+#	Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/mongo")
+#	Util.RunSubp("git clone https://github.com/hobinyoon/mongo /mnt/local-ssd0/mutant/mongo")
+#
+#	# Symlink
+#	Util.RunSubp("rm -rf /home/ubuntu/work/mutant/mongo")
+#	Util.RunSubp("ln -s /mnt/local-ssd0/mutant/mongo /home/ubuntu/work/mutant/mongo")
+#
+#	# Build. May take a long time.
+#	Util.RunSubp("cd /home/ubuntu/work/mutant/mongo && scons mongod -j16", measure_time=True)
+#
+#	# Edit the git source repository for easy development.
+#	Util.RunSubp("sed -i 's/" \
+#			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mongo" \
+#			"/\\turl = git@github.com:hobinyoon\/mongo.git" \
+#			"/g' %s" % "~/work/mutant/mongo/.git/config")
+#
+#	# Create data and system log directories
+#	dn = "/mnt/local-ssd1/mongo-data"
+#	Util.RunSubp("sudo mkdir -p %s && sudo chown ubuntu %s" % (dn, dn))
+#	dn = "/mnt/local-ssd0/mongo-log"
+#	Util.RunSubp("sudo mkdir -p %s && sudo chown ubuntu %s" % (dn, dn))
 
 
 def _CloneAndBuildRocksDb():
@@ -258,8 +257,8 @@ def _CloneAndBuildRocksDb():
 	Util.RunSubp("rm -rf /home/ubuntu/work/mutant/rocksdb")
 	Util.RunSubp("ln -s /mnt/local-ssd0/mutant/rocksdb /home/ubuntu/work/mutant/rocksdb")
 
-	# Build. May take a long time.
-	Util.RunSubp("cd /home/ubuntu/work/mutant/rocksdb && scons mongod -j16", measure_time=True)
+	# Build. Takes about 5 mins
+	Util.RunSubp("cd /home/ubuntu/work/mutant/rocksdb && make -j16", measure_time=True)
 
 	# Edit the git source repository for easy development.
 	Util.RunSubp("sed -i 's/" \
@@ -479,7 +478,7 @@ def _EditCassConfDataFileDir(fn):
 def RunCassandra():
 	with Cons.MT("Running Cassandra ..."):
 		# Run Cassandra as a non-daemon. The cloud-init script never ends but it's
-		# okay for now.  You can see the Cassandra log in the log file
+		# okay, for now. You can see the Cassandra log in the log file
 		# ~/work/mutant/log/..., so that's a plus.
 		cmd = "%s/work/mutant/cassandra/mutant/restart-dstat-run-cass.py" \
 				% os.path.expanduser("~")
