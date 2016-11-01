@@ -250,6 +250,9 @@ def _CloneAndBuildCassandra():
 
 
 def _CloneAndBuildRocksDb():
+	if "rocks_db" not in Ec2InitUtil.GetParam("server"):
+		return
+
 	# Git clone
 	Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/rocksdb")
 	Util.RunSubp("git clone https://github.com/hobinyoon/rocksdb /mnt/local-ssd0/mutant/rocksdb")
