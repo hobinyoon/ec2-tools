@@ -293,7 +293,7 @@ def _WaitForCassServers():
 
 def RunYcsb():
 	with Cons.MT("Running YCSB ..."):
-		cmd = "%s/work/mutant/YCSB/mutant/restart-dstat-run-workload.py %s %s" \
+		cmd = "%s/work/mutant/YCSB/mutant/cassandra/restart-dstat-run-workload.py %s %s" \
 				% (os.path.expanduser("~")
 						, Ec2InitUtil.GetParam("client")["ycsb"]["workload_type"]
 						, Ec2InitUtil.GetParam("client")["ycsb"]["params"])
