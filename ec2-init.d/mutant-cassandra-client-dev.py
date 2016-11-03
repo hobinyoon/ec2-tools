@@ -37,7 +37,7 @@ def main(argv):
 		WaitForServers()
 		RunYcsb()
 
-		# TODO: UploadToS3()
+		GetLogsFromServersAndUpoadToS3()
 
 		# The client node requests termination of the job with the job_id. Job
 		# controller gets the requests and terminates all node with the job_id.
@@ -298,6 +298,20 @@ def RunYcsb():
 						, Ec2InitUtil.GetParam("client")["ycsb"]["workload_type"]
 						, Ec2InitUtil.GetParam("client")["ycsb"]["params"])
 		Util.RunSubp(cmd)
+
+
+def GetLogsFromServersAndUpoadToS3():
+	fn_module = "%s/rsync-server-logs-to-client-upload-to-S3.py" % os.path.dirname(__file__)
+
+	mod_name,file_ext = os.path.splitext(os.path.split(fn_module)[-1])
+	if file_ext.lower() != '.py':
+		raise RuntimeError("Unexpected file_ext: %s" % file_ext)
+	try:
+		py_mod = imp.load_source(mod_name, fn_module)
+	except IOError as e:
+		_Log("fn_module: %s" % fn_module)
+		raise e
+	getattr(py_mod, "main")([fn_module, params_encoded, tags_json])
 
 
 def MayTerminateCluster():
