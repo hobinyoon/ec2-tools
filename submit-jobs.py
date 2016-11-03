@@ -57,44 +57,6 @@ def _GetQ():
 
 
 def Job_MutantDevS1C1():
-	# Workload A: Update heavy workload
-	ycsb_workload_a = {
-			"workload_type": "a"
-			, "params" : "-p recordcount=1000" \
-					" -p operationcount=1" \
-					" -p status.interval=1" \
-					" -p fieldcount=10" \
-					" -p fieldlength=100"
-					# TODO: add threads and target later
-					}
-
-	# Workload D: Read latest workload
-	ycsb_workload_d = {
-			"workload_type": "d"
-			, "params" : "-p recordcount=1000" \
-					" -p operationcount=400000000" \
-					" -p status.interval=1" \
-					" -p fieldcount=10" \
-					" -p fieldlength=100" \
-					" -threads 100" \
-					" -target 17000"
-					}
-
-	# Workload E: Short ranges
-	ycsb_workload_e = {
-			"workload_type": "e"
-			, "params" : "-p recordcount=1000" \
-					" -p operationcount=400000000" \
-					" -p status.interval=1" \
-					" -p fieldcount=10" \
-					" -p fieldlength=100" \
-					" -threads 100" \
-					# Just taking a guess. It scans "zipian(100) with 0.99" records at
-					# once. Not sure tell how many it is on average. Let's say 3.  Then
-					# roughly 17000 / 3 = 5400, ignoring the write overhead.
-					" -target 5000"
-					}
-
 	_EnqReq(
 			{
 				# The server and the client are in the same AZ.
@@ -157,11 +119,69 @@ def Job_MutantDevS1C1():
 				, "client" : {
 					"init_script": "mutant-cassandra-client-dev"
 					, "ami_name": "mutant-client"
-					, "ycsb": ycsb_workload_a
+					, "ycsb": _YcsbWorkloadA()
 					, "terminate_cluster_when_done": "false"
 					}
 				}
 			)
+
+
+def _YcsbWorkloadA():
+	# Workload A: Update heavy workload
+	ycsb_params = ""
+	ycsb_params += " -threads 100"
+
+	# The server can handle >6000 IOPS when unthrottled
+	# With 4000, server CPU load < 20%
+	#
+	# CPU up to 47%, when running multiple compactions.
+	ycsb_params += " -target 4000"
+
+	ycsb_params += " -p recordcount=20000000"
+
+	# 100000 : 27736.0 ms = ? : 1 h
+	#ycsb_params += " -p operationcount=100000"
+	# 12979521 operations to run for 1 hour.
+	ycsb_params += " -p operationcount=12979521"
+
+	ycsb_params += " -p status.interval=1"
+	ycsb_params += " -p fieldcount=10"
+	ycsb_params += " -p fieldlength=100"
+	return {
+			"workload_type": "a"
+			, "params" : ycsb_params
+			}
+
+
+def _YcsbWorkloadD():
+	# Workload D: Read latest workload
+	return {
+			"workload_type": "d"
+			, "params" : "-p recordcount=1000" \
+					" -p operationcount=400000000" \
+					" -p status.interval=1" \
+					" -p fieldcount=10" \
+					" -p fieldlength=100" \
+					" -threads 100" \
+					" -target 17000"
+					}
+
+
+def _YcsbWorkloadE():
+	# Workload E: Short ranges
+	return {
+			"workload_type": "e"
+			, "params" : "-p recordcount=1000" \
+					" -p operationcount=400000000" \
+					" -p status.interval=1" \
+					" -p fieldcount=10" \
+					" -p fieldlength=100" \
+					" -threads 100" \
+					# Just taking a guess. It scans "zipian(100) with 0.99" records at
+					# once. Not sure tell how many it is on average. Let's say 3.  Then
+					# roughly 17000 / 3 = 5400, ignoring the write overhead.
+					" -target 5000"
+					}
 
 
 def Job_MutantDevS1():
