@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import datetime
+import imp
 import os
 import pprint
 import re
@@ -311,7 +312,7 @@ def GetLogsFromServersAndUpoadToS3():
 	except IOError as e:
 		_Log("fn_module: %s" % fn_module)
 		raise e
-	getattr(py_mod, "main")([fn_module, params_encoded, tags_json])
+	getattr(py_mod, "main")([fn_module])
 
 
 def MayTerminateCluster():
