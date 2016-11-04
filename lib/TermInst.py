@@ -143,19 +143,6 @@ class _TermInst:
 				))
 
 			
-	elif argv[1] == "job_id:None":
-		job_id_none_requested = True
-	else:
-		tags = {}
-		for i in range(1, len(argv)):
-			t = argv[i].split(":")
-			if len(t) != 2:
-				raise RuntimeError("Unexpected. argv[%d]=[%s]" % (i, argv[i]))
-			tags[t[0]] = t[1]
-
-	TermInst.ByTags(tags, job_id_none_requested)
-
-
 def ByJobIdTermSelfLast():
 	job_id = Ec2Util.JobId()
 	Cons.P("Terminating running instances of job_id %s" % job_id)
