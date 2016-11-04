@@ -11,6 +11,8 @@ import TermInst
 
 
 def main(argv):
+	Test()
+
 	if len(argv) < 2:
 		print "Usage: %s (all or tags in key:value pairs)" % argv[0]
 		sys.exit(1)
@@ -30,6 +32,11 @@ def main(argv):
 			tags[t[0]] = t[1]
 
 	TermInst.ByTags(tags, job_id_none_requested)
+
+
+def Test():
+	TermInst.ByJobIdTermSelfLast()
+	sys.exit(0)
 
 
 if __name__ == "__main__":

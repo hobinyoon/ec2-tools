@@ -56,16 +56,6 @@ def GetRegion():
 	return _region
 
 
-_inst_id = None
-def InstId():
-	global _inst_id
-	if _inst_id is not None:
-		return _inst_id
-
-	_inst_id  = Util.RunSubp("curl -s http://169.254.169.254/latest/meta-data/instance-id", print_cmd = False, print_output = False)
-	return _inst_id
-
-
 _pub_ip = None
 def GetPubIp():
 	global _pub_ip

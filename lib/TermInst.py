@@ -9,20 +9,18 @@ import Util
 
 import BotoClient
 import Ec2Region
+import Ec2Util
 
 
 def ByTags(tags, job_id_none_requested):
-	threads = []
-
-	sys.stdout.write("Terminating running instances:")
-	sys.stdout.flush()
-
-	_TermInst.Init()
+	Cons.P("Terminating running instances:")
+	_TermInst.Init(job_id_none_requested)
 
 	tis = []
 	for r in Ec2Region.All():
 		tis.append(_TermInst(r, tags))
 
+	threads = []
 	for ti in tis:
 		t = threading.Thread(target=ti.Run)
 		t.daemon = True
@@ -39,11 +37,14 @@ def ByTags(tags, job_id_none_requested):
 
 
 class _TermInst:
+	_job_id_none_requested = False
 	_regions_processed = 0
 	_regions_processed_lock = threading.Lock()
 
 	@staticmethod
-	def Init():
+	def Init(job_id_none_requested=False, term_by_job_id_self_last=False):
+		_TermInst._job_id_none_requested = job_id_none_requested
+		_TermInst._term_by_job_id_self_last = term_by_job_id_self_last
 		_TermInst._regions_processed = 0
 
 	def __init__(self, region, tags):
@@ -67,6 +68,8 @@ class _TermInst:
 			response = BotoClient.Get(self.region).describe_instances(Filters = filters)
 		#Cons.P(pprint.pformat(response, indent=2, width=100))
 
+		inst_ids_to_term_self = []
+		inst_ids_to_term_others = []
 		self.inst_ids_to_term = []
 
 		for r in response["Reservations"]:
@@ -74,19 +77,38 @@ class _TermInst:
 				if "Name" in r1["State"]:
 					# Terminate only running intances
 					if r1["State"]["Name"] == "running":
+						inst_id = r1["InstanceId"]
 						if job_id_none_requested:
 							#Cons.P(pprint.pformat(r1))
 							if "Tags" not in r1:
-								self.inst_ids_to_term.append(r1["InstanceId"])
+								if inst_id == Ec2Util.InstId():
+									inst_ids_to_term_self.append(inst_id)
+								else:
+									inst_ids_to_term_others.append(inst_id)
+								self.inst_ids_to_term.append(inst_id)
 						else:
-							self.inst_ids_to_term.append(r1["InstanceId"])
+							if inst_id == Ec2Util.InstId():
+								inst_ids_to_term_self.append(inst_id)
+							else:
+								inst_ids_to_term_others.append(inst_id)
+							self.inst_ids_to_term.append(inst_id)
 
 		#Cons.P("There are %d instances to terminate." % len(self.inst_ids_to_term))
 		#Cons.P(pprint.pformat(self.inst_ids_to_term, indent=2, width=100))
 
-		if len(self.inst_ids_to_term) > 0:
-			self.term_inst_response = BotoClient.Get(self.region).terminate_instances(InstanceIds = self.inst_ids_to_term)
+		if _TermInst._term_by_job_id_self_last:
+			if len(inst_ids_to_term_others) > 0:
+				self.term_inst_response = BotoClient.Get(self.region).terminate_instances(InstanceIds = inst_ids_to_term_others)
 
+			if len(inst_ids_to_term_self) > 0:
+				# Wait for others to terminate
+				time.sleep(5)
+				self.term_inst_response = BotoClient.Get(self.region).terminate_instances(InstanceIds = inst_ids_to_term_self)
+		else:
+			if len(self.inst_ids_to_term) > 0:
+				self.term_inst_response = BotoClient.Get(self.region).terminate_instances(InstanceIds = self.inst_ids_to_term)
+
+		# Note: below is not even reached when you kill yourself
 		with _TermInst._regions_processed_lock:
 			_TermInst._regions_processed += 1
 			if _TermInst._regions_processed == 1:
@@ -121,5 +143,43 @@ class _TermInst:
 				))
 
 			
+	elif argv[1] == "job_id:None":
+		job_id_none_requested = True
+	else:
+		tags = {}
+		for i in range(1, len(argv)):
+			t = argv[i].split(":")
+			if len(t) != 2:
+				raise RuntimeError("Unexpected. argv[%d]=[%s]" % (i, argv[i]))
+			tags[t[0]] = t[1]
+
+	TermInst.ByTags(tags, job_id_none_requested)
+
+
 def ByJobIdTermSelfLast():
-	raise RuntimeError("Implement")
+	job_id = Ec2Util.JobId()
+	Cons.P("Terminating running instances of job_id %s" % job_id)
+
+	_TermInst.Init(term_by_job_id_self_last=True)
+
+	tags = {}
+	tags["job_id"] = job_id
+
+	tis = []
+	for r in Ec2Region.All():
+		tis.append(_TermInst(r, tags))
+
+	threads = []
+	for ti in tis:
+		t = threading.Thread(target=ti.Run)
+		t.daemon = True
+		threads.append(t)
+		t.start()
+
+	for t in threads:
+		t.join()
+	print ""
+
+	Cons.P(_TermInst.Header())
+	for ti in tis:
+		ti.PrintResult()
