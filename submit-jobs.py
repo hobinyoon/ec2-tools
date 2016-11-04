@@ -113,10 +113,10 @@ def Job_MutantDevS1C1():
 					# Pre-populate DB using the 50GB one stored in S3.
 					, "pre_populate_db": "true"
 
-					# TODO: may want to group by cassandra or rocks_db
-
-					, "rocks_db": {
-						}
+					# Note: may want to group cassandra parameters too
+					#
+					#, "rocks_db": {
+					#	}
 					}
 
 				, "client" : {
