@@ -78,7 +78,7 @@ class _TermInst:
 					# Terminate only running intances
 					if r1["State"]["Name"] == "running":
 						inst_id = r1["InstanceId"]
-						if job_id_none_requested:
+						if _TermInst._job_id_none_requested:
 							#Cons.P(pprint.pformat(r1))
 							if "Tags" not in r1:
 								if inst_id == Ec2Util.InstId():
