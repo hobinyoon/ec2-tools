@@ -19,9 +19,6 @@ def ByTags(tags, job_id_none_requested):
 
 	_TermInst.Init()
 
-	@staticmethod
-	def Init():
-
 	tis = []
 	for r in Ec2Region.All():
 		tis.append(_TermInst(r, tags))
@@ -101,6 +98,7 @@ class _TermInst:
 
 	_fmt = "%-15s %19s %13s %13s"
 
+	@staticmethod
 	def Header():
 		return Util.BuildHeader(_TermInst._fmt,
 		"Region"
