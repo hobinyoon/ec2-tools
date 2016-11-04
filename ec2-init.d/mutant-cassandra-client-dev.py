@@ -16,6 +16,7 @@ import Util
 
 sys.path.insert(0, "%s/../lib" % os.path.dirname(__file__))
 import BotoClient
+import TermInst
 
 sys.path.insert(0, "%s" % os.path.dirname(__file__))
 import Ec2InitUtil
@@ -40,8 +41,6 @@ def main(argv):
 
 		GetLogsFromServersAndUpoadToS3()
 
-		# The client node requests termination of the job with the job_id. Job
-		# controller gets the requests and terminates all node with the job_id.
 		MayTerminateCluster()
 	except Exception as e:
 		msg = "Exception: %s\n%s" % (e, traceback.format_exc())
@@ -316,14 +315,13 @@ def GetLogsFromServersAndUpoadToS3():
 
 
 def MayTerminateCluster():
-	if "terminate_cluster_when_done" in Ec2InitUtil.GetParam("client"):
-		if Ec2InitUtil.GetParam("client")["terminate_cluster_when_done"] == "true":
-			pass
-			# TODO: make a termination request
+	if "terminate_cluster_when_done" not in Ec2InitUtil.GetParam("client"):
+		return
+	if not bool(Ec2InitUtil.GetParam("client")["terminate_cluster_when_done"]):
+		return
 
-			# Note: Some of these will be needed for batch experiments
-			#_jr_sqs_url = None
-			#_jr_sqs_msg_receipt_handle = None
+	# Terminate other nodes first and terminate self
+	TermInst.ByJobIdTermSelfLast()
 
 
 if __name__ == "__main__":
