@@ -27,14 +27,16 @@ def main(argv):
 	s0_ip = ServerIPs()[0]
 
 	# dstat logs are already in the log directory of the server
-	cmd = "rsync -avP ubuntu@%s:/mnt/local-ssd0/mutant/log/%s/* /mnt/local-ssd0/mutant/log/%s/" \
+	cmd = "rsync -avP -e 'ssh -o \"StrictHostKeyChecking no\" -o \"UserKnownHostsFile /dev/null\"'" \
+			" ubuntu@%s:/mnt/local-ssd0/mutant/log/%s/* /mnt/local-ssd0/mutant/log/%s/" \
 			% (s0_ip, JobId(), JobId())
 	Util.RunSubp(cmd, measure_time=True)
 
 	# Get Cassandra logs too
 	dn = "/mnt/local-ssd0/mutant/log/%s/s0/cassandra" % JobId()
 	Util.MkDirs(dn)
-	cmd = "rsync -avP ubuntu@%s:work/mutant/cassandra/logs/* %s/" \
+	cmd = "rsync -avP -e 'ssh -o \"StrictHostKeyChecking no\" -o \"UserKnownHostsFile /dev/null\"'" \
+			" ubuntu@%s:work/mutant/cassandra/logs/* %s/" \
 			% (s0_ip, dn)
 	Util.RunSubp(cmd, measure_time=True)
 
