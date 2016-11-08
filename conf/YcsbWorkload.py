@@ -29,7 +29,7 @@ def A():
 def B():
 	ycsb_params = ""
 	ycsb_params += " -threads 100"
-	ycsb_params += " -target 2000"
+	ycsb_params += " -target 17000"
 	ycsb_params += " -p recordcount=20000000"
 
 	# Both target IOPS and operation count to the halves of workload a, since
@@ -49,7 +49,7 @@ def B():
 def C():
 	ycsb_params = ""
 	ycsb_params += " -threads 100"
-	ycsb_params += " -target 2000"
+	ycsb_params += " -target 17000"
 	ycsb_params += " -p recordcount=20000000"
 
 	# Load set to the same level as B
@@ -58,6 +58,7 @@ def C():
 	ycsb_params += " -p status.interval=1"
 	ycsb_params += " -p fieldcount=10"
 	ycsb_params += " -p fieldlength=100"
+	# requestdistribution=zipfian by default
 	return {
 			"workload_type": "c"
 			, "params" : ycsb_params
