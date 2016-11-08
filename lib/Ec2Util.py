@@ -16,8 +16,33 @@ def JobId():
 
 	hn = socket.gethostname()
 	t = hn.split("-")
+
+	# It can happen when you are not on a EC2 machine created for mutant. For
+	# instance, mjolnir.
+	if len(t) < 4:
+		return None
+
 	_job_id = t[3] + "-" + t[4]
 	return _job_id
+
+
+# For example, c, s0, s1, ...
+_node_name = None
+def NodeName():
+	global _node_name
+	if _node_name is not None:
+		return _node_name
+
+	hn = socket.gethostname()
+	t = hn.split("-")
+
+	# It can happen when you are not on a EC2 machine created for mutant. For
+	# instance, mjolnir.
+	if len(t) < 5:
+		return None
+
+	_node_name = t[5]
+	return _node_name
 
 
 _inst_id = None
