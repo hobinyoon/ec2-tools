@@ -122,7 +122,7 @@ def Job_MutantDevS1C1():
 				, "client" : {
 					"init_script": "mutant-cassandra-client-dev"
 					, "ami_name": "mutant-client"
-					, "ycsb": YcsbWorkload.C()
+					, "ycsb": YcsbWorkload.C_uniform()
 					, "terminate_cluster_when_done": "false"
 					}
 				}

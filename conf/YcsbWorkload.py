@@ -64,6 +64,26 @@ def C():
 			}
 
 
+# Workload C: Read only
+def C_uniform():
+	ycsb_params = ""
+	ycsb_params += " -threads 100"
+	ycsb_params += " -target 2000"
+	ycsb_params += " -p recordcount=20000000"
+
+	# Load set to the same level as B
+	ycsb_params += " -p operationcount=6489760"
+
+	ycsb_params += " -p status.interval=1"
+	ycsb_params += " -p fieldcount=10"
+	ycsb_params += " -p fieldlength=100"
+	ycsb_params += " -p requestdistribution=uniform"
+	return {
+			"workload_type": "c"
+			, "params" : ycsb_params
+			}
+
+
 # Workload D: Read latest workload
 def D():
 	return {
