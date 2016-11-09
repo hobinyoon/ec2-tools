@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import boto3
+import botocore
 import datetime
 import os
 import pprint
@@ -52,7 +53,7 @@ def main(argv):
 		return
 
 	confirm = raw_input("Would you like to proceed (Y/N)? ")
-	if confirm != "Y":
+	if not bool(confirm):
 		return
 
 	Cons.P("")
