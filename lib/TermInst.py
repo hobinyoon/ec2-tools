@@ -14,7 +14,7 @@ import Ec2Util
 
 
 def ByTags(tags, job_id_none_requested):
-	Cons.P("Terminating running instances:")
+	Cons.Pnnl("Terminating running instances:")
 	_TermInst.Init(job_id_none_requested)
 
 	tis = []
@@ -45,6 +45,9 @@ class _TermInst:
 	@staticmethod
 	def Init(job_id_none_requested=False, term_by_job_id_self_last=False):
 		_TermInst._job_id_none_requested = job_id_none_requested
+
+		# This is only when the class is used by an EC2 instance, not by an outside
+		# machine like mt-s7.
 		_TermInst._term_by_job_id_self_last = term_by_job_id_self_last
 		_TermInst._regions_processed = 0
 
@@ -82,16 +85,18 @@ class _TermInst:
 						if _TermInst._job_id_none_requested:
 							#Cons.P(pprint.pformat(r1))
 							if "Tags" not in r1:
+								if _TermInst._term_by_job_id_self_last:
+									if inst_id == Ec2Util.InstId():
+										inst_ids_to_term_self.append(inst_id)
+									else:
+										inst_ids_to_term_others.append(inst_id)
+								self.inst_ids_to_term.append(inst_id)
+						else:
+							if _TermInst._term_by_job_id_self_last:
 								if inst_id == Ec2Util.InstId():
 									inst_ids_to_term_self.append(inst_id)
 								else:
 									inst_ids_to_term_others.append(inst_id)
-								self.inst_ids_to_term.append(inst_id)
-						else:
-							if inst_id == Ec2Util.InstId():
-								inst_ids_to_term_self.append(inst_id)
-							else:
-								inst_ids_to_term_others.append(inst_id)
 							self.inst_ids_to_term.append(inst_id)
 
 		#Cons.P("There are %d instances to terminate." % len(self.inst_ids_to_term))

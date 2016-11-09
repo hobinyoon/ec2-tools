@@ -11,8 +11,6 @@ import TermInst
 
 
 def main(argv):
-	Test()
-
 	if len(argv) < 2:
 		print "Usage: %s (all or tags in key:value pairs)" % argv[0]
 		sys.exit(1)
