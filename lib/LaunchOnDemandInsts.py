@@ -40,7 +40,17 @@ class _Req:
 			# Might be better than randomly placing them.
 			self.region = req_msg.msg_body["region"]
 			self.inst_type = req_msg.msg_body["inst_type"]
-			self.az = SpotPrice.MostStableAz(self.region, self.inst_type)
+			if True:
+				self.az = SpotPrice.MostStableAz(self.region, self.inst_type)
+			else:
+				# 161108-135339: An error occurred (InsufficientInstanceCapacity) when
+				# calling the RunInstances operation (reached max retries: 4): We
+				# currently do not have sufficient c3.2xlarge capacity in the
+				# Availability Zone you requested (us-east-1a). Our system will be
+				# working on provisioning additional capacity. You can currently get
+				# c3.2xlarge capacity by not specifying an Availability Zone in your
+				# request or choosing us-east-1c.
+				self.az = "us-east-1c"
 
 			# One client and multiple servers
 			self.num_nodes = 1
