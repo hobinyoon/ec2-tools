@@ -85,8 +85,7 @@ def Job_MutantDevS1C1():
 				, "inst_type": "c3.2xlarge"
 
 				, "server": {
-					# Note: We'll see if the AMIs need to be separated by DBs. May want
-					# to upgrade to 16.04.
+					# Note: We'll see if the AMIs need to be separated by DBs.
 					"init_script": "mutant-cassandra-server-dev"
 					, "ami_name": "mutant-cassandra-server"
 					, "num_nodes": "1"
@@ -122,7 +121,7 @@ def Job_MutantDevS1C1():
 				, "client" : {
 					"init_script": "mutant-cassandra-client-dev"
 					, "ami_name": "mutant-client"
-					, "ycsb": YcsbWorkload.C_uniform()
+					, "ycsb": YcsbWorkload.A()
 					, "terminate_cluster_when_done": "false"
 					}
 				}
@@ -132,16 +131,18 @@ def Job_MutantDevS1C1():
 def Job_MutantDevS1():
 	_EnqReq(
 			{"region": "us-east-1"
-				# Client uses the same instance type as the server, cause it generates
-				# all requests for a cluster of servers.
-				, "spot_req": {"inst_type": "c3.2xlarge", "max_price": 2.0}
-				#, "spot_req": {"inst_type": "r3.xlarge", "max_price": 2.0}
+				, "inst_type": "c3.2xlarge"
 
 				, "server": {
-					# We'll see if the AMIs need to be separated by DBs.
+					# RocksDB can use the same AMI
 					"init_script": "mutant-cassandra-server-dev"
 					, "ami_name": "mutant-cassandra-server"
 					, "num_nodes": "1"
+					, "block_storage_devs": [
+						{"VolumeType": "gp2", "VolumeSize": 80, "DeviceName": "d"}
+						#, {"VolumeType": "st1", "VolumeSize": 500, "DeviceName": "e"}
+						#, {"VolumeType": "sc1", "VolumeSize": 500, "DeviceName": "f"}
+						]
 					}
 				}
 			)
