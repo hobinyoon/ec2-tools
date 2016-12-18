@@ -148,7 +148,7 @@ def _DescInst(dio):
 		dio.P("No instances found.\n")
 	else:
 		# Header
-		fmt = "%-15s %13s %-10s %6.4f %2s %10s %15s %13s"
+		fmt = "%-15s %13s %-10s %6.4f %2s %19s %15s %13s"
 		dio.P(Util.BuildHeader(fmt,
 				"az"
 				" job_id"

@@ -111,11 +111,6 @@ def Job_MutantDevS1C1():
 
 					# Pre-populate DB using the 50GB one stored in S3.
 					, "pre_populate_db": "true"
-
-					# Note: may want to group cassandra parameters too
-					#
-					#, "rocks_db": {
-					#	}
 					}
 
 				, "client" : {
@@ -143,6 +138,9 @@ def Job_MutantDevS1():
 						#, {"VolumeType": "st1", "VolumeSize": 500, "DeviceName": "e"}
 						#, {"VolumeType": "sc1", "VolumeSize": 500, "DeviceName": "f"}
 						]
+					, "unzip_quizup_data": "true"
+					#, "run_cassandra_server": "true"
+					, "rocksdb": {}
 					}
 				}
 			)
