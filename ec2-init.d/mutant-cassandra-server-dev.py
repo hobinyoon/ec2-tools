@@ -211,23 +211,24 @@ def CloneSrcAndBuild():
 
 
 def _CloneAndBuildCassandra():
-	# Git clone
-	Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/cassandra")
-	Util.RunSubp("git clone https://github.com/hobinyoon/mutant-cassandra-3.9 /mnt/local-ssd0/mutant/cassandra")
+	with Cons.MT("Cloning Cassandra src and build ..."):
+		# Git clone
+		Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/cassandra")
+		Util.RunSubp("git clone https://github.com/hobinyoon/mutant-cassandra-3.9 /mnt/local-ssd0/mutant/cassandra")
 
-	# Symlink
-	Util.RunSubp("rm -rf /home/ubuntu/work/mutant/cassandra")
-	Util.RunSubp("ln -s /mnt/local-ssd0/mutant/cassandra /home/ubuntu/work/mutant/cassandra")
+		# Symlink
+		Util.RunSubp("rm -rf /home/ubuntu/work/mutant/cassandra")
+		Util.RunSubp("ln -s /mnt/local-ssd0/mutant/cassandra /home/ubuntu/work/mutant/cassandra")
 
-	# Build
-	if Ec2InitUtil.GetParam(["server", "run_cassandra_server"]) == "true":
-		Util.RunSubp("cd /home/ubuntu/work/mutant/cassandra && ant")
+		# Build
+		if Ec2InitUtil.GetParam(["server", "run_cassandra_server"]) == "true":
+			Util.RunSubp("cd /home/ubuntu/work/mutant/cassandra && ant")
 
-	# Edit the git source repository for easy development.
-	Util.RunSubp("sed -i 's/" \
-			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mutant-cassandra-3.9" \
-			"/\\turl = git@github.com:hobinyoon\/mutant-cassandra-3.9.git" \
-			"/g' %s" % "~/work/mutant/cassandra/.git/config")
+		# Edit the git source repository for easy development.
+		Util.RunSubp("sed -i 's/" \
+				"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mutant-cassandra-3.9" \
+				"/\\turl = git@github.com:hobinyoon\/mutant-cassandra-3.9.git" \
+				"/g' %s" % "~/work/mutant/cassandra/.git/config")
 
 
 #def _CloneAndBuildMongoDb():
@@ -259,77 +260,81 @@ def _CloneAndBuildRocksDb():
 	if "rocks_db" not in Ec2InitUtil.GetParam("server"):
 		return
 
-	# Git clone
-	Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/rocksdb")
-	Util.RunSubp("git clone https://github.com/hobinyoon/rocksdb /mnt/local-ssd0/mutant/rocksdb")
+	with Cons.MT("Cloning RocksDB src and build ..."):
+		# Git clone
+		Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/rocksdb")
+		Util.RunSubp("git clone https://github.com/hobinyoon/rocksdb /mnt/local-ssd0/mutant/rocksdb")
 
-	# Symlink
-	Util.RunSubp("rm -rf /home/ubuntu/work/mutant/rocksdb")
-	Util.RunSubp("ln -s /mnt/local-ssd0/mutant/rocksdb /home/ubuntu/work/mutant/rocksdb")
+		# Symlink
+		Util.RunSubp("rm -rf /home/ubuntu/work/mutant/rocksdb")
+		Util.RunSubp("ln -s /mnt/local-ssd0/mutant/rocksdb /home/ubuntu/work/mutant/rocksdb")
 
-	# Build. Takes about 5 mins
-	Util.RunSubp("cd /home/ubuntu/work/mutant/rocksdb && make -j16", measure_time=True)
+		# Build. Takes about 5 mins
+		Util.RunSubp("cd /home/ubuntu/work/mutant/rocksdb && make -j16 shared_lib", measure_time=True)
 
-	# Edit the git source repository for easy development.
-	Util.RunSubp("sed -i 's/" \
-			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/rocksdb" \
-			"/\\turl = git@github.com:hobinyoon\/rocksdb.git" \
-			"/g' %s" % "~/work/mutant/rocksdb/.git/config")
+		# Edit the git source repository for easy development.
+		Util.RunSubp("sed -i 's/" \
+				"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/rocksdb" \
+				"/\\turl = git@github.com:hobinyoon\/rocksdb.git" \
+				"/g' %s" % "~/work/mutant/rocksdb/.git/config")
 
-	# Create data directory
-	dn = "/mnt/local-ssd1/rocksdb-data"
-	Util.RunSubp("sudo mkdir -p %s && sudo chown ubuntu %s" % (dn, dn))
+		# Create data directory
+		dn = "/mnt/local-ssd1/rocksdb-data"
+		Util.RunSubp("sudo mkdir -p %s && sudo chown ubuntu %s" % (dn, dn))
 
 
 def _CloneCassandra2x():
-	# Git clone
-	Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/mutant-cassandra-2.2.3")
-	Util.RunSubp("git clone https://github.com/hobinyoon/mutant-cassandra-2.2.3 /mnt/local-ssd0/mutant/mutant-cassandra-2.2.3")
+	with Cons.MT("Cloning Cassandra 2.x src and build ..."):
+		# Git clone
+		Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/mutant-cassandra-2.2.3")
+		Util.RunSubp("git clone https://github.com/hobinyoon/mutant-cassandra-2.2.3 /mnt/local-ssd0/mutant/mutant-cassandra-2.2.3")
 
-	# Symlink
-	Util.RunSubp("rm -rf /home/ubuntu/work/mutant/cassandra-2.2.3")
-	Util.RunSubp("ln -s /mnt/local-ssd0/mutant/mutant-cassandra-2.2.3 /home/ubuntu/work/mutant/cassandra-2.2.3")
+		# Symlink
+		Util.RunSubp("rm -rf /home/ubuntu/work/mutant/cassandra-2.2.3")
+		Util.RunSubp("ln -s /mnt/local-ssd0/mutant/mutant-cassandra-2.2.3 /home/ubuntu/work/mutant/cassandra-2.2.3")
 
-	# Edit the git source repository for easy development.
-	Util.RunSubp("sed -i 's/" \
-			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mutant-cassandra-2.2.3" \
-			"/\\turl = git@github.com:hobinyoon\/mutant-cassandra-2.2.3.git" \
-			"/g' %s" % "~/work/mutant/cassandra-2.2.3/.git/config")
+		# Edit the git source repository for easy development.
+		Util.RunSubp("sed -i 's/" \
+				"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mutant-cassandra-2.2.3" \
+				"/\\turl = git@github.com:hobinyoon\/mutant-cassandra-2.2.3.git" \
+				"/g' %s" % "~/work/mutant/cassandra-2.2.3/.git/config")
 
 
 def _CloneMisc():
-	# Git clone
-	Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/misc")
-	Util.RunSubp("git clone https://github.com/hobinyoon/mutant-misc /mnt/local-ssd0/mutant/misc")
+	with Cons.MT("Cloning misc ..."):
+		# Git clone
+		Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/misc")
+		Util.RunSubp("git clone https://github.com/hobinyoon/mutant-misc /mnt/local-ssd0/mutant/misc")
 
-	# Symlink
-	Util.RunSubp("rm -rf /home/ubuntu/work/mutant/misc")
-	Util.RunSubp("ln -s /mnt/local-ssd0/mutant/misc /home/ubuntu/work/mutant/misc")
+		# Symlink
+		Util.RunSubp("rm -rf /home/ubuntu/work/mutant/misc")
+		Util.RunSubp("ln -s /mnt/local-ssd0/mutant/misc /home/ubuntu/work/mutant/misc")
 
-	# Edit the git source repository for easy development.
-	Util.RunSubp("sed -i 's/" \
-			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mutant-misc" \
-			"/\\turl = git@github.com:hobinyoon\/mutant-misc.git" \
-			"/g' %s" % "~/work/mutant/misc/.git/config")
+		# Edit the git source repository for easy development.
+		Util.RunSubp("sed -i 's/" \
+				"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/mutant-misc" \
+				"/\\turl = git@github.com:hobinyoon\/mutant-misc.git" \
+				"/g' %s" % "~/work/mutant/misc/.git/config")
 
 
 def _CloneAndBuildYcsb():
-	# Git clone
-	Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/YCSB")
-	Util.RunSubp("git clone https://github.com/hobinyoon/YCSB /mnt/local-ssd0/mutant/YCSB")
+	with Cons.MT("Cloning YCSB and build ..."):
+		# Git clone
+		Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/YCSB")
+		Util.RunSubp("git clone https://github.com/hobinyoon/YCSB /mnt/local-ssd0/mutant/YCSB")
 
-	# Symlink
-	Util.RunSubp("rm -rf /home/ubuntu/work/mutant/YCSB")
-	Util.RunSubp("ln -s /mnt/local-ssd0/mutant/YCSB /home/ubuntu/work/mutant/YCSB")
+		# Symlink
+		Util.RunSubp("rm -rf /home/ubuntu/work/mutant/YCSB")
+		Util.RunSubp("ln -s /mnt/local-ssd0/mutant/YCSB /home/ubuntu/work/mutant/YCSB")
 
-	# Build
-	Util.RunSubp("cd /home/ubuntu/work/mutant/YCSB && mvn -pl com.yahoo.ycsb:cassandra-binding -am clean package -DskipTests >/dev/null 2>&1")
+		# Build
+		Util.RunSubp("cd /home/ubuntu/work/mutant/YCSB && mvn -pl com.yahoo.ycsb:cassandra-binding -am clean package -DskipTests >/dev/null 2>&1")
 
-	# Edit the git source repository for easy development.
-	Util.RunSubp("sed -i 's/" \
-			"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/YCSB" \
-			"/\\turl = git@github.com:hobinyoon\/YCSB.git" \
-			"/g' %s" % "~/work/mutant/YCSB/.git/config")
+		# Edit the git source repository for easy development.
+		Util.RunSubp("sed -i 's/" \
+				"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/YCSB" \
+				"/\\turl = git@github.com:hobinyoon\/YCSB.git" \
+				"/g' %s" % "~/work/mutant/YCSB/.git/config")
 
 
 _nm_ip = None
