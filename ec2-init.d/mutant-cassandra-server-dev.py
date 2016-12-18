@@ -37,7 +37,11 @@ def main(argv):
 		Ec2InitUtil.ChangeLogOutput()
 		CloneSrcAndBuild()
 		EditCassConf()
-		RunCassandra()
+
+		if Ec2InitUtil.GetParam(["server", "unzip_quizup_data"]) == "true":
+			UnzipQuizupData()
+		if Ec2InitUtil.GetParam(["server", "run_cassandra_server"]) == "true":
+			RunCassandra()
 
 		# Server nodes don't terminate by themselves. They may be terminated by the
 		# request from the client.
@@ -199,8 +203,9 @@ def CloneSrcAndBuild():
 		Util.RunSubp("mkdir -p /mnt/local-ssd0/mutant")
 
 		_CloneAndBuildCassandra()
-		_CloneAndBuildRocksDb()
 		_CloneCassandra2x()
+
+		_CloneAndBuildRocksDb()
 		_CloneMisc()
 		_CloneAndBuildYcsb()
 
@@ -215,7 +220,8 @@ def _CloneAndBuildCassandra():
 	Util.RunSubp("ln -s /mnt/local-ssd0/mutant/cassandra /home/ubuntu/work/mutant/cassandra")
 
 	# Build
-	Util.RunSubp("cd /home/ubuntu/work/mutant/cassandra && ant")
+	if Ec2InitUtil.GetParam(["server", "run_cassandra_server"]) == "true":
+		Util.RunSubp("cd /home/ubuntu/work/mutant/cassandra && ant")
 
 	# Edit the git source repository for easy development.
 	Util.RunSubp("sed -i 's/" \
@@ -331,7 +337,7 @@ def EditCassConf():
 	fn_cass_yaml = "/home/ubuntu/work/mutant/cassandra/conf/cassandra.yaml"
 	with Cons.MT("Editing %s ..." % fn_cass_yaml):
 		# Wait for all the server nodes to be up
-		server_num_nodes_expected = int(Ec2InitUtil.GetParam("server")["num_nodes"])
+		server_num_nodes_expected = int(Ec2InitUtil.GetParam(["server", "num_nodes"]))
 		with Cons.MTnnl("Waiting for %d server node(s) with job_id %s"
 				% (server_num_nodes_expected, Ec2InitUtil.GetJobId())):
 			global _nm_ip
@@ -483,16 +489,28 @@ def RunCassandra():
 	PrePopulateCassData()
 
 	with Cons.MT("Running Cassandra ..."):
-		# Run Cassandra as a non-daemon. Easier for debugging. The cloud-init
-		# script never ends but it's okay, for now. You can see the Cassandra log
-		# in the log file ~/work/mutant/log/..., so that's a plus.
+		# Run Cassandra foreground, as a non-daemon. It's easier for debugging. The
+		# cloud-init script never ends but it's okay, for now. You can see the
+		# Cassandra log in the log file ~/work/mutant/log/..., so that's a plus.
 		cmd = "%s/work/mutant/cassandra/mutant/restart-dstat-run-cass.py" \
 				% os.path.expanduser("~")
 		Util.RunSubp(cmd)
 
 
+def UnzipQuizupData():
+	with Cons.MT("Unzipping QuizUp data ..."):
+		Util.RunSubp("mkdir -p /mnt/local-ssd0/mutant/quizup-data")
+		Util.RunSubp("rm -rf %s/work/mutant/quizup-data" % os.path.expanduser("~"))
+		Util.RunSubp("ln -s /mnt/local-ssd0/mutant/quizup-data %s/work/mutant/quizup-data" % os.path.expanduser("~"))
+
+		# Note: parallelize later when needed
+		for i in ["0.05", "0.10", "1.00", "10.00"]:
+			Util.RunSubp("cd %s/work/mutant/quizup-data && 7z e -so %s/work/mutant/quizup-data-zipped/%s.tar.7z | tar xf -" \
+					% (os.path.expanduser("~"), os.path.expanduser("~"), i))
+
+
 def PrePopulateCassData():
-	if not bool(Ec2InitUtil.GetParam("server")["pre_populate_db"]):
+	if not bool(Ec2InitUtil.GetParam(["server", "pre_populate_db"])):
 		return
 
 	with Cons.MT("Pre-popularing Cassandra data ..."):

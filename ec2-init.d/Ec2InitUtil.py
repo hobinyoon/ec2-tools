@@ -16,12 +16,27 @@ def SetParams(v):
 	_params = json.loads(base64.b64decode(v))
 	#Cons.P("_params: %s" % pprint.pformat(_params))
 
+
+# This function takes either a key or a list of keys.
+# When a key is given as a parameter, it returns _params[k1].
+# When a list, [k1, k2, ...], is given as a parameter, it returns _params[k1][k2][...].
 def GetParam(k):
-	return _params[k]
+	if isinstance(k, list):
+		n = _params
+		for k1 in k:
+			if k1 not in n:
+				return None
+			n = n[k1]
+		return n
+	else:
+		if k not in _params:
+			return None
+		else:
+			return _params[k]
 
 
 def GetJobId():
-	return GetParam("extra")["job_id"]
+	return GetParam(["extra", "job_id"])
 
 
 _ec2_tags = None

@@ -212,7 +212,7 @@ def WaitForServers():
 _nm_ip = None
 def _WaitForServerNodes():
 	# Wait for all the server nodes to be up
-	server_num_nodes_expected = int(Ec2InitUtil.GetParam("server")["num_nodes"])
+	server_num_nodes_expected = int(Ec2InitUtil.GetParam(["server", "num_nodes"]))
 	with Cons.MTnnl("Waiting for %d server node(s) with job_id %s"
 			% (server_num_nodes_expected, Ec2InitUtil.GetJobId())):
 		global _nm_ip
@@ -295,8 +295,8 @@ def RunYcsb():
 	with Cons.MT("Running YCSB ..."):
 		cmd = "%s/work/mutant/YCSB/mutant/cassandra/restart-dstat-run-workload.py %s %s" \
 				% (os.path.expanduser("~")
-						, Ec2InitUtil.GetParam("client")["ycsb"]["workload_type"]
-						, Ec2InitUtil.GetParam("client")["ycsb"]["params"])
+						, Ec2InitUtil.GetParam(["client", "ycsb", "workload_type"])
+						, Ec2InitUtil.GetParam(["client", "ycsb", "params"]))
 		Util.RunSubp(cmd)
 
 
@@ -317,7 +317,7 @@ def GetLogsFromServersAndUpoadToS3():
 def MayTerminateCluster():
 	if "terminate_cluster_when_done" not in Ec2InitUtil.GetParam("client"):
 		return
-	if not bool(Ec2InitUtil.GetParam("client")["terminate_cluster_when_done"]):
+	if not bool(Ec2InitUtil.GetParam(["client", "terminate_cluster_when_done"])):
 		return
 
 	# Terminate other nodes first and terminate self
