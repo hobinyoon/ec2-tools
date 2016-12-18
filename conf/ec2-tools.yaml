@@ -1,6 +1,6 @@
 region_ami:
   mutant-cassandra-server:
-    us-east-1: ami-8f87a598
+    us-east-1: ami-b8d9d2af
 
   mutant-client:
     us-east-1: ami-f585a7e2
