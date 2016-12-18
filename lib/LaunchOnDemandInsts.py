@@ -77,11 +77,11 @@ class _Req:
 	#   http://unix.stackexchange.com/questions/4342/how-do-i-get-sudo-u-user-to-use-the-users-env
 	user_data = \
 """#!/bin/bash
-rm -rf /home/ubuntu/work/mutant
-sudo -i -u ubuntu bash -c 'mkdir -p /home/ubuntu/work/mutant'
 sudo -i -u ubuntu bash -c 'git clone https://github.com/hobinyoon/mutant-ec2-tools.git /home/ubuntu/work/mutant/ec2-tools'
 sudo -i -u ubuntu /home/ubuntu/work/mutant/ec2-tools/lib/ec2-init.py {0}
 """
+#rm -rf /home/ubuntu/work/mutant
+#sudo -i -u ubuntu bash -c 'mkdir -p /home/ubuntu/work/mutant'
 
 	def _LaunchClient(self):
 		if "client" not in self.req_msg.msg_body:
