@@ -257,7 +257,7 @@ def _CloneAndBuildCassandra():
 
 
 def _CloneAndBuildRocksDb():
-	if "rocks_db" not in Ec2InitUtil.GetParam("server"):
+	if Ec2InitUtil.GetParam("server", "rocksdb") is None:
 		return
 
 	with Cons.MT("Cloning RocksDB src and build ..."):
