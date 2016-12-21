@@ -504,13 +504,13 @@ def RunCassandra():
 
 def UnzipQuizupData():
 	with Cons.MT("Unzipping QuizUp data ..."):
-		Util.RunSubp("mkdir -p /mnt/local-ssd0/mutant/quizup-data")
-		Util.RunSubp("rm -rf %s/work/mutant/quizup-data" % os.path.expanduser("~"))
-		Util.RunSubp("ln -s /mnt/local-ssd0/mutant/quizup-data %s/work/mutant/quizup-data" % os.path.expanduser("~"))
+		Util.RunSubp("mkdir -p /mnt/local-ssd0/quizup-data")
+		Util.RunSubp("rm -rf %s/work/quizup-data" % os.path.expanduser("~"))
+		Util.RunSubp("ln -s /mnt/local-ssd0/quizup-data %s/work/quizup-data" % os.path.expanduser("~"))
 
 		# Note: parallelize later when needed
 		for i in ["0.05", "0.10", "1.00", "10.00", "100.00"]:
-			Util.RunSubp("cd %s/work/mutant/quizup-data && 7z e -so %s/work/mutant/quizup-data-zipped/%s.tar.7z | tar xf -" \
+			Util.RunSubp("cd %s/work/quizup-data && 7z e -so %s/work/quizup-data-zipped/%s.tar.7z | tar xf -" \
 					% (os.path.expanduser("~"), os.path.expanduser("~"), i))
 
 
