@@ -281,6 +281,8 @@ def _CloneAndBuildRocksDb():
 		# Create data directory
 		dn = "/mnt/local-ssd1/rocksdb-data"
 		Util.RunSubp("sudo mkdir -p %s && sudo chown ubuntu %s" % (dn, dn))
+		Util.RunSubp("rm -rf ~/work/rocksdb-data")
+		Util.RunSubp("ln -s %s ~/work/rocksdb-data" % dn)
 
 
 def _CloneCassandra2x():
