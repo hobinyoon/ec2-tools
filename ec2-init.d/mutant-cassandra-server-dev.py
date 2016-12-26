@@ -269,14 +269,19 @@ def _CloneAndBuildRocksDb():
 		Util.RunSubp("rm -rf /home/ubuntu/work/mutant/rocksdb")
 		Util.RunSubp("ln -s /mnt/local-ssd0/mutant/rocksdb /home/ubuntu/work/mutant/rocksdb")
 
-		# Build. Takes about 5 mins
-		Util.RunSubp("cd /home/ubuntu/work/mutant/rocksdb && make -j16 shared_lib", measure_time=True)
-
 		# Edit the git source repository for easy development.
 		Util.RunSubp("sed -i 's/" \
 				"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/rocksdb" \
 				"/\\turl = git@github.com:hobinyoon\/rocksdb.git" \
 				"/g' %s" % "~/work/mutant/rocksdb/.git/config")
+
+		# Switch to the mutant branch
+		Util.RunSubp("cd /home/ubuntu/work/mutant/rocksdb" \
+		" && git branch -f mutant origin/mutant" \
+		" && git checkout mutant")
+
+		# Build. Takes about 5 mins
+		Util.RunSubp("cd /home/ubuntu/work/mutant/rocksdb && make -j16 shared_lib", measure_time=True)
 
 		# Create data directory
 		dn = "/mnt/local-ssd1/rocksdb-data"
