@@ -149,15 +149,15 @@ def MkDirs(path):
 			raise
 
 
-def RunSubp(cmd, env=os.environ.copy(), shell=True, print_cmd=True, print_output=True, measure_time=False):
+def RunSubp(cmd, env=os.environ.copy(), shell=True, print_cmd=True, print_output=True, measure_time=False, gen_exception=True):
 	if print_cmd:
 		with Cons.MT(cmd, measure_time):
-			return _RunSubp(cmd, env=env, shell=shell, print_output=print_output)
+			return _RunSubp(cmd, env=env, shell=shell, print_output=print_output, gen_exception=gen_exception)
 	else:
-		return _RunSubp(cmd, env=env, shell=shell, print_output=print_output)
+		return _RunSubp(cmd, env=env, shell=shell, print_output=print_output, gen_exception=gen_exception)
 
 
-def _RunSubp(cmd, env, shell, print_output):
+def _RunSubp(cmd, env, shell, print_output, gen_exception):
 	lines = ""
 	p = None
 	if shell:
@@ -171,8 +171,9 @@ def _RunSubp(cmd, env, shell, print_output):
 			Cons.P(line.rstrip())
 		lines += line
 	p.wait()
-	if p.returncode != 0:
-		raise RuntimeError("Error: cmd=[%s] rc=%d" % (cmd, p.returncode))
+	if gen_exception:
+		if p.returncode != 0:
+			raise RuntimeError("Error: cmd=[%s] rc=%d" % (cmd, p.returncode))
 	return lines
 
 
