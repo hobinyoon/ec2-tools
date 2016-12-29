@@ -514,11 +514,8 @@ def UnzipQuizupData():
 		Util.RunSubp("mkdir -p /mnt/local-ssd0/quizup-data")
 		Util.RunSubp("rm -rf %s/work/quizup-data" % os.path.expanduser("~"))
 		Util.RunSubp("ln -s /mnt/local-ssd0/quizup-data %s/work/quizup-data" % os.path.expanduser("~"))
-
-		# Note: parallelize later when needed
-		for i in ["0.05", "0.10", "1.00", "10.00", "100.00"]:
-			Util.RunSubp("cd %s/work/quizup-data && 7z e -so %s/work/quizup-data-zipped/%s.tar.7z | tar xf -" \
-					% (os.path.expanduser("~"), os.path.expanduser("~"), i))
+		Util.RunSubp("mkdir -p %s/work/quizup-data/memcached-2w/simulator-data" % os.path.expanduser("~"))
+		Util.RunSubp("cd %s/work/quizup-data-zipped && ./unzip.sh" % os.path.expanduser("~"))
 
 
 def PrePopulateCassData():
