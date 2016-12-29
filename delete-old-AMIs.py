@@ -53,7 +53,7 @@ def main(argv):
 		return
 
 	confirm = raw_input("Would you like to proceed (Y/N)? ")
-	if not bool(confirm):
+	if confirm.lower() != "Y":
 		return
 
 	Cons.P("")
@@ -238,7 +238,7 @@ class ImageSnapshotCleaner:
 		def _ParseAmiId(self):
 			# Created by CreateImage(i-5133aecd) for ami-abf83cc6 from vol-ee05363e
 			#                                        012345678901
-			m = re.match(r"Created by CreateImage\(i-........\) for ami-", self.desc)
+			m = re.match(r"Created by CreateImage\(i-(\d|\w)+\) for ami-", self.desc)
 			if m is not None:
 				self.ami_id = self.desc[len(m.group(0)) - 4:len(m.group(0)) - 4 + 11 + 1]
 				return
