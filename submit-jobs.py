@@ -134,7 +134,11 @@ def Job_MutantDevS1():
 					, "ami_name": "mutant-cassandra-server"
 					, "num_nodes": "1"
 					, "block_storage_devs": [
-						{"VolumeType": "gp2", "VolumeSize": 80, "DeviceName": "d"}
+						#{"VolumeType": "gp2", "VolumeSize": 80, "DeviceName": "d"}
+
+						# 1TB to measure the performance
+						{"VolumeType": "gp2", "VolumeSize": 1000, "DeviceName": "d"}
+
 						#, {"VolumeType": "st1", "VolumeSize": 500, "DeviceName": "e"}
 						#, {"VolumeType": "sc1", "VolumeSize": 500, "DeviceName": "f"}
 						]
