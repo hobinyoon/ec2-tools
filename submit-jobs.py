@@ -136,10 +136,13 @@ def Job_MutantDevS1():
 					, "block_storage_devs": [
 						#{"VolumeType": "gp2", "VolumeSize": 80, "DeviceName": "d"}
 
-						# 1TB to measure the performance
-						{"VolumeType": "gp2", "VolumeSize": 1000, "DeviceName": "d"}
+						# 1TB gp2 for 3000 IOPS
+						#{"VolumeType": "gp2", "VolumeSize": 1000, "DeviceName": "d"}
 
-						#, {"VolumeType": "st1", "VolumeSize": 500, "DeviceName": "e"}
+						# 1TB st1 for 40Mib/s, 250 Mib/s (burst) throughput. Good enough
+						# for running the 100% quizup data for 5400 secs.
+						{"VolumeType": "st1", "VolumeSize": 1000, "DeviceName": "e"}
+
 						#, {"VolumeType": "sc1", "VolumeSize": 500, "DeviceName": "f"}
 						]
 					, "unzip_quizup_data": "true"
