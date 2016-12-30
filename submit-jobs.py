@@ -139,11 +139,12 @@ def Job_MutantDevS1():
 						# 1TB gp2 for 3000 IOPS
 						#{"VolumeType": "gp2", "VolumeSize": 1000, "DeviceName": "d"}
 
-						# 1TB st1 for 40Mib/s, 250 Mib/s (burst) throughput. Good enough
+						# 1TB st1 for 40 Mib/s, 250 Mib/s (burst) throughput. Good enough
 						# for running the 100% quizup data for 5400 secs.
-						{"VolumeType": "st1", "VolumeSize": 1000, "DeviceName": "e"}
+						#{"VolumeType": "st1", "VolumeSize": 1000, "DeviceName": "e"}
 
-						#, {"VolumeType": "sc1", "VolumeSize": 500, "DeviceName": "f"}
+						# 3TB. 36 Mib/s, 240 Mib/s
+						{"VolumeType": "sc1", "VolumeSize": 3000, "DeviceName": "f"}
 						]
 					, "unzip_quizup_data": "true"
 					#, "run_cassandra_server": "true"
