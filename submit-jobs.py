@@ -17,6 +17,7 @@ import JobReq
 
 sys.path.insert(0, "%s/conf" % os.path.dirname(__file__))
 import YcsbWorkload
+import RocksDBQuizup
 
 
 def main(argv):
@@ -134,7 +135,7 @@ def Job_MutantDevS1():
 					, "ami_name": "mutant-cassandra-server"
 					, "num_nodes": "1"
 					, "block_storage_devs": [
-						#{"VolumeType": "gp2", "VolumeSize": 80, "DeviceName": "d"}
+						{"VolumeType": "gp2", "VolumeSize": 80, "DeviceName": "d"}
 
 						# 1TB gp2 for 3000 IOPS
 						#{"VolumeType": "gp2", "VolumeSize": 1000, "DeviceName": "d"}
@@ -146,11 +147,17 @@ def Job_MutantDevS1():
 						#{"VolumeType": "st1", "VolumeSize": 3000, "DeviceName": "e"}
 
 						# 3TB. 36 Mib/s, 240 Mib/s
-						{"VolumeType": "sc1", "VolumeSize": 3000, "DeviceName": "f"}
+						#{"VolumeType": "sc1", "VolumeSize": 3000, "DeviceName": "f"}
 						]
 					, "unzip_quizup_data": "true"
 					#, "run_cassandra_server": "true"
-					, "rocksdb": {}
+					# For now, it doesn't do much other than checking out the code and building.
+					, "rocksdb": { }
+					# quizup workload generator
+
+					# Storage usage measurement for unmodified RocksDB and Mutant with
+					# sstable migration threshold 10.
+					, "rocksdb-quizup": RocksDBQuizup.storage_usage_measurement_unmodified_rocksdb
 					}
 				}
 			)
