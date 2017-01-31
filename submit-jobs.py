@@ -38,6 +38,58 @@ def main(argv):
 	globals()[job]()
 
 
+def Job_UnmodifiedRocksDBLatency():
+	params = { \
+			# us-east-1, which is where the S3 buckets for experiment are.
+			"region": "us-east-1"
+			, "inst_type": "c3.2xlarge"
+
+			# RocksDB can use the same AMI
+			, "init_script": "mutant-cassandra-server-dev"
+			, "ami_name": "mutant-cassandra-server"
+			, "block_storage_devs": [
+				# 1TB gp2 for 3000 IOPS
+				#{"VolumeType": "gp2", "VolumeSize": 1000, "DeviceName": "d"}
+
+				# 3TB st1 for 120 Mib/s, 500 Mib/s (burst) throughput.
+				#   http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html
+				#{"VolumeType": "st1", "VolumeSize": 3000, "DeviceName": "e"}
+
+				# 3TB sc1 for 36 Mib/s, 240 Mib/s (burst).
+				{"VolumeType": "sc1", "VolumeSize": 3000, "DeviceName": "f"}
+				]
+			, "unzip_quizup_data": "true"
+
+			, "run_cassandra_server": "false"
+
+			# For now, it doesn't do much other than checking out the code and building.
+			, "rocksdb": { }
+
+			, "rocksdb-quizup-runs": []
+			}
+
+	p1 = { \
+			"mutant_enabled": "false"
+
+			#, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
+			#, "fast_dev_path": "/mnt/ebs-gp2/rocksdb-data"
+			#, "fast_dev_path": "/mnt/ebs-st1/rocksdb-data"
+			, "fast_dev_path": "/mnt/ebs-sc1/rocksdb-data"
+
+			, "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
+			, "init_db_to_90p_loaded": "true"
+			, "evict_cached_data": "true"
+			, "workload_start_from": 0.899
+			, "workload_stop_at":    -1.0
+			, "simulation_time_dur_in_sec": 60000
+			, "terminate_inst_when_done": "true"
+			}
+
+	for i in range(10):
+		params["rocksdb-quizup-runs"].append(dict(p1))
+	LaunchOnDemandInsts.Launch(params)
+
+
 def Job_MutantLatencyBySstMigTempThresholds():
 	params = { \
 			# us-east-1, which is where the S3 buckets for experiment are.
