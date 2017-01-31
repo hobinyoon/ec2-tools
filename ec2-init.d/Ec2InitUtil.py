@@ -106,8 +106,7 @@ def ChangeLogOutput():
 		Util.RunSubp("rm %s || true" % dn_log)
 		Util.RunSubp("ln -s %s %s" % (dn_log_ssd0, dn_log))
 
-		dn = "%s/%s/%s" % (dn_log, GetJobId()
-				, GetEc2Tag("name").replace("server", "s").replace("client", "c"))
+		dn = "%s/%s" % (dn_log, GetJobId())
 		Util.MkDirs(dn)
 
 		# Redict stdout to the log file in local SSD
