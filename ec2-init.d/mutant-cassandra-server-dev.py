@@ -36,13 +36,14 @@ def main(argv):
 		PrepareBlockDevs()
 		Ec2InitUtil.ChangeLogOutput()
 		CloneSrcAndBuild()
+
+		if Ec2InitUtil.GetParam(["server", "unzip_quizup_data"]) == "true":
+			UnzipQuizupData()
 		RunRocksDBQuizup()
 
 		if Ec2InitUtil.GetParam(["server", "run_cassandra_server"]) == "true":
 			EditCassConf()
 
-		if Ec2InitUtil.GetParam(["server", "unzip_quizup_data"]) == "true":
-			UnzipQuizupData()
 		if Ec2InitUtil.GetParam(["server", "run_cassandra_server"]) == "true":
 			RunCassandra()
 
