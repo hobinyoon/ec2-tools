@@ -146,7 +146,7 @@ sudo -i -u ubuntu /home/ubuntu/work/mutant/ec2-tools/lib/ec2-init.py {0}
 						self._TagInst(inst_id)
 
 			if num_running == 1:
-				msg = "job_id: %s. %d instances are created." % (self.job_id, num_running)
+				Cons.P("job_id: %s. %d instances are created." % (self.job_id, num_running))
 				return
 
 			time.sleep(1)
