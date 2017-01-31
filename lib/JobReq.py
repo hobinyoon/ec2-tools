@@ -154,6 +154,7 @@ def _Poll(jr_q):
 					WaitTimeSeconds=5
 					)
 			for m in msgs:
+				Cons.P("Received a queue item: %s" % m)
 				# put the job completion msg. Wait when the queue is full.
 				jr_q.put(Msg(m), block=True, timeout=None)
 		except botocore.exceptions.EndpointConnectionError as e:
