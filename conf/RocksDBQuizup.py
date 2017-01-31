@@ -1,23 +1,55 @@
 # Storage usage measurement for unmodified RocksDB and Mutant with
 # sstable migration threshold 10.
 storage_usage_measurement_unmodified_rocksdb = {
-	"enable_mutant": "false"
+	"mutant_enabled": "false"
 
-	# TODO: modify quizup client to setup the db_db_paths and make symbolic links
-	, "db_db_paths": {"t0": "~/work/rocksdb-data/quizup/t0"
-		}
+	# Fast device paths.
+	, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
 
-	# TODO: Do not load existing DB
-	, "load_existing_db": "false"
+	# Slow device paths.
+	, "slow_dev_paths": {"t1": "/mnt/ebs-gp2/rocksdb-data-quizup-t1"}
+
+	# Main db_path. ~/work/rocksdb-data will be symlinked to this.
+	, "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
+
+	# Init with the 90%-loaded db
+	, "init_db_to_90p_loaded": "false"
+
+	, "evict_cached_data": "true"
+
+	# Workload start and stop in percent. -1.0 for undefined.
+	, "workload_start_from": -1.0
+	, "workload_stop_at":    -1.0
+
+	, "simulation_time_dur_in_sec": 60000
+
+	, "terminate_inst_when_done": "true"
 }
 
 storage_usage_measurement_mutant = {
-	"enable_mutant": "true"
+	"mutant_enabled": "true"
 
-	# TODO: modify quizup client to setup the db_db_paths and make symbolic links
-	, "db_db_paths": {"t0": "~/work/rocksdb-data/quizup/t0"
-		, "t1": "/mnt/ebs-gp2/rocksdb-data/quizup/t1"
-		}
+	# Fast device paths.
+	, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
 
-	, "load_existing_db": "false"
+	# Slow device paths.
+	, "slow_dev_paths": {"t1": "/mnt/ebs-gp2/rocksdb-data-quizup-t1"}
+
+	# Main db_path. ~/work/rocksdb-data will be symlinked to this.
+	, "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
+
+	# Init with the 90%-loaded db
+	, "init_db_to_90p_loaded": "false"
+
+	, "evict_cached_data": "true"
+
+	# Workload start and stop in percent. -1.0 for undefined.
+	, "workload_start_from": -1.0
+	, "workload_stop_at":    -1.0
+
+	#, "simulation_time_dur_in_sec": 60000
+	# Run faster for test
+	, "simulation_time_dur_in_sec": 2000
+
+	, "terminate_inst_when_done": "true"
 }

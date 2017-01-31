@@ -17,6 +17,7 @@ import BotoClient
 import Conf
 import Ec2Region
 import JobContOutput
+import JobReq
 import SpotPrice
 
 
@@ -126,6 +127,13 @@ sudo -i -u ubuntu /home/ubuntu/work/mutant/ec2-tools/lib/ec2-init.py {0}
 			return
 
 		user_data = _Req.user_data.format(self.req_msg.Serialize({"job_id": self.job_id, "type": "server"}))
+		# Useful for dev, so that you don't need to launch a new instance every time you test something.
+		if False:
+			Cons.P("Print out user_data for debugging:")
+			Cons.P("user_data=[%s]" % user_data)
+			# Delete the job request sqs msg dev nodes, so that they don't reappear.
+			JobReq.DeleteMsg(self.req_msg.msg.receipt_handle)
+			os._exit(1)
 		req_msg_server = self.req_msg.msg_body["server"]
 		ami_name = req_msg_server["ami_name"]
 		server_num_nodes = int(req_msg_server["num_nodes"])
