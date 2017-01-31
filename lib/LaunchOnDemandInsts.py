@@ -46,15 +46,9 @@ class _Req:
 			# request or choosing us-east-1c.
 			self.az = "us-east-1c"
 
-		self.inst_check_thr_started = False
-		self.inst_check_thr_cnt_lock = threading.Lock()
-
 		self.inst_info = InstInfo()
 
 		self._LaunchNode()
-
-		# Join the inst checking thread
-		self.thread_inst_check.join()
 
 	def _LaunchNode(self):
 		self.params["extra"] = {"job_id": self.job_id, "type": "server"}
