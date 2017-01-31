@@ -57,6 +57,7 @@ class _Req:
 		#   http://unix.stackexchange.com/questions/4342/how-do-i-get-sudo-u-user-to-use-the-users-env
 		user_data = \
 """#!/bin/bash
+sudo rm -rf /home/ubuntu/work/mutant/ec2-tools
 sudo -i -u ubuntu bash -c 'git clone https://github.com/hobinyoon/mutant-ec2-tools.git /home/ubuntu/work/mutant/ec2-tools'
 sudo -i -u ubuntu /home/ubuntu/work/mutant/ec2-tools/lib/ec2-init.py {0}
 """
