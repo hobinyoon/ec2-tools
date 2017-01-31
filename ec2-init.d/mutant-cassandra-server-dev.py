@@ -31,20 +31,20 @@ def main(argv):
 		Ec2InitUtil.SetParams(argv[1])
 		Ec2InitUtil.SetEc2Tags(argv[2])
 
-		SetHostname()
-		Ec2InitUtil.SyncTime()
-		PrepareBlockDevs()
+		#SetHostname()
+		#Ec2InitUtil.SyncTime()
+		#PrepareBlockDevs()
 		Ec2InitUtil.ChangeLogOutput()
 		CloneSrcAndBuild()
 
-		if Ec2InitUtil.GetParam(["server", "unzip_quizup_data"]) == "true":
+		if Ec2InitUtil.GetParam(["unzip_quizup_data"]) == "true":
 			UnzipQuizupData()
 		RunRocksDBQuizup()
 
-		if Ec2InitUtil.GetParam(["server", "run_cassandra_server"]) == "true":
+		if Ec2InitUtil.GetParam(["run_cassandra_server"]) == "true":
 			EditCassConf()
 
-		if Ec2InitUtil.GetParam(["server", "run_cassandra_server"]) == "true":
+		if Ec2InitUtil.GetParam(["run_cassandra_server"]) == "true":
 			RunCassandra()
 
 		# Server nodes don't terminate by themselves. They may be terminated by the
@@ -184,22 +184,6 @@ def PrepareBlockDevs():
 			Util.RunSubp("sudo chown -R ubuntu /mnt/%s" % dir_name)
 
 
-# Local SSD structure:
-# - ssd0 for database server, ycsb
-# - ssd1 for system or experiment logs. Well, most r3 types have only 1 SSD. ss0 for now.
-#
-# ~
-# `-- work
-#     `-- mutant
-#         |-- ec2-tools
-#         |-- ycsb      (symlink to /mnt/local-ssd0/mutant/ycsb)
-#         |-- cassandra (symlink to /mnt/local-ssd0/mutant/cassandra)
-#         `-- log       (symlink to /mnt/local-ssd1/mutant/log)
-#             `-- system
-#
-# Cassandra data and log goes under its own directory.
-
-
 def CloneSrcAndBuild():
 	with Cons.MT("Cloning src and build ..."):
 		# Make parent
@@ -224,7 +208,7 @@ def _CloneAndBuildCassandra():
 		Util.RunSubp("ln -s /mnt/local-ssd0/mutant/cassandra /home/ubuntu/work/mutant/cassandra")
 
 		# Build
-		if Ec2InitUtil.GetParam(["server", "run_cassandra_server"]) == "true":
+		if Ec2InitUtil.GetParam(["run_cassandra_server"]) == "true":
 			Util.RunSubp("cd /home/ubuntu/work/mutant/cassandra && ant")
 
 		# Edit the git source repository for easy development.
@@ -260,7 +244,7 @@ def _CloneAndBuildCassandra():
 
 
 def _CloneAndBuildRocksDb():
-	if Ec2InitUtil.GetParam(["server", "rocksdb"]) is None:
+	if Ec2InitUtil.GetParam(["rocksdb"]) is None:
 		return
 
 	with Cons.MT("Cloning RocksDB src and build ..."):
@@ -348,7 +332,7 @@ def _CloneAndBuildYcsb():
 
 
 def RunRocksDBQuizup():
-	for params in Ec2InitUtil.GetParam(["server", "rocksdb-quizup-runs"]):
+	for params in Ec2InitUtil.GetParam(["rocksdb-quizup-runs"]):
 		with Cons.MT("Running RocksDB Quizup ..."):
 			Cons.P(pprint.pformat(params))
 
@@ -570,7 +554,7 @@ def UnzipQuizupData():
 
 
 def PrePopulateCassData():
-	if not bool(Ec2InitUtil.GetParam(["server", "pre_populate_db"])):
+	if not bool(Ec2InitUtil.GetParam(["pre_populate_db"])):
 		return
 
 	with Cons.MT("Pre-popularing Cassandra data ..."):
