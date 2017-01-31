@@ -31,9 +31,9 @@ def main(argv):
 		Ec2InitUtil.SetParams(argv[1])
 		Ec2InitUtil.SetEc2Tags(argv[2])
 
-		#SetHostname()
-		#Ec2InitUtil.SyncTime()
-		#PrepareBlockDevs()
+		SetHostname()
+		Ec2InitUtil.SyncTime()
+		PrepareBlockDevs()
 		Ec2InitUtil.ChangeLogOutput()
 		CloneSrcAndBuild()
 
