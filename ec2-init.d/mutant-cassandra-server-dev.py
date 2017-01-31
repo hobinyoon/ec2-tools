@@ -392,7 +392,7 @@ def RunRocksDBQuizup():
 				% (os.path.expanduser("~"), " ".join(params))
 		Util.RunSubp(cmd)
 
-		if "simulation_tinate_inst_when_done" in rocksdb_quizup_param:
+		if "terminate_inst_when_done" in rocksdb_quizup_param:
 			if rocksdb_quizup_param["terminate_inst_when_done"].lower() == "true":
 				Util.RunSubp("sudo shutdown -h now")
 
