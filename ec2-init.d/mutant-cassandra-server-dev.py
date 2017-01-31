@@ -361,6 +361,9 @@ def RunRocksDBQuizup():
 		if "mutant_enabled" in rocksdb_quizup_param:
 			params.append("--mutant_enabled=%s" % rocksdb_quizup_param["mutant_enabled"])
 
+		if "sst_migration_temperature_threshold" in rocksdb_quizup_param:
+			params.append("--sst_migration_temperature_threshold=%s" % rocksdb_quizup_param["sst_migration_temperature_threshold"])
+
 		if "fast_dev_path" in rocksdb_quizup_param:
 			params.append("--fast_dev_path=%s" % rocksdb_quizup_param["fast_dev_path"])
 
