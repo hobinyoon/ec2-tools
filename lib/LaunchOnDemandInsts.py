@@ -26,7 +26,10 @@ _tpe = concurrent.futures.ThreadPoolExecutor(max_workers=10)
 
 
 def Launch(job_id, msg, job_controller_gm_q):
-	_tpe.submit(_Req, job_id, msg, job_controller_gm_q)
+	# I see a lot of job_req are not processed. Like only 6 out of 14 are
+	# processed. Try not multi-threading.
+	#_tpe.submit(_Req, job_id, msg, job_controller_gm_q)
+	r = _Req(job_id, msg, job_controller_gm_q)
 
 
 class _Req:
