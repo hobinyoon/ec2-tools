@@ -23,20 +23,8 @@ import JobReq
 import SpotPrice
 
 
-<<<<<<< HEAD
-# http://masnun.com/2016/03/29/python-a-quick-introduction-to-the-concurrent-futures-module.html
-_tpe = concurrent.futures.ThreadPoolExecutor(max_workers=10)
-
-
-def Launch(job_id, msg, job_controller_gm_q):
-	# I see a lot of job_req are not processed. Like only 6 out of 14 are
-	# processed. Try not multi-threading.
-	#_tpe.submit(_Req, job_id, msg, job_controller_gm_q)
-	r = _Req(job_id, msg, job_controller_gm_q)
-=======
 def Launch(params):
 	r = _Req(params)
->>>>>>> 78aee9127c99160afeb68755956a81844ce0af0f
 
 
 class _Req:
