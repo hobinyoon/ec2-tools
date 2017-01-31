@@ -49,14 +49,14 @@ def Job_MutantLatencyBySstMigTempThresholds():
 			, "ami_name": "mutant-cassandra-server"
 			, "block_storage_devs": [
 				# 1TB gp2 for 3000 IOPS
-				#{"VolumeType": "gp2", "VolumeSize": 1000, "DeviceName": "d"}
+				{"VolumeType": "gp2", "VolumeSize": 1000, "DeviceName": "d"}
 
 				# 3TB st1 for 120 Mib/s, 500 Mib/s (burst) throughput.
 				#   http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html
 				#{"VolumeType": "st1", "VolumeSize": 3000, "DeviceName": "e"}
 
 				# 3TB sc1 for 36 Mib/s, 240 Mib/s (burst).
-				{"VolumeType": "sc1", "VolumeSize": 3000, "DeviceName": "f"}
+				#{"VolumeType": "sc1", "VolumeSize": 3000, "DeviceName": "f"}
 				]
 			, "unzip_quizup_data": "true"
 
@@ -70,11 +70,11 @@ def Job_MutantLatencyBySstMigTempThresholds():
 
 	p1 = { \
 			"mutant_enabled": "true"
-			, "sst_migration_temperature_threshold": [200, 150, 100, 50, 40, 30, 20, 15, 10, 5, 4, 3, 2, 1] * 2
+			#, "sst_migration_temperature_threshold": 10
 			, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
-			#, "slow_dev_paths": {"t1": "/mnt/ebs-gp2/rocksdb-data-quizup-t1"}
+			, "slow_dev_paths": {"t1": "/mnt/ebs-gp2/rocksdb-data-quizup-t1"}
 			#, "slow_dev_paths": {"t1": "/mnt/ebs-st1/rocksdb-data-quizup-t1"}
-			, "slow_dev_paths": {"t1": "/mnt/ebs-sc1/rocksdb-data-quizup-t1"}
+			#, "slow_dev_paths": {"t1": "/mnt/ebs-sc1/rocksdb-data-quizup-t1"}
 			, "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
 			, "init_db_to_90p_loaded": "true"
 			, "evict_cached_data": "true"
