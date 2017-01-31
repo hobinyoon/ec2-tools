@@ -11,6 +11,7 @@ import re
 import sys
 import time
 import traceback
+import zlib
 
 sys.path.insert(0, "%s/util" % os.path.dirname(os.path.realpath(__file__)))
 import Cons
@@ -58,7 +59,7 @@ def _LogInstInfo():
 
 def _RunInitScript(params_encoded):
 	_Log("params_encoded: %s" % params_encoded)
-	params = json.loads(base64.b64decode(params_encoded))
+	params = json.loads(zlib.decompress(base64.b64decode(params_encoded)))
 	_Log("params: %s" % pprint.pformat(params))
 
 	type_ = params["extra"]["type"]
@@ -96,7 +97,7 @@ def main(argv):
 	#Util.RunSubp("touch /tmp/%s" % getpass.getuser())
 
 	if len(argv) != 2:
-		raise RuntimeError("Usage: %s base64_json_encoded_params" % argv[0])
+		raise RuntimeError("Usage: %s base64_zlib_json_encoded_params" % argv[0])
 
 	# Edit the git source repository for easy development.
 	Util.RunSubp("sed -i 's/" \

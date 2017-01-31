@@ -9,6 +9,7 @@ import sys
 import threading
 import time
 import traceback
+import zlib
 
 sys.path.insert(0, "%s/util" % os.path.dirname(__file__))
 import Cons
@@ -65,7 +66,10 @@ class _Req:
 sudo -i -u ubuntu bash -c 'git clone https://github.com/hobinyoon/mutant-ec2-tools.git /home/ubuntu/work/mutant/ec2-tools'
 sudo -i -u ubuntu /home/ubuntu/work/mutant/ec2-tools/lib/ec2-init.py {0}
 """
-		user_data = user_data.format(base64.b64encode(json.dumps(self.params)))
+		# User data is limited to 16384 bytes. zlib has a really good compression rate.
+		#user_data = user_data.format(base64.b64encode(json.dumps(self.params)))
+		user_data = user_data.format(base64.b64encode(zlib.compress(json.dumps(self.params))))
+
 		# Useful for dev, so that you don't need to launch a new instance every time you test something.
 		if False:
 			Cons.P("Print out user_data for debugging:")
