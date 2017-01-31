@@ -338,45 +338,44 @@ def RunRocksDBQuizup():
 
 			params1 = []
 
-			if "mutant_enabled" in params:
-				params1.append("--mutant_enabled=%s" % params["mutant_enabled"])
-
-			if "sst_migration_temperature_threshold" in params:
-				params1.append("--sst_migration_temperature_threshold=%s" % params["sst_migration_temperature_threshold"])
-
+			# Parameters for run.sh
 			if "fast_dev_path" in params:
 				params1.append("--fast_dev_path=%s" % params["fast_dev_path"])
-
 			if "slow_dev_paths" in params:
 				slow_dev_paths = params["slow_dev_paths"]
 				for k, v in slow_dev_paths.iteritems():
 					params1.append("--slow_dev%s_path=%s" % (k[-1:], v))
-
 			if "db_path" in params:
 				params1.append("--db_path=%s" % params["db_path"])
-
 			if "init_db_to_90p_loaded" in params:
 				params1.append("--init_db_to_90p_loaded=%s" % params["init_db_to_90p_loaded"])
-
 			if "evict_cached_data" in params:
 				params1.append("--evict_cached_data=%s" % params["evict_cached_data"])
+			if "memory_limit_in_mb" in params:
+				params1.append("--memory_limit_in_mb=%s" % params["memory_limit_in_mb"])
+			params1.append("--upload_result_to_s3")
 
+			# Parameters for the quizup binary
+			if "exp_desc" in params:
+				params1.append("--exp_desc=%s" % base64.b64encode(params["exp_desc"]))
+			if "mutant_enabled" in params:
+				params1.append("--mutant_enabled=%s" % params["mutant_enabled"])
 			if "workload_start_from" in params:
 				params1.append("--workload_start_from=%s" % params["workload_start_from"])
 			if "workload_stop_at" in params:
 				params1.append("--workload_stop_at=%s" % params["workload_stop_at"])
-
 			if "simulation_time_dur_in_sec" in params:
 				params1.append("--simulation_time_dur_in_sec=%s" % params["simulation_time_dur_in_sec"])
-
-			params1.append("--upload_result_to_s3")
+			if "sst_migration_temperature_threshold" in params:
+				params1.append("--sst_migration_temperature_threshold=%s" % params["sst_migration_temperature_threshold"])
 
 			cmd = "cd %s/work/mutant/misc/rocksdb/quizup && stdbuf -i0 -o0 -e0 ./run.py %s" \
 					% (os.path.expanduser("~"), " ".join(params1))
 			Util.RunSubp(cmd)
 
 	# Terminate instance
-	Util.RunSubp("sudo shutdown -h now")
+	if Ec2InitUtil.GetParam(["rocksdb-quizup-runs", "terminate_inst_when_done"]) == "true":
+		Util.RunSubp("sudo shutdown -h now")
 
 
 _nm_ip = None
