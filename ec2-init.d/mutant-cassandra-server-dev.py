@@ -348,48 +348,52 @@ def _CloneAndBuildYcsb():
 
 
 def RunRocksDBQuizup():
-	rocsdb_quizup_param = Ec2InitUtil.GetParam(["server", "rocksdb-quizup"])
-	if rocsdb_quizup_param is None:
+	rocksdb_quizup_param = Ec2InitUtil.GetParam(["server", "rocksdb-quizup"])
+	if rocksdb_quizup_param is None:
 		return
 
 	with Cons.MT("Running RocksDB Quizup ..."):
-		#Cons.P(pprint.pformat(rocsdb_quizup_param))
+		#Cons.P(pprint.pformat(rocksdb_quizup_param))
 
 		params = []
 
-		if "mutant_enabled" in rocsdb_quizup_param:
-			params.append("--mutant_enabled=%s" % rocsdb_quizup_param["mutant_enabled"])
+		if "mutant_enabled" in rocksdb_quizup_param:
+			params.append("--mutant_enabled=%s" % rocksdb_quizup_param["mutant_enabled"])
 
-		if "fast_dev_path" in rocsdb_quizup_param:
-			params.append("--fast_dev_path=%s" % rocsdb_quizup_param["fast_dev_path"])
+		if "fast_dev_path" in rocksdb_quizup_param:
+			params.append("--fast_dev_path=%s" % rocksdb_quizup_param["fast_dev_path"])
 
-		if "slow_dev_paths" in rocsdb_quizup_param:
-			slow_dev_paths = rocsdb_quizup_param["slow_dev_paths"]
+		if "slow_dev_paths" in rocksdb_quizup_param:
+			slow_dev_paths = rocksdb_quizup_param["slow_dev_paths"]
 			for k, v in slow_dev_paths.iteritems():
 				params.append("--slow_dev%s_path=%s" % (k[-1:], v))
 
-		if "db_path" in rocsdb_quizup_param:
-			params.append("--db_path=%s" % rocsdb_quizup_param["db_path"])
+		if "db_path" in rocksdb_quizup_param:
+			params.append("--db_path=%s" % rocksdb_quizup_param["db_path"])
 
-		if "init_db_to_90p_loaded" in rocsdb_quizup_param:
-			params.append("--init_db_to_90p_loaded=%s" % rocsdb_quizup_param["init_db_to_90p_loaded"])
+		if "init_db_to_90p_loaded" in rocksdb_quizup_param:
+			params.append("--init_db_to_90p_loaded=%s" % rocksdb_quizup_param["init_db_to_90p_loaded"])
 
-		if "evict_cached_data" in rocsdb_quizup_param:
-			params.append("--evict_cached_data=%s" % rocsdb_quizup_param["evict_cached_data"])
+		if "evict_cached_data" in rocksdb_quizup_param:
+			params.append("--evict_cached_data=%s" % rocksdb_quizup_param["evict_cached_data"])
 
-		if "workload_start_from" in rocsdb_quizup_param:
-			params.append("--workload_start_from=%s" % rocsdb_quizup_param["workload_start_from"])
-		if "workload_stop_at" in rocsdb_quizup_param:
-			params.append("--workload_stop_at=%s" % rocsdb_quizup_param["workload_stop_at"])
+		if "workload_start_from" in rocksdb_quizup_param:
+			params.append("--workload_start_from=%s" % rocksdb_quizup_param["workload_start_from"])
+		if "workload_stop_at" in rocksdb_quizup_param:
+			params.append("--workload_stop_at=%s" % rocksdb_quizup_param["workload_stop_at"])
 
-		if "simulation_time_dur_in_sec" in rocsdb_quizup_param:
-			params.append("--simulation_time_dur_in_sec=%s" % rocsdb_quizup_param["simulation_time_dur_in_sec"])
+		if "simulation_time_dur_in_sec" in rocksdb_quizup_param:
+			params.append("--simulation_time_dur_in_sec=%s" % rocksdb_quizup_param["simulation_time_dur_in_sec"])
 
 		params.append("--upload_result_to_s3")
 
 		cmd = "cd %s/work/mutant/misc/rocksdb/quizup && stdbuf -i0 -o0 -e0 ./run.py %s" \
 				% (os.path.expanduser("~"), " ".join(params))
 		Util.RunSubp(cmd)
+
+		if "simulation_tinate_inst_when_done" in rocksdb_quizup_param:
+			if rocksdb_quizup_param["terminate_inst_when_done"].lower() == "true":
+				Util.RunSubp("sudo shutdown -h now")
 
 
 _nm_ip = None
