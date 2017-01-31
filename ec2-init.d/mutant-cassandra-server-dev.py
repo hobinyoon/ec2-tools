@@ -57,8 +57,7 @@ def main(argv):
 def SetHostname():
 	with Cons.MT("Setting host name ..."):
 		# Hostname consists of availability zone name and launch req datetime
-		hn = "%s-%s-%s" % (Ec2InitUtil.GetAz(), Ec2InitUtil.GetJobId()
-				, Ec2InitUtil.GetEc2Tag("name").replace("server", "s").replace("client", "c"))
+		hn = "%s-%s" % (Ec2InitUtil.GetAz(), Ec2InitUtil.GetJobId())
 
 		# http://askubuntu.com/questions/9540/how-do-i-change-the-computer-name
 		Util.RunSubp("sudo sh -c 'echo \"%s\" > /etc/hostname'" % hn)

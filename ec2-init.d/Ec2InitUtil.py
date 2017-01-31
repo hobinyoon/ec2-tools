@@ -3,6 +3,7 @@ import json
 import os
 import pprint
 import sys
+import zlib
 
 sys.path.insert(0, "%s/../lib/util" % os.path.dirname(__file__))
 import Cons
@@ -13,7 +14,7 @@ _params = None
 
 def SetParams(v):
 	global _params
-	_params = json.loads(base64.b64decode(v))
+	_params = json.loads(zlib.decompress(base64.b64decode(v)))
 	#Cons.P("_params: %s" % pprint.pformat(_params))
 
 
