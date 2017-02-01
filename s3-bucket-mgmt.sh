@@ -29,3 +29,7 @@ done
 #   Compared with the storage price, it's better to move it out when you don't use it for more than 1 month.
 
 # Cleaning up a lot of not-so-important AMIs
+#   Now total 41GB. $4.4/Month. Will want to download the data later on.
+#   Or move to s3, which is $0.023/GB/Month. Or even to
+#     Infrequently accessed storage: $0.0125/GB/Month
+#     Glacier storage:               $0.004 /GB/Month. This is the way to go. Or free cloud storage services like Mega
