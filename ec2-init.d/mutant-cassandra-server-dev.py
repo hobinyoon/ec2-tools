@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import base64
 import boto3
 import datetime
 import multiprocessing
