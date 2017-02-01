@@ -49,6 +49,8 @@ def Job_UnmodifiedRocksDBLatencyByMemorySizes():
 			, "ami_name": "mutant-cassandra-server"
 			, "block_storage_devs": [
 				#{"VolumeType": "gp2", "VolumeSize": 1000, "DeviceName": "d"}
+				#{"VolumeType": "st1", "VolumeSize": 3000, "DeviceName": "e"}
+				{"VolumeType": "sc1", "VolumeSize": 3000, "DeviceName": "f"}
 				]
 			, "unzip_quizup_data": "true"
 
@@ -62,8 +64,14 @@ def Job_UnmodifiedRocksDBLatencyByMemorySizes():
 
 	p1 = { \
 			"exp_desc": "Unmodified RocksDB latency by different memory sizes"
-			, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
-			, "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
+			#, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
+			#, "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
+			#, "fast_dev_path": "/mnt/ebs-gp2/rocksdb-data"
+			#, "db_path": "/mnt/ebs-gp2/rocksdb-data/quizup"
+			#, "fast_dev_path": "/mnt/ebs-st1/rocksdb-data"
+			#, "db_path": "/mnt/ebs-st1/rocksdb-data/quizup"
+			, "fast_dev_path": "/mnt/ebs-sc1/rocksdb-data"
+			, "db_path": "/mnt/ebs-sc1/rocksdb-data/quizup"
 			, "init_db_to_90p_loaded": "true"
 			, "evict_cached_data": "true"
 			, "memory_limit_in_mb": 1024 * 3
@@ -75,29 +83,38 @@ def Job_UnmodifiedRocksDBLatencyByMemorySizes():
 			, "simulation_time_dur_in_sec": 60000
 			}
 
+	# By storage devices too
+
 	# The later ones may crash. I'll have to check the instances manually.
+	params["rocksdb-quizup-runs"] = []
 	for i in [5.0, 4.9, 4.8, 4.7, 4.6, 4.5, 4.4, 4.3, 4.2, 4.1, 4.0]:
 		p1["memory_limit_in_mb"] = 1024.0 * i
 		params["rocksdb-quizup-runs"].append(dict(p1))
-		LaunchOnDemandInsts.Launch(params)
+	LaunchOnDemandInsts.Launch(params)
 
-# TODO
-#	for i in [3.9, 3.8, 3.7, 3.6, 3.5, 3.4, 3.3, 3.2, 3.1, 3.0]:
-#		p1["memory_limit_in_mb"] = 1024.0 * i
-#		params["rocksdb-quizup-runs"].append(dict(p1))
-#		LaunchOnDemandInsts.Launch(params)
-#	for i in [2.9, 2.8, 2.7, 2.6, 2.5, 2.4, 2.3, 2.2, 2.1, 2.0]:
-#		p1["memory_limit_in_mb"] = 1024.0 * i
-#		params["rocksdb-quizup-runs"].append(dict(p1))
-#		LaunchOnDemandInsts.Launch(params)
-#	for i in [1.9, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0]:
-#		p1["memory_limit_in_mb"] = 1024.0 * i
-#		params["rocksdb-quizup-runs"].append(dict(p1))
-#		LaunchOnDemandInsts.Launch(params)
-#	for i in [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0]:
-#		p1["memory_limit_in_mb"] = 1024.0 * i
-#		params["rocksdb-quizup-runs"].append(dict(p1))
-#		LaunchOnDemandInsts.Launch(params)
+	params["rocksdb-quizup-runs"] = []
+	for i in [3.9, 3.8, 3.7, 3.6, 3.5, 3.4, 3.3, 3.2, 3.1, 3.0]:
+		p1["memory_limit_in_mb"] = 1024.0 * i
+		params["rocksdb-quizup-runs"].append(dict(p1))
+	LaunchOnDemandInsts.Launch(params)
+
+	params["rocksdb-quizup-runs"] = []
+	for i in [2.9, 2.8, 2.7, 2.6, 2.5, 2.4, 2.3, 2.2, 2.1, 2.0]:
+		p1["memory_limit_in_mb"] = 1024.0 * i
+		params["rocksdb-quizup-runs"].append(dict(p1))
+	LaunchOnDemandInsts.Launch(params)
+
+	params["rocksdb-quizup-runs"] = []
+	for i in [1.9, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0]:
+		p1["memory_limit_in_mb"] = 1024.0 * i
+		params["rocksdb-quizup-runs"].append(dict(p1))
+	LaunchOnDemandInsts.Launch(params)
+
+	params["rocksdb-quizup-runs"] = []
+	for i in [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0]:
+		p1["memory_limit_in_mb"] = 1024.0 * i
+		params["rocksdb-quizup-runs"].append(dict(p1))
+	LaunchOnDemandInsts.Launch(params)
 
 
 def Job_MutantStorageUsage():
