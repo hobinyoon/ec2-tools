@@ -87,7 +87,11 @@ class _Req:
 		# This is run as root. Some of them need to be run by the user ubuntu
 		#   http://unix.stackexchange.com/questions/4342/how-do-i-get-sudo-u-user-to-use-the-users-env
 		#
-		# running command through ssh is to have ulimit in effect, which works only in a login shell.
+		# Running command through ssh is to make ulimit in effect, which works only
+		# in a login shell. With the cloud-init initial shell, max number of open
+		# files is 1024, which is not enough for RocksDB-Mutant-Quizup.
+		# - A downside seems to be that you don't see the log in
+		#   /var/log/cloud-init-output.log.
 		user_data = \
 """#!/bin/bash
 sudo rm -rf /home/ubuntu/work/mutant/ec2-tools
