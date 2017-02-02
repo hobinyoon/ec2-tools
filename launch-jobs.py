@@ -46,11 +46,12 @@ def Job_UnmodifiedRocksDBLatencyByMemorySizes():
 			self.mem_sizes = []
 		def Full(self):
 			return (len(self.mem_sizes) >= 4)
-		def Add(self, mem_size):
+		def Add(self, mem_size, force=False):
 			# Experiment already done
-			if ((self.stg_dev == "local-ssd1") and (mem_size in [3.8, 3.6, 3.4, 3.2])) \
-					or ((self.stg_dev == "ebs-gp2") and (mem_size in [4.2])):
-						return
+			if not force:
+				if ((self.stg_dev == "local-ssd1") and (mem_size in [3.8, 3.6, 3.4, 3.2])) \
+						or ((self.stg_dev == "ebs-gp2") and (mem_size in [4.2])):
+							return
 			self.mem_sizes.append(mem_size)
 		def Size(self):
 			return len(self.mem_sizes)
@@ -71,7 +72,7 @@ def Job_UnmodifiedRocksDBLatencyByMemorySizes():
 	else:
 		# Manual setting
 		conf = Conf("ebs-gp2")
-		conf.Add(4.2)
+		conf.Add(4.2, force=True)
 		confs.append(conf)
 	Cons.P("%d machines" % len(confs))
 	Cons.P(pprint.pformat(confs, width=100))
