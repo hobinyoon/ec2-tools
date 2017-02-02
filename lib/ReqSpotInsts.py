@@ -93,7 +93,7 @@ class _Req:
 sudo rm -rf /home/ubuntu/work/mutant/ec2-tools
 sudo -i -u ubuntu bash -c 'git clone https://github.com/hobinyoon/mutant-ec2-tools.git /home/ubuntu/work/mutant/ec2-tools'
 ulimit -a
-ssh -o "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" ubuntu@localhost /home/ubuntu/work/mutant/ec2-tools/lib/ec2-init.py {0}
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ubuntu@localhost /home/ubuntu/work/mutant/ec2-tools/lib/ec2-init.py {0}
 """
 		#sudo -i -u ubuntu /home/ubuntu/work/mutant/ec2-tools/lib/ec2-init.py {0}
 		user_data = user_data.format(base64.b64encode(zlib.compress(json.dumps(self.params))))
