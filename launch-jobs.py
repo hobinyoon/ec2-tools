@@ -16,6 +16,7 @@ sys.path.insert(0, "%s/lib" % os.path.dirname(__file__))
 import Ec2Region
 
 import LaunchOnDemandInsts
+import ReqSpotInsts
 
 
 def main(argv):
@@ -39,82 +40,87 @@ def main(argv):
 
 
 def Job_UnmodifiedRocksDBLatencyByMemorySizes():
-	params = { \
-			# us-east-1, which is where the S3 buckets for experiment are.
-			"region": "us-east-1"
-			, "inst_type": "c3.2xlarge"
+	class Conf:
+		def __init__(self, stg_dev):
+			self.stg_dev = stg_dev
+			self.mem_sizes = []
+		def Full(self):
+			return (len(self.mem_sizes) >= 4)
+		def Add(self, mem_size):
+			# Experiment already done
+			if self.stg_dev == "local-ssd1":
+				if mem_size in [3.8, 3.6, 3.4, 3.2]:
+					return
+			self.mem_sizes.append(mem_size)
+		def Size(self):
+			return len(self.mem_sizes)
+		def __repr__(self):
+			return "(%s, %s)" % (self.stg_dev, self.mem_sizes)
 
-			# RocksDB can use the same AMI
-			, "init_script": "mutant-cassandra-server-dev"
-			, "ami_name": "mutant-cassandra-server"
-			, "block_storage_devs": [
-				#{"VolumeType": "gp2", "VolumeSize": 1000, "DeviceName": "d"}
-				#{"VolumeType": "st1", "VolumeSize": 3000, "DeviceName": "e"}
-				{"VolumeType": "sc1", "VolumeSize": 3000, "DeviceName": "f"}
-				]
-			, "unzip_quizup_data": "true"
+	confs = []
+	# TODO: Enable this after making sure the single-node experiment goes well
+	if False:
+		for stg_dev in ["local-ssd1", "ebs-gp2", "ebs-st1", "ebs-sc1"]:
+			conf = Conf(stg_dev)
+			for i in range(42, 8, -2):
+				if conf.Full():
+					confs.append(conf)
+					conf = Conf(stg_dev)
+				conf.Add(i/10.0)
+			if conf.Size() > 0:
+				confs.append(conf)
+	else:
+		conf = Conf("ebs-gp2")
+		conf.Add(4.2)
+		confs.append(conf)
+	Cons.P("%d machines" % len(confs))
+	Cons.P(pprint.pformat(confs, width=100))
 
-			, "run_cassandra_server": "false"
+	for conf in confs:
+		params = { \
+				# us-east-1, which is where the S3 buckets for experiment are.
+				"region": "us-east-1"
+				, "inst_type": "c3.2xlarge"
+				, "spot_req_max_price": 1.0
+				# RocksDB can use the same AMI
+				, "init_script": "mutant-cassandra-server-dev"
+				, "ami_name": "mutant-cassandra-server"
+				, "block_storage_devs": []
+				, "unzip_quizup_data": "true"
+				, "run_cassandra_server": "false"
+				# For now, it doesn't do much other than checking out the code and building.
+				, "rocksdb": { }
+				, "rocksdb-quizup-runs": []
+				}
+		if conf.stg_dev == "local-ssd1":
+			pass
+		elif conf.stg_dev == "ebs-gp2":
+			params["block_storage_devs"].append({"VolumeType": "gp2", "VolumeSize": 1000, "DeviceName": "d"})
+		elif conf.stg_dev == "ebs-st1":
+			params["block_storage_devs"].append({"VolumeType": "st1", "VolumeSize": 3000, "DeviceName": "e"})
+		elif conf.stg_dev == "ebs-sc1":
+			params["block_storage_devs"].append({"VolumeType": "sc1", "VolumeSize": 3000, "DeviceName": "f"})
+		else:
+			raise RuntimeError("Unexpected")
 
-			# For now, it doesn't do much other than checking out the code and building.
-			, "rocksdb": { }
+		p1 = { \
+				"exp_desc": "Unmodified RocksDB latency by different memory sizes"
+				, "fast_dev_path": "/mnt/%s/rocksdb-data" % conf.stg_dev
+				, "db_path": "/mnt/%s/rocksdb-data/quizup" % conf.stg_dev
+				, "init_db_to_90p_loaded": "true"
+				, "evict_cached_data": "true"
+				, "memory_limit_in_mb": 1024 * 3
+				, "terminate_inst_when_done": "true"
 
-			, "rocksdb-quizup-runs": []
-			}
-
-	p1 = { \
-			"exp_desc": "Unmodified RocksDB latency by different memory sizes"
-			#, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
-			#, "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
-			#, "fast_dev_path": "/mnt/ebs-gp2/rocksdb-data"
-			#, "db_path": "/mnt/ebs-gp2/rocksdb-data/quizup"
-			#, "fast_dev_path": "/mnt/ebs-st1/rocksdb-data"
-			#, "db_path": "/mnt/ebs-st1/rocksdb-data/quizup"
-			, "fast_dev_path": "/mnt/ebs-sc1/rocksdb-data"
-			, "db_path": "/mnt/ebs-sc1/rocksdb-data/quizup"
-			, "init_db_to_90p_loaded": "true"
-			, "evict_cached_data": "true"
-			, "memory_limit_in_mb": 1024 * 3
-			, "terminate_inst_when_done": "true"
-
-			, "mutant_enabled": "false"
-			, "workload_start_from": 0.899
-			, "workload_stop_at":    -1.0
-			, "simulation_time_dur_in_sec": 60000
-			}
-
-	# By storage devices too
-
-	# The later ones may crash. I'll have to check the instances manually.
-	params["rocksdb-quizup-runs"] = []
-	for i in [5.0, 4.9, 4.8, 4.7, 4.6, 4.5, 4.4, 4.3, 4.2, 4.1, 4.0]:
-		p1["memory_limit_in_mb"] = 1024.0 * i
-		params["rocksdb-quizup-runs"].append(dict(p1))
-	LaunchOnDemandInsts.Launch(params)
-
-	params["rocksdb-quizup-runs"] = []
-	for i in [3.9, 3.8, 3.7, 3.6, 3.5, 3.4, 3.3, 3.2, 3.1, 3.0]:
-		p1["memory_limit_in_mb"] = 1024.0 * i
-		params["rocksdb-quizup-runs"].append(dict(p1))
-	LaunchOnDemandInsts.Launch(params)
-
-	params["rocksdb-quizup-runs"] = []
-	for i in [2.9, 2.8, 2.7, 2.6, 2.5, 2.4, 2.3, 2.2, 2.1, 2.0]:
-		p1["memory_limit_in_mb"] = 1024.0 * i
-		params["rocksdb-quizup-runs"].append(dict(p1))
-	LaunchOnDemandInsts.Launch(params)
-
-	params["rocksdb-quizup-runs"] = []
-	for i in [1.9, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0]:
-		p1["memory_limit_in_mb"] = 1024.0 * i
-		params["rocksdb-quizup-runs"].append(dict(p1))
-	LaunchOnDemandInsts.Launch(params)
-
-	params["rocksdb-quizup-runs"] = []
-	for i in [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0]:
-		p1["memory_limit_in_mb"] = 1024.0 * i
-		params["rocksdb-quizup-runs"].append(dict(p1))
-	LaunchOnDemandInsts.Launch(params)
+				, "mutant_enabled": "false"
+				, "workload_start_from": 0.899
+				, "workload_stop_at":    -1.0
+				, "simulation_time_dur_in_sec": 60000
+				}
+		for ms in conf.mem_sizes:
+			p1["memory_limit_in_mb"] = 1024.0 * ms
+			params["rocksdb-quizup-runs"].append(dict(p1))
+		LaunchJob(params)
 
 
 def Job_MutantStorageUsage():
@@ -155,7 +161,7 @@ def Job_MutantStorageUsage():
 			}
 
 	params["rocksdb-quizup-runs"].append(dict(p1))
-	LaunchOnDemandInsts.Launch(params)
+	LaunchJob(params)
 
 
 def Job_UnmodifiedRocksDBLatency():
@@ -207,7 +213,7 @@ def Job_UnmodifiedRocksDBLatency():
 
 	for i in range(10):
 		params["rocksdb-quizup-runs"].append(dict(p1))
-	LaunchOnDemandInsts.Launch(params)
+	LaunchJob(params)
 
 
 def Job_MutantLatencyBySstMigTempThresholds():
@@ -259,7 +265,16 @@ def Job_MutantLatencyBySstMigTempThresholds():
 	for sst_mig_temp_th in [200, 150, 100, 50, 40, 30, 20, 15, 10, 5, 4, 3, 2, 1] * 2:
 		p1["sst_migration_temperature_threshold"] = sst_mig_temp_th
 		params["rocksdb-quizup-runs"].append(dict(p1))
-	LaunchOnDemandInsts.Launch(params)
+	LaunchJob(params)
+
+
+def LaunchJob(params):
+	# Spot instance
+	ReqSpotInsts.Req(params)
+
+	# On-demand instance
+	#LaunchOnDemandInsts.Launch(params)
+
 
 
 if __name__ == "__main__":

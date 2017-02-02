@@ -1,25 +1,17 @@
 import base64
 import botocore
-import concurrent.futures
-import datetime
 import json
 import os
 import pprint
 import sys
-import threading
 import time
-import traceback
 import zlib
 
 sys.path.insert(0, "%s/util" % os.path.dirname(__file__))
 import Cons
-import Util
 
 import BotoClient
 import Conf
-import Ec2Region
-import JobContOutput
-import JobReq
 import SpotPrice
 
 
@@ -70,7 +62,6 @@ sudo -i -u ubuntu /home/ubuntu/work/mutant/ec2-tools/lib/ec2-init.py {0}
 			Cons.P("Print out user_data for debugging:")
 			Cons.P("user_data=[%s]" % user_data)
 			os._exit(1)
-		ami_name = self.params["ami_name"]
 
 		block_dev_mappings = []
 		for b in self.params["block_storage_devs"]:
@@ -86,7 +77,7 @@ sudo -i -u ubuntu /home/ubuntu/work/mutant/ec2-tools/lib/ec2-init.py {0}
 		while True:
 			try:
 				r = BotoClient.Get(self.params["region"]).run_instances(
-						ImageId = GetLatestAmiId(self.params["region"], ami_name)
+						ImageId = GetLatestAmiId(self.params["region"], self.params["ami_name"])
 						, MinCount=1
 						, MaxCount=1
 						, SecurityGroups=["mutant-server"]
@@ -189,45 +180,39 @@ class InstInfo:
 			self.inst_tagged = False
 
 	def __init__(self):
-		self.lock = threading.Lock()
 		self.by_inst_id = {}
 
 	def Add(self, name, inst_ids):
-		with self.lock:
-			if name == "server":
-				for i in range(len(inst_ids)):
-					name1 = "%s%d" % (name, i)
-					inst_id = inst_ids[i]
-					e = InstInfo.E(name1, inst_id)
-					self.by_inst_id[inst_id] = e
-			else:
-				if len(inst_ids) != 1:
-					raise RuntimeError("Unexpected: %d" % len(inst_ids))
-				inst_id = inst_ids[0]
-				e = InstInfo.E(name, inst_id)
+		if name == "server":
+			for i in range(len(inst_ids)):
+				name1 = "%s%d" % (name, i)
+				inst_id = inst_ids[i]
+				e = InstInfo.E(name1, inst_id)
 				self.by_inst_id[inst_id] = e
+		else:
+			if len(inst_ids) != 1:
+				raise RuntimeError("Unexpected: %d" % len(inst_ids))
+			inst_id = inst_ids[0]
+			e = InstInfo.E(name, inst_id)
+			self.by_inst_id[inst_id] = e
 
 	def GetAllInstIds(self):
-		with self.lock:
-			keys = []
-			for k, v in self.by_inst_id.iteritems():
-				keys.append(k)
-			return keys
+		keys = []
+		for k, v in self.by_inst_id.iteritems():
+			keys.append(k)
+		return keys
 
 	def IsInstTagged(self, inst_id):
-		with self.lock:
-			e = self.by_inst_id[inst_id]
-			return e.inst_tagged
+		e = self.by_inst_id[inst_id]
+		return e.inst_tagged
 
 	def NodeName(self, inst_id):
-		with self.lock:
-			e = self.by_inst_id[inst_id]
-			return e.name
+		e = self.by_inst_id[inst_id]
+		return e.name
 
 	def SetInstTagged(self, inst_id):
-		with self.lock:
-			e = self.by_inst_id[inst_id]
-			e.inst_tagged = True
+		e = self.by_inst_id[inst_id]
+		e.inst_tagged = True
 
 
 def GetLatestAmiId(region, name):
