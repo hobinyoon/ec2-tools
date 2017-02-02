@@ -137,7 +137,7 @@ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ubuntu@localhost
 						Type = "one-time",
 						LaunchSpecification = ls,
 						)
-				Cons.P("SpotInstReqResp: %s" % pprint.pformat(r))
+				#Cons.P("SpotInstReqResp: %s" % pprint.pformat(r))
 
 				for e in r["SpotInstanceRequests"]:
 					spot_req_id = e["SpotInstanceRequestId"]
