@@ -156,7 +156,7 @@ sudo -i -u ubuntu /home/ubuntu/work/mutant/ec2-tools/lib/ec2-init.py {0}
 					Cons.P("spot_req_id=%s status=%s inst_id=%s" % (spot_req_id, status, inst_id))
 					self.spot_req_infos.SetSpotReqFulfilled(spot_req_id, inst_id)
 					fulfilled = True
-				if not filfilled:
+				if not fulfilled:
 					time.sleep(1)
 			except botocore.exceptions.ClientError as e:
 				if e.response["Error"]["Code"] == "InvalidSpotInstanceRequestID.NotFound":
