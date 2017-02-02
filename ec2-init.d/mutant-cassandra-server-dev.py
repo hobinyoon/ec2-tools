@@ -48,8 +48,9 @@ def main(argv):
 		if Ec2InitUtil.GetParam(["run_cassandra_server"]) == "true":
 			RunCassandra()
 
-		# Server nodes don't terminate by themselves. They may be terminated by the
-		# request from the client.
+		# Terminate instance
+		if Ec2InitUtil.GetParam(["terminate_inst_when_done"]):
+			Util.RunSubp("sudo shutdown -h now")
 	except Exception as e:
 		msg = "Exception: %s\n%s" % (e, traceback.format_exc())
 		Cons.P(msg)
@@ -373,10 +374,6 @@ def RunRocksDBQuizup():
 			cmd = "cd %s/work/mutant/misc/rocksdb/quizup && stdbuf -i0 -o0 -e0 ./run.py %s" \
 					% (os.path.expanduser("~"), " ".join(params1))
 			Util.RunSubp(cmd)
-
-	# Terminate instance
-	if Ec2InitUtil.GetParam(["rocksdb-quizup-runs", "terminate_inst_when_done"]) == "true":
-		Util.RunSubp("sudo shutdown -h now")
 
 
 _nm_ip = None
