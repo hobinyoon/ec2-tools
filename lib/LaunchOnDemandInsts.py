@@ -59,9 +59,8 @@ sudo -i -u ubuntu /home/ubuntu/work/mutant/ec2-tools/lib/ec2-init.py {0}
 
 		# Useful for dev, so that you don't need to launch a new instance every time you test something.
 		if False:
-			Cons.P("Print out user_data for debugging:")
 			Cons.P("user_data=[%s]" % user_data)
-			os._exit(1)
+			sys.exit(0)
 
 		block_dev_mappings = []
 		for b in self.params["block_storage_devs"]:

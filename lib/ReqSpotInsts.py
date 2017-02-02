@@ -93,10 +93,15 @@ class _Req:
 sudo rm -rf /home/ubuntu/work/mutant/ec2-tools
 sudo -i -u ubuntu bash -c 'git clone https://github.com/hobinyoon/mutant-ec2-tools.git /home/ubuntu/work/mutant/ec2-tools'
 ulimit -a
-ssh ubuntu@localhost /home/ubuntu/work/mutant/ec2-tools/lib/ec2-init.py {0}
+ssh -o "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" ubuntu@localhost /home/ubuntu/work/mutant/ec2-tools/lib/ec2-init.py {0}
 """
 		#sudo -i -u ubuntu /home/ubuntu/work/mutant/ec2-tools/lib/ec2-init.py {0}
 		user_data = user_data.format(base64.b64encode(zlib.compress(json.dumps(self.params))))
+
+		# Useful for debugging
+		if False:
+			Cons.P("user_data=[%s]" % user_data)
+			sys.exit(0)
 
 		block_dev_mappings = []
 		for b in self.params["block_storage_devs"]:
