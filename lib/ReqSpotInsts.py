@@ -92,6 +92,7 @@ class _Req:
 """#!/bin/bash
 sudo rm -rf /home/ubuntu/work/mutant/ec2-tools
 sudo -i -u ubuntu bash -c 'git clone https://github.com/hobinyoon/mutant-ec2-tools.git /home/ubuntu/work/mutant/ec2-tools'
+ulimit -a
 ssh ubuntu@localhost /home/ubuntu/work/mutant/ec2-tools/lib/ec2-init.py {0}
 """
 		#sudo -i -u ubuntu /home/ubuntu/work/mutant/ec2-tools/lib/ec2-init.py {0}

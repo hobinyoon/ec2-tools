@@ -95,6 +95,9 @@ def main(argv):
 	# This script is run under the user 'ubuntu'.
 	#Util.RunSubp("touch /tmp/%s" % getpass.getuser())
 
+	# Testing the max number of open files
+	Util.RunSubp("ulimit -a")
+
 	if len(argv) != 2:
 		raise RuntimeError("Usage: %s base64_zlib_json_encoded_params" % argv[0])
 
