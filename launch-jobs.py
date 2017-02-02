@@ -92,6 +92,7 @@ def Job_UnmodifiedRocksDBLatencyByMemorySizes():
 				# For now, it doesn't do much other than checking out the code and building.
 				, "rocksdb": { }
 				, "rocksdb-quizup-runs": []
+				, "terminate_inst_when_done": "true"
 				}
 		if conf.stg_dev == "local-ssd1":
 			pass
@@ -111,7 +112,6 @@ def Job_UnmodifiedRocksDBLatencyByMemorySizes():
 				, "init_db_to_90p_loaded": "true"
 				, "evict_cached_data": "true"
 				, "memory_limit_in_mb": 1024 * 3
-				, "terminate_inst_when_done": "true"
 
 				, "mutant_enabled": "false"
 				, "workload_start_from": 0.899
