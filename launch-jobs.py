@@ -60,6 +60,10 @@ def Job_UnmodifiedRocksDBLatencyByMemorySizes():
 		def __repr__(self):
 			return "(%s, %s)" % (self.stg_dev, self.mem_sizes)
 
+	# The lower bound without getting the system overloaded are different for
+	# different storage devices.  local-ssd1 and ebs-gp2 have 10, which is 1.0GB,
+	# which the range() function sets the lower bound as 8.  ebs-st1 can go 1.6GB
+	# without the storage device overloaded, ebs-sc1 2.0GB.
 	num_exp_per_conf = 5
 	confs = []
 	for stg_dev in ["local-ssd1", "ebs-gp2"]:
@@ -76,7 +80,7 @@ def Job_UnmodifiedRocksDBLatencyByMemorySizes():
 	stg_dev = "ebs-st1"
 	conf = Conf(stg_dev)
 	for j in range(num_exp_per_conf):
-		for i in range(30, 12, -2):
+		for i in range(30, 14, -2):
 			if conf.Full():
 				confs.append(conf)
 				conf = Conf(stg_dev)
@@ -87,7 +91,7 @@ def Job_UnmodifiedRocksDBLatencyByMemorySizes():
 	stg_dev = "ebs-sc1"
 	conf = Conf(stg_dev)
 	for j in range(num_exp_per_conf):
-		for i in range(30, 14, -2):
+		for i in range(30, 18, -2):
 			if conf.Full():
 				confs.append(conf)
 				conf = Conf(stg_dev)
@@ -95,8 +99,13 @@ def Job_UnmodifiedRocksDBLatencyByMemorySizes():
 	if conf.Size() > 0:
 		confs.append(conf)
 
+	# Patch a missed experiment
+	#confs[18].mem_sizes = confs[18].mem_sizes[4:]
+	#confs = confs[18:19]
+
 	Cons.P("%d machines" % len(confs))
 	Cons.P(pprint.pformat(confs, width=100))
+	#sys.exit(0)
 
 	for conf in confs:
 		params = { \
