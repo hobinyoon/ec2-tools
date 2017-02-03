@@ -41,7 +41,7 @@ def main(argv):
 
 def Job_UnmodifiedRocksDBLatencyByMemorySizes():
 	class Conf:
-		exp_per_ec2inst = 4
+		exp_per_ec2inst = 8
 		def __init__(self, stg_dev):
 			self.stg_dev = stg_dev
 			self.mem_sizes = []
@@ -60,42 +60,40 @@ def Job_UnmodifiedRocksDBLatencyByMemorySizes():
 		def __repr__(self):
 			return "(%s, %s)" % (self.stg_dev, self.mem_sizes)
 
+	num_exp_per_conf = 5
 	confs = []
 	for stg_dev in ["local-ssd1", "ebs-gp2"]:
 		conf = Conf(stg_dev)
-		for i in range(30, 8, -2):
-			if conf.Full():
-				confs.append(conf)
-				conf = Conf(stg_dev)
-			conf.Add(i/10.0)
+		for j in range(num_exp_per_conf):
+			for i in range(30, 8, -2):
+				if conf.Full():
+					confs.append(conf)
+					conf = Conf(stg_dev)
+				conf.Add(i/10.0)
 		if conf.Size() > 0:
 			confs.append(conf)
 
 	stg_dev = "ebs-st1"
 	conf = Conf(stg_dev)
-	for i in range(30, 12, -2):
-		if conf.Full():
-			confs.append(conf)
-			conf = Conf(stg_dev)
-		conf.Add(i/10.0)
+	for j in range(num_exp_per_conf):
+		for i in range(30, 12, -2):
+			if conf.Full():
+				confs.append(conf)
+				conf = Conf(stg_dev)
+			conf.Add(i/10.0)
 	if conf.Size() > 0:
 		confs.append(conf)
 
 	stg_dev = "ebs-sc1"
 	conf = Conf(stg_dev)
-	for i in range(30, 14, -2):
-		if conf.Full():
-			confs.append(conf)
-			conf = Conf(stg_dev)
-		conf.Add(i/10.0)
+	for j in range(num_exp_per_conf):
+		for i in range(30, 14, -2):
+			if conf.Full():
+				confs.append(conf)
+				conf = Conf(stg_dev)
+			conf.Add(i/10.0)
 	if conf.Size() > 0:
 		confs.append(conf)
-
-	# Repeat all experiments 5 times.
-	confs1 = []
-	for i in range(5):
-		confs1 += confs
-	confs = confs1
 
 	Cons.P("%d machines" % len(confs))
 	Cons.P(pprint.pformat(confs, width=100))
