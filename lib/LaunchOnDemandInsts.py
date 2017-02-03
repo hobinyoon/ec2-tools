@@ -47,11 +47,17 @@ class _Req:
 
 		# This is run as root. Some of them need to be run by the user ubuntu
 		#   http://unix.stackexchange.com/questions/4342/how-do-i-get-sudo-u-user-to-use-the-users-env
+		#
+		# Running command through ssh is to make ulimit in effect, which works only
+		# in a login shell. With the cloud-init initial shell, max number of open
+		# files is 1024, which is not enough for RocksDB-Mutant-Quizup.
+		# - A downside seems to be that you don't see the log in
+		#   /var/log/cloud-init-output.log.
 		user_data = \
 """#!/bin/bash
 sudo rm -rf /home/ubuntu/work/mutant/ec2-tools
 sudo -i -u ubuntu bash -c 'git clone https://github.com/hobinyoon/mutant-ec2-tools.git /home/ubuntu/work/mutant/ec2-tools'
-sudo -i -u ubuntu /home/ubuntu/work/mutant/ec2-tools/lib/ec2-init.py {0}
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ubuntu@localhost /home/ubuntu/work/mutant/ec2-tools/lib/ec2-init.py {0}
 """
 		# User data is limited to 16384 bytes. zlib has a really good compression rate.
 		#user_data = user_data.format(base64.b64encode(json.dumps(self.params)))
@@ -132,7 +138,8 @@ sudo -i -u ubuntu /home/ubuntu/work/mutant/ec2-tools/lib/ec2-init.py {0}
 						raise RuntimeError("Unexpected: %s" % pprint.pformat(e1))
 					elif state == "running":
 						num_running += 1
-						pub_ip = e1["PublicIpAddress"]
+						# Some doesn't have it. Might be not assigned yet.
+						#pub_ip = e1["PublicIpAddress"]
 					elif state == "pending":
 						self._TagInst(inst_id)
 

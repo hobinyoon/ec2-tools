@@ -206,7 +206,8 @@ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ubuntu@localhost
 						raise RuntimeError("Unexpected: %s" % pprint.pformat(e1))
 					elif state == "running":
 						num_running += 1
-						pub_ip = e1["PublicIpAddress"]
+						# Some doesn't have it. Might be not assigned yet.
+						#pub_ip = e1["PublicIpAddress"]
 					elif state == "pending":
 						self._TagInst(inst_id)
 
