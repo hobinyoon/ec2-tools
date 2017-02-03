@@ -41,17 +41,19 @@ def main(argv):
 
 def Job_UnmodifiedRocksDBLatencyByMemorySizes():
 	class Conf:
+		exp_per_ec2inst = 4
 		def __init__(self, stg_dev):
 			self.stg_dev = stg_dev
 			self.mem_sizes = []
 		def Full(self):
-			return (len(self.mem_sizes) >= 4)
+			return (len(self.mem_sizes) >= Conf.exp_per_ec2inst)
 		def Add(self, mem_size, force=False):
-			# Experiment already done
-			if not force:
-				if ((self.stg_dev == "local-ssd1") and (mem_size in [3.8, 3.6, 3.4, 3.2])) \
-						or ((self.stg_dev == "ebs-gp2") and (mem_size in [4.2])):
-							return
+			if False:
+				# Experiment already done
+				if not force:
+					if ((self.stg_dev == "local-ssd1") and (mem_size in [3.8, 3.6, 3.4, 3.2])) \
+							or ((self.stg_dev == "ebs-gp2") and (mem_size in [4.2])):
+								return
 			self.mem_sizes.append(mem_size)
 		def Size(self):
 			return len(self.mem_sizes)
@@ -59,21 +61,42 @@ def Job_UnmodifiedRocksDBLatencyByMemorySizes():
 			return "(%s, %s)" % (self.stg_dev, self.mem_sizes)
 
 	confs = []
-	if True:
-		for stg_dev in ["local-ssd1", "ebs-gp2", "ebs-st1", "ebs-sc1"]:
-			conf = Conf(stg_dev)
-			for i in range(42, 8, -2):
-				if conf.Full():
-					confs.append(conf)
-					conf = Conf(stg_dev)
-				conf.Add(i/10.0)
-			if conf.Size() > 0:
+	for stg_dev in ["local-ssd1", "ebs-gp2"]:
+		conf = Conf(stg_dev)
+		for i in range(30, 8, -2):
+			if conf.Full():
 				confs.append(conf)
-	else:
-		# Manual setting
-		conf = Conf("ebs-gp2")
-		conf.Add(4.2, force=True)
+				conf = Conf(stg_dev)
+			conf.Add(i/10.0)
+		if conf.Size() > 0:
+			confs.append(conf)
+
+	stg_dev = "ebs-st1"
+	conf = Conf(stg_dev)
+	for i in range(30, 12, -2):
+		if conf.Full():
+			confs.append(conf)
+			conf = Conf(stg_dev)
+		conf.Add(i/10.0)
+	if conf.Size() > 0:
 		confs.append(conf)
+
+	stg_dev = "ebs-sc1"
+	conf = Conf(stg_dev)
+	for i in range(30, 14, -2):
+		if conf.Full():
+			confs.append(conf)
+			conf = Conf(stg_dev)
+		conf.Add(i/10.0)
+	if conf.Size() > 0:
+		confs.append(conf)
+
+	# Repeat all experiments 5 times.
+	confs1 = []
+	for i in range(5):
+		confs1 += confs
+	confs = confs1
+
 	Cons.P("%d machines" % len(confs))
 	Cons.P(pprint.pformat(confs, width=100))
 
