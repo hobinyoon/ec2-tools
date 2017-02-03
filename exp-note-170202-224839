@@ -1,0 +1,28 @@
+170202-224839 [(local-ssd1, [3.0, 2.8, 2.6, 2.4, 2.2, 2.0, 1.8, 1.6]), gone.
+170202-224905 (local-ssd1, [1.4, 1.2, 1.0, 3.0, 2.8, 2.6, 2.4, 2.2]), 1.2 OOM-killed. restarted from the 3rd one (index starting from 0). It will take a while
+170202-224933 (local-ssd1, [2.0, 1.8, 1.6, 1.4, 1.2, 1.0, 3.0, 2.8]), 1.0 OOM-killed. restarted from 3.0. It will take a while
+170202-225002 (local-ssd1, [2.6, 2.4, 2.2, 2.0, 1.8, 1.6, 1.4, 1.2]), 1.2 OOM-killed. Good enough. Terminate.
+170202-225029 (local-ssd1, [1.0, 3.0, 2.8, 2.6, 2.4, 2.2, 2.0, 1.8]), 1.0 was the first. How unlucky. excluded the low memory ones. restarted. will take a while.
+170202-225056 (local-ssd1, [1.6, 1.4, 1.2, 1.0, 3.0, 2.8, 2.6, 2.4]), restarted from the 4th one.
+170202-225120 (local-ssd1, [2.2, 2.0, 1.8, 1.6, 1.4, 1.2, 1.0]),	1.0 OOM-killed. good enough. terminate.
+
+170202-225141 (ebs-gp2, [3.0, 2.8, 2.6, 2.4, 2.2, 2.0, 1.8, 1.6]), gone. must have gone well.
+170202-225210 (ebs-gp2, [1.4, 1.2, 1.0, 3.0, 2.8, 2.6, 2.4, 2.2]), restarting from 3.0
+170202-225230 (ebs-gp2, [2.0, 1.8, 1.6, 1.4, 1.2, 1.0, 3.0, 2.8]), restarting from 3.0
+170202-225255 (ebs-gp2, [2.6, 2.4, 2.2, 2.0, 1.8, 1.6, 1.4, 1.2]), gone. must have gone well.
+170202-225321 (ebs-gp2, [1.0, 3.0, 2.8, 2.6, 2.4, 2.2, 2.0, 1.8]), restarting from 3.0. will take a while.
+170202-225347 (ebs-gp2, [1.6, 1.4, 1.2, 1.0, 3.0, 2.8, 2.6, 2.4]), restarting from 3.0. will take a while.
+170202-225413 (ebs-gp2, [2.2, 2.0, 1.8, 1.6, 1.4, 1.2, 1.0]),      good enough. terminate.
+
+170202-225514 (ebs-st1, [3.0, 2.8, 2.6, 2.4, 2.2, 2.0, 1.8, 1.6]), gone. must have gone well.
+170202-225538 (ebs-st1, [1.4, 3.0, 2.8, 2.6, 2.4, 2.2, 2.0, 1.8]), updated and restarted.
+170202-225607 (ebs-st1, [1.6, 1.4, 3.0, 2.8, 2.6, 2.4, 2.2, 2.0]), got through 1.4. took long. let it run till the end.
+170202-225635 (ebs-st1, [1.8, 1.6, 1.4, 3.0, 2.8, 2.6, 2.4, 2.2]), got through 1.4. took long. let it run till the end.
+170202-225701 (ebs-st1, [2.0, 1.8, 1.6, 1.4, 3.0, 2.8, 2.6, 2.4]), done up to 1.6. accidentally terminated. restarted from 3.0 with a new VM.
+170202-225729 (ebs-st1, [2.2, 2.0, 1.8, 1.6, 1.4]),                gone. seems to have gone through.
+
+170202-225758 (ebs-sc1, [3.0, 2.8, 2.6, 2.4, 2.2, 2.0, 1.8, 1.6]), I don't see it any more. must have gone at the same time I was trying to log in.
+170202-225824 (ebs-sc1, [3.0, 2.8, 2.6, 2.4, 2.2, 2.0, 1.8, 1.6]), Running the last one. Lagging behind. I don't need it. Good enough. terminated.
+170202-232909 (ebs-sc1, [3.0, 2.8, 2.6, 2.4, 2.2, 2.0, 1.8, 1.6]), Good enough. terminated.
+170202-232936 (ebs-sc1, [3.0, 2.8, 2.6, 2.4, 2.2, 2.0, 1.8, 1.6]), Good enough. terminated.
+170202-233003 (ebs-sc1, [3.0, 2.8, 2.6, 2.4, 2.2, 2.0, 1.8, 1.6])] Good enough. terminated.
