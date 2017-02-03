@@ -61,15 +61,16 @@ def Job_UnmodifiedRocksDBLatencyByMemorySizes():
 			return "(%s, %s)" % (self.stg_dev, self.mem_sizes)
 
 	# The lower bound without getting the system overloaded are different for
-	# different storage devices.  local-ssd1 and ebs-gp2 have 10, which is 1.0GB,
-	# which the range() function sets the lower bound as 8.  ebs-st1 can go 1.6GB
-	# without the storage device overloaded, ebs-sc1 2.0GB.
+	# different storage devices.  local-ssd1 and ebs-gp2 have 14, which is 1.4GB,
+	# which the range() function sets the lower bound as 12. They are capped by
+	# the main memory. OOM killer.  ebs-st1 can go 1.6GB without the storage
+	# device overloaded, ebs-sc1 2.0GB.
 	num_exp_per_conf = 5
 	confs = []
 	for stg_dev in ["local-ssd1", "ebs-gp2"]:
 		conf = Conf(stg_dev)
 		for j in range(num_exp_per_conf):
-			for i in range(30, 8, -2):
+			for i in range(30, 12, -2):
 				if conf.Full():
 					confs.append(conf)
 					conf = Conf(stg_dev)
