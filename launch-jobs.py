@@ -11,6 +11,7 @@ import types
 
 sys.path.insert(0, "%s/lib/util" % os.path.dirname(__file__))
 import Cons
+import Util
 
 sys.path.insert(0, "%s/lib" % os.path.dirname(__file__))
 import Ec2Region
@@ -30,13 +31,50 @@ def main(argv):
 
 	if len(argv) != 2:
 		Cons.P("Usage: %s job_name" % argv[0])
-		Cons.P("  Jobs available: %s" % " ".join(job_list))
+		Cons.P("  Jobs available:")
+		Cons.P(Util.Indent("\n".join(sorted(job_list)), 4))
 		sys.exit(1)
 
 	job = "Job_" + argv[1]
 
 	# http://stackoverflow.com/questions/3061/calling-a-function-of-a-module-from-a-string-with-the-functions-name-in-python
 	globals()[job]()
+
+
+def Job_MutantStorageSizeByTime():
+	params = { \
+			# us-east-1, which is where the S3 buckets for experiment are.
+			"region": "us-east-1"
+			, "inst_type": "c3.2xlarge"
+			, "spot_req_max_price": 1.0
+			# RocksDB can use the same AMI
+			, "init_script": "mutant-cassandra-server-dev"
+			, "ami_name": "mutant-cassandra-server"
+			# 100 GB is good enough. 300 baseline IOPS. 2,000 bust IOPS. 3T sc1 has only 36 IOPS.
+			, "block_storage_devs": [{"VolumeType": "gp2", "VolumeSize": 100, "DeviceName": "d"}]
+			, "unzip_quizup_data": "true"
+			, "run_cassandra_server": "false"
+			# For now, it doesn't do much other than checking out the code and building.
+			, "rocksdb": { }
+			, "rocksdb-quizup-runs": []
+			, "terminate_inst_when_done": "true"
+			}
+	p1 = { \
+			"exp_desc": "Mutant storage usage mesurement"
+			, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
+			, "slow_dev_paths": {"t1": "/mnt/ebs-gp2/rocksdb-data-quizup-t1"}
+			, "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
+			, "init_db_to_90p_loaded": "false"
+			, "evict_cached_data": "true"
+			, "memory_limit_in_mb": 2.0 * 1024
+
+			, "mutant_enabled": "true"
+			, "workload_start_from": -1.0
+			, "workload_stop_at":    -1.0
+			, "simulation_time_dur_in_sec": 60000
+			}
+	params["rocksdb-quizup-runs"].append(dict(p1))
+	LaunchJob(params)
 
 
 def Job_UnmodifiedRocksDBLatencyByMemorySizes():
@@ -153,99 +191,6 @@ def Job_UnmodifiedRocksDBLatencyByMemorySizes():
 			p1["memory_limit_in_mb"] = 1024.0 * ms
 			params["rocksdb-quizup-runs"].append(dict(p1))
 		LaunchJob(params)
-
-
-def Job_MutantStorageUsage():
-	params = { \
-			# us-east-1, which is where the S3 buckets for experiment are.
-			"region": "us-east-1"
-			, "inst_type": "c3.2xlarge"
-
-			# RocksDB can use the same AMI
-			, "init_script": "mutant-cassandra-server-dev"
-			, "ami_name": "mutant-cassandra-server"
-			, "block_storage_devs": [
-				{"VolumeType": "gp2", "VolumeSize": 100, "DeviceName": "d"}
-				]
-			, "unzip_quizup_data": "true"
-
-			, "run_cassandra_server": "false"
-
-			# For now, it doesn't do much other than checking out the code and building.
-			, "rocksdb": { }
-
-			, "rocksdb-quizup-runs": []
-			}
-
-	p1 = { \
-			"mutant_enabled": "true"
-
-			, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
-			, "slow_dev_paths": {"t1": "/mnt/ebs-gp2/rocksdb-data-quizup-t1"}
-
-			, "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
-			, "init_db_to_90p_loaded": "false"
-			, "evict_cached_data": "true"
-			, "workload_start_from": -1.0
-			, "workload_stop_at":    -1.0
-			, "simulation_time_dur_in_sec": 60000
-			, "terminate_inst_when_done": "true"
-			}
-
-	params["rocksdb-quizup-runs"].append(dict(p1))
-	LaunchJob(params)
-
-
-def Job_UnmodifiedRocksDBLatency():
-	params = { \
-			# us-east-1, which is where the S3 buckets for experiment are.
-			"region": "us-east-1"
-			, "inst_type": "c3.2xlarge"
-
-			# RocksDB can use the same AMI
-			, "init_script": "mutant-cassandra-server-dev"
-			, "ami_name": "mutant-cassandra-server"
-			, "block_storage_devs": [
-				# 1TB gp2 for 3000 IOPS
-				#{"VolumeType": "gp2", "VolumeSize": 1000, "DeviceName": "d"}
-
-				# 3TB st1 for 120 Mib/s, 500 Mib/s (burst) throughput.
-				#   http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html
-				#{"VolumeType": "st1", "VolumeSize": 3000, "DeviceName": "e"}
-
-				# 3TB sc1 for 36 Mib/s, 240 Mib/s (burst).
-				{"VolumeType": "sc1", "VolumeSize": 3000, "DeviceName": "f"}
-				]
-			, "unzip_quizup_data": "true"
-
-			, "run_cassandra_server": "false"
-
-			# For now, it doesn't do much other than checking out the code and building.
-			, "rocksdb": { }
-
-			, "rocksdb-quizup-runs": []
-			}
-
-	p1 = { \
-			"mutant_enabled": "false"
-
-			#, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
-			#, "fast_dev_path": "/mnt/ebs-gp2/rocksdb-data"
-			#, "fast_dev_path": "/mnt/ebs-st1/rocksdb-data"
-			, "fast_dev_path": "/mnt/ebs-sc1/rocksdb-data"
-
-			, "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
-			, "init_db_to_90p_loaded": "true"
-			, "evict_cached_data": "true"
-			, "workload_start_from": 0.899
-			, "workload_stop_at":    -1.0
-			, "simulation_time_dur_in_sec": 60000
-			, "terminate_inst_when_done": "true"
-			}
-
-	for i in range(10):
-		params["rocksdb-quizup-runs"].append(dict(p1))
-	LaunchJob(params)
 
 
 def Job_MutantLatencyBySstMigTempThresholds():
