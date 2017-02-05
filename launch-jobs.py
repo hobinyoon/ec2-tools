@@ -151,7 +151,7 @@ def Job_MutantStorageSizeByTime():
 			, "terminate_inst_when_done": "true"
 			}
 	p1 = { \
-			"exp_desc": "Mutant storage usage mesurement"
+			"exp_desc": "Mutant storage usage measurement"
 			, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
 			, "slow_dev_paths": {"t1": "/mnt/ebs-gp2/rocksdb-data-quizup-t1"}
 			, "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
