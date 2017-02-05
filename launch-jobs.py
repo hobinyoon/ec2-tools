@@ -42,6 +42,8 @@ def main(argv):
 	globals()[job]()
 
 
+# TODO: separate into different files so that you can easily compare and make
+# sure you don't make any mistakes.
 def Job_2LevelMutantLatencyByColdStgBySstMigTempThresholds():
 	class Conf:
 		exp_per_ec2inst = 4
@@ -111,7 +113,7 @@ def Job_2LevelMutantLatencyByColdStgBySstMigTempThresholds():
 
 		for mt in conf.sst_mig_temp_thrds:
 			p1 = { \
-					"exp_desc": "Mutant storage usage mesurement"
+					"exp_desc": "Mutant latency by cold storge devices by SSTable migration temperature thresholds"
 					, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
 					, "slow_dev_paths": {"t1": "/mnt/%s/rocksdb-data-quizup-t1" % conf.slow_dev}
 					, "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
