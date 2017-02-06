@@ -132,6 +132,26 @@ def Job_2LevelMutantLatencyByColdStgBySstMigTempThresholds():
 		LaunchJob(params)
 
 
+def Job_TestServer():
+	params = { \
+			# us-east-1, which is where the S3 buckets for experiment are.
+			"region": "us-east-1"
+			, "inst_type": "c3.2xlarge"
+			, "spot_req_max_price": 1.0
+			# RocksDB can use the same AMI
+			, "init_script": "mutant-cassandra-server-dev"
+			, "ami_name": "mutant-cassandra-server"
+			, "block_storage_devs": []
+			, "unzip_quizup_data": "true"
+			, "run_cassandra_server": "false"
+			# For now, it doesn't do much other than checking out the code and building.
+			, "rocksdb": { }
+			, "rocksdb-quizup-runs": []
+			, "terminate_inst_when_done": "true"
+			}
+	LaunchJob(params)
+
+
 def Job_MutantStorageSizeByTime():
 	params = { \
 			# us-east-1, which is where the S3 buckets for experiment are.
