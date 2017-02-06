@@ -46,7 +46,7 @@ def main(argv):
 # sure you don't make any mistakes.
 def Job_2LevelMutantLatencyByColdStgBySstMigTempThresholds():
 	class Conf:
-		exp_per_ec2inst = 4
+		exp_per_ec2inst = 8
 		def __init__(self, slow_dev):
 			self.slow_dev = slow_dev
 			self.sst_mig_temp_thrds = []
@@ -66,10 +66,38 @@ def Job_2LevelMutantLatencyByColdStgBySstMigTempThresholds():
 
 	num_exp_per_conf = 4
 	confs = []
-	for slow_dev in ["ebs-gp2", "ebs-st1", "ebs-sc1"]:
+	# Redo some exps
+	if False:
+		for slow_dev in ["ebs-gp2", "ebs-st1", "ebs-sc1"]:
+			conf = Conf(slow_dev)
+			for j in range(num_exp_per_conf):
+				for i in range(-2, 9):
+					if conf.Full():
+						confs.append(conf)
+						conf = Conf(slow_dev)
+					mig_temp_thrds = math.pow(2, i)
+					conf.Add(mig_temp_thrds)
+			if conf.Size() > 0:
+				confs.append(conf)
+
+	num_exp_per_conf = 2
+	for slow_dev in ["ebs-st1"]:
 		conf = Conf(slow_dev)
 		for j in range(num_exp_per_conf):
-			for i in range(-2, 9):
+			for i in range(1, 9):
+				if conf.Full():
+					confs.append(conf)
+					conf = Conf(slow_dev)
+				mig_temp_thrds = math.pow(2, i)
+				conf.Add(mig_temp_thrds)
+		if conf.Size() > 0:
+			confs.append(conf)
+
+	num_exp_per_conf = 4
+	for slow_dev in ["ebs-sc1"]:
+		conf = Conf(slow_dev)
+		for j in range(num_exp_per_conf):
+			for i in range(2, 9):
 				if conf.Full():
 					confs.append(conf)
 					conf = Conf(slow_dev)
@@ -104,10 +132,12 @@ def Job_2LevelMutantLatencyByColdStgBySstMigTempThresholds():
 		elif conf.slow_dev == "ebs-st1":
 			# 1T st1: 40 MiB/s. 250 burst MiB/s. Since most of the requests will be
 			# absorbed by local SSD, I think you can go a lot lower than this.
-			params["block_storage_devs"].append({"VolumeType": "st1", "VolumeSize": 1000, "DeviceName": "e"})
+			# Redo some of the experiment with a 3T disk. From SSTable migration temperature threshold 2.
+			params["block_storage_devs"].append({"VolumeType": "st1", "VolumeSize": 3000, "DeviceName": "e"})
 		elif conf.slow_dev == "ebs-sc1":
 			# 1T sc1: 12 MiB/s. 80 burst MiB/s
-			params["block_storage_devs"].append({"VolumeType": "sc1", "VolumeSize": 1000, "DeviceName": "f"})
+			# Redo some of the experiment with a 3T disk. From SSTable migration temperature threshold 4.
+			params["block_storage_devs"].append({"VolumeType": "sc1", "VolumeSize": 3000, "DeviceName": "f"})
 		else:
 			raise RuntimeError("Unexpected")
 
