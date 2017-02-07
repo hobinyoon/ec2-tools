@@ -46,7 +46,7 @@ def main(argv):
 # sure you don't make any mistakes.
 def Job_2LevelMutantLatencyByColdStgBySstMigTempThresholds():
 	class Conf:
-		exp_per_ec2inst = 8
+		exp_per_ec2inst = 4
 		def __init__(self, slow_dev):
 			self.slow_dev = slow_dev
 			self.sst_mig_temp_thrds = []
@@ -67,7 +67,7 @@ def Job_2LevelMutantLatencyByColdStgBySstMigTempThresholds():
 	num_exp_per_conf = 4
 	confs = []
 	# Redo some exps
-	if False:
+	if True:
 		for slow_dev in ["ebs-gp2", "ebs-st1", "ebs-sc1"]:
 			conf = Conf(slow_dev)
 			for j in range(num_exp_per_conf):
@@ -80,34 +80,51 @@ def Job_2LevelMutantLatencyByColdStgBySstMigTempThresholds():
 			if conf.Size() > 0:
 				confs.append(conf)
 
-	num_exp_per_conf = 2
-	for slow_dev in ["ebs-st1"]:
-		conf = Conf(slow_dev)
-		for j in range(num_exp_per_conf):
-			for i in range(1, 9):
-				if conf.Full():
-					confs.append(conf)
-					conf = Conf(slow_dev)
-				mig_temp_thrds = math.pow(2, i)
-				conf.Add(mig_temp_thrds)
-		if conf.Size() > 0:
-			confs.append(conf)
+	if False:
+		num_exp_per_conf = 2
+		for slow_dev in ["ebs-st1"]:
+			conf = Conf(slow_dev)
+			for j in range(num_exp_per_conf):
+				for i in range(1, 9):
+					if conf.Full():
+						confs.append(conf)
+						conf = Conf(slow_dev)
+					mig_temp_thrds = math.pow(2, i)
+					conf.Add(mig_temp_thrds)
+			if conf.Size() > 0:
+				confs.append(conf)
 
-	num_exp_per_conf = 4
-	for slow_dev in ["ebs-sc1"]:
-		conf = Conf(slow_dev)
-		for j in range(num_exp_per_conf):
-			for i in range(2, 9):
-				if conf.Full():
-					confs.append(conf)
-					conf = Conf(slow_dev)
-				mig_temp_thrds = math.pow(2, i)
-				conf.Add(mig_temp_thrds)
-		if conf.Size() > 0:
-			confs.append(conf)
+	if False:
+		num_exp_per_conf = 4
+		for slow_dev in ["ebs-sc1"]:
+			conf = Conf(slow_dev)
+			for j in range(num_exp_per_conf):
+				for i in range(2, 9):
+					if conf.Full():
+						confs.append(conf)
+						conf = Conf(slow_dev)
+					mig_temp_thrds = math.pow(2, i)
+					conf.Add(mig_temp_thrds)
+			if conf.Size() > 0:
+				confs.append(conf)
+
+	if False:
+		num_exp_per_conf = 4
+		for slow_dev in ["ebs-sc1"]:
+			conf = Conf(slow_dev)
+			for j in range(num_exp_per_conf):
+				for i in range(0, 2):
+					if conf.Full():
+						confs.append(conf)
+						conf = Conf(slow_dev)
+					mig_temp_thrds = math.pow(2, i)
+					conf.Add(mig_temp_thrds)
+			if conf.Size() > 0:
+				confs.append(conf)
 
 	Cons.P("%d machines" % len(confs))
 	Cons.P(pprint.pformat(confs, width=100))
+	sys.exit(0)
 
 	for conf in confs:
 		params = { \
