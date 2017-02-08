@@ -67,7 +67,7 @@ def Job_UnmodifiedRocksDbWithWithoutMetadataCachingByStgDevs():
 	for stg_dev in ["local-ssd1", "ebs-gp2", "ebs-st1", "ebs-sc1"]:
 		conf = Conf(stg_dev)
 		for j in range(num_exp_per_conf):
-			for i in [True, False]:
+			for i in ["true", "false"]:
 				if conf.Full():
 					confs.append(conf)
 					conf = Conf(stg_dev)
@@ -77,7 +77,6 @@ def Job_UnmodifiedRocksDbWithWithoutMetadataCachingByStgDevs():
 
 	Cons.P("%d machines" % len(confs))
 	Cons.P(pprint.pformat(confs, width=100))
-	sys.exit(0)
 
 	for conf in confs:
 		params = { \
@@ -108,22 +107,27 @@ def Job_UnmodifiedRocksDbWithWithoutMetadataCachingByStgDevs():
 			raise RuntimeError("Unexpected")
 
 		p1 = { \
-				"exp_desc": "Unmodified RocksDB latency by different memory sizes"
+				"exp_desc": "Unmodified RocksDB latency with and without metadata caching"
 				, "fast_dev_path": "/mnt/%s/rocksdb-data" % conf.stg_dev
 				, "db_path": "/mnt/%s/rocksdb-data/quizup" % conf.stg_dev
 				, "init_db_to_90p_loaded": "true"
 				, "evict_cached_data": "true"
-				, "memory_limit_in_mb": 1024 * 3
+				, "memory_limit_in_mb": 1024 * 2
 
-				, "mutant_enabled": "false"
+				, "cache_filter_index_at_all_levels": None
+
+				, "monitor_temp": "false"
+				, "migrate_sstables": "false"
 				, "workload_start_from": 0.899
 				, "workload_stop_at":    -1.0
 				, "simulation_time_dur_in_sec": 60000
 				}
-		for ms in conf.mem_sizes:
-			p1["memory_limit_in_mb"] = 1024.0 * ms
+		for mc in conf.metadata_caching:
+			p1["cache_filter_index_at_all_levels"] = mc
 			params["rocksdb-quizup-runs"].append(dict(p1))
-		LaunchJob(params)
+
+		Cons.P(pprint.pformat(params))
+		#LaunchJob(params)
 
 
 def Job_2LevelMutantLatencyByColdStgBySstMigTempThresholds():
@@ -251,7 +255,7 @@ def Job_2LevelMutantLatencyByColdStgBySstMigTempThresholds():
 					, "evict_cached_data": "true"
 					, "memory_limit_in_mb": 2.0 * 1024
 
-					, "mutant_enabled": "true"
+					, "monitor_temp": "true"
 					, "workload_start_from": 0.899
 					, "workload_stop_at":    -1.0
 					, "simulation_time_dur_in_sec": 60000
@@ -309,7 +313,7 @@ def Job_MutantStorageSizeByTime():
 			, "evict_cached_data": "true"
 			, "memory_limit_in_mb": 2.0 * 1024
 
-			, "mutant_enabled": "true"
+			, "monitor_temp": "true"
 			, "workload_start_from": -1.0
 			, "workload_stop_at":    -1.0
 			, "simulation_time_dur_in_sec": 60000
@@ -424,7 +428,7 @@ def Job_UnmodifiedRocksDBLatencyByMemorySizes():
 				, "evict_cached_data": "true"
 				, "memory_limit_in_mb": 1024 * 3
 
-				, "mutant_enabled": "false"
+				, "monitor_temp": "false"
 				, "workload_start_from": 0.899
 				, "workload_stop_at":    -1.0
 				, "simulation_time_dur_in_sec": 60000

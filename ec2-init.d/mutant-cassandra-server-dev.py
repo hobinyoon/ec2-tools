@@ -360,8 +360,14 @@ def RunRocksDBQuizup():
 			# Parameters for the quizup binary
 			if "exp_desc" in params:
 				params1.append("--exp_desc=%s" % base64.b64encode(params["exp_desc"]))
-			if "mutant_enabled" in params:
-				params1.append("--mutant_enabled=%s" % params["mutant_enabled"])
+
+			if "cache_filter_index_at_all_levels" in params:
+				params1.append("--cache_filter_index_at_all_levels=%s" % params["cache_filter_index_at_all_levels"])
+
+			if "monitor_temp" in params:
+				params1.append("--monitor_temp=%s" % params["monitor_temp"])
+			if "migrate_sstables" in params:
+				params1.append("--migrate_sstables=%s" % params["migrate_sstables"])
 			if "workload_start_from" in params:
 				params1.append("--workload_start_from=%s" % params["workload_start_from"])
 			if "workload_stop_at" in params:

@@ -1,7 +1,7 @@
 # Storage usage measurement for unmodified RocksDB and Mutant with
 # sstable migration threshold 10.
 storage_usage_measurement_unmodified_rocksdb = {
-	"mutant_enabled": "false"
+	"monitor_temp": "false"
 
 	# Fast device paths.
 	, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
@@ -27,7 +27,7 @@ storage_usage_measurement_unmodified_rocksdb = {
 }
 
 storage_usage_measurement_mutant = {
-	"mutant_enabled": "true"
+	"monitor_temp": "true"
 
 	# Fast device paths.
 	, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
