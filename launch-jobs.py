@@ -46,7 +46,7 @@ def main(argv):
 # sure you don't make any mistakes.
 def Job_2LevelMutantLatencyByColdStgBySstMigTempThresholds():
 	class Conf:
-		exp_per_ec2inst = 4
+		exp_per_ec2inst = 7
 		def __init__(self, slow_dev):
 			self.slow_dev = slow_dev
 			self.sst_mig_temp_thrds = []
@@ -71,7 +71,8 @@ def Job_2LevelMutantLatencyByColdStgBySstMigTempThresholds():
 		for slow_dev in ["ebs-gp2", "ebs-st1", "ebs-sc1"]:
 			conf = Conf(slow_dev)
 			for j in range(num_exp_per_conf):
-				for i in range(-2, 9):
+				#for i in range(-2, 9):
+				for i in range(-2, -10, -1):
 					if conf.Full():
 						confs.append(conf)
 						conf = Conf(slow_dev)
