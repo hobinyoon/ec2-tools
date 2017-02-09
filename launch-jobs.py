@@ -42,6 +42,91 @@ def main(argv):
 	globals()[job]()
 
 
+def Job_2LevelMutantLatencyBySstMigTempThresholdsToMeasureStorageUsage():
+	class Conf:
+		exp_per_ec2inst = 2
+		def __init__(self, slow_dev):
+			self.slow_dev = slow_dev
+			self.sst_mig_temp_thrds = []
+		def Full(self):
+			return (len(self.sst_mig_temp_thrds) >= Conf.exp_per_ec2inst)
+		def Add(self, mem_size):
+			self.sst_mig_temp_thrds.append(mem_size)
+		def Size(self):
+			return len(self.sst_mig_temp_thrds)
+		def __repr__(self):
+			return "(%s, %s)" % (self.slow_dev, self.sst_mig_temp_thrds)
+
+	# [0.25, 256]
+	for i in range(-2, 9):
+		#Cons.P("%d %f" % (i, math.pow(2, i)))
+		mig_temp_thrds = math.pow(2, i)
+
+	num_exp_per_conf = 2
+	confs = []
+	if True:
+		for slow_dev in ["ebs-gp2"]:
+			conf = Conf(slow_dev)
+			for j in range(num_exp_per_conf):
+				for i in range(-14, 12, 2):
+					if conf.Full():
+						confs.append(conf)
+						conf = Conf(slow_dev)
+					mig_temp_thrds = math.pow(2, i)
+					conf.Add(mig_temp_thrds)
+			if conf.Size() > 0:
+				confs.append(conf)
+
+	Cons.P("%d machines" % len(confs))
+	Cons.P(pprint.pformat(confs, width=100))
+	#sys.exit(0)
+
+	for conf in confs:
+		params = { \
+				# us-east-1, which is where the S3 buckets for experiment are.
+				"region": "us-east-1"
+				, "inst_type": "c3.2xlarge"
+				, "spot_req_max_price": 1.0
+				# RocksDB can use the same AMI
+				, "init_script": "mutant-cassandra-server-dev"
+				, "ami_name": "mutant-cassandra-server"
+				, "block_storage_devs": []
+				, "unzip_quizup_data": "true"
+				, "run_cassandra_server": "false"
+				# For now, it doesn't do much other than checking out the code and building.
+				, "rocksdb": { }
+				, "rocksdb-quizup-runs": []
+				, "terminate_inst_when_done": "true"
+				}
+		if conf.slow_dev == "ebs-gp2":
+			# 100GB gp2: 300 baseline IOPS. 2,000 burst IOPS.
+			params["block_storage_devs"].append({"VolumeType": "gp2", "VolumeSize": 100, "DeviceName": "d"})
+		else:
+			raise RuntimeError("Unexpected")
+
+		for mt in conf.sst_mig_temp_thrds:
+			p1 = { \
+					"exp_desc": "Mutant latency by cold storge devices by SSTable migration temperature thresholds"
+					, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
+					, "slow_dev_paths": {"t1": "/mnt/%s/rocksdb-data-quizup-t1" % conf.slow_dev}
+					, "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
+					, "init_db_to_90p_loaded": "false"
+					, "evict_cached_data": "true"
+					, "memory_limit_in_mb": 9.0 * 1024
+
+					, "cache_filter_index_at_all_levels": "true"
+					, "monitor_temp": "true"
+					, "migrate_sstables": "true"
+					, "workload_start_from": -1.0
+					, "workload_stop_at":    -1.0
+					, "simulation_time_dur_in_sec": 20000
+					, "sst_migration_temperature_threshold": mt
+					}
+			params["rocksdb-quizup-runs"].append(dict(p1))
+		#Cons.P(pprint.pformat(params))
+		LaunchJob(params)
+
+
 def Job_UnmodifiedRocksDbWithWithoutMetadataCachingByStgDevs():
 	class Conf:
 		exp_per_ec2inst = 5
