@@ -229,7 +229,7 @@ def Job_UnmodifiedRocksDbWithWithoutMetadataCachingByStgDevs():
 			raise RuntimeError("Unexpected")
 
 		p1 = { \
-				"exp_desc": "Unmodified RocksDB latency with and without metadata caching"
+				"exp_desc": "Unmodified RocksDB latency with and without aggresive metadata caching"
 				, "fast_dev_path": "/mnt/%s/rocksdb-data" % conf.stg_dev
 				, "db_path": "/mnt/%s/rocksdb-data/quizup" % conf.stg_dev
 				, "init_db_to_90p_loaded": "true"
@@ -248,8 +248,8 @@ def Job_UnmodifiedRocksDbWithWithoutMetadataCachingByStgDevs():
 			p1["cache_filter_index_at_all_levels"] = mc
 			params["rocksdb-quizup-runs"].append(dict(p1))
 
-		Cons.P(pprint.pformat(params))
-		#LaunchJob(params)
+		#Cons.P(pprint.pformat(params))
+		LaunchJob(params)
 
 
 def Job_2LevelMutantLatencyByColdStgBySstMigTempThresholds():
