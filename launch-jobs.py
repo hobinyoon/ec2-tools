@@ -42,7 +42,7 @@ def main(argv):
 	globals()[job]()
 
 
-def Job_2LevelMutantLatencyBySstMigTempThresholdsToMeasureStorageUsage():
+def Job_2LevelMutantBySstMigTempThresholdsToMeasureStorageUsage():
 	class Conf:
 		exp_per_ec2inst = 2
 		def __init__(self, slow_dev):
@@ -64,7 +64,7 @@ def Job_2LevelMutantLatencyBySstMigTempThresholdsToMeasureStorageUsage():
 
 	num_exp_per_conf = 2
 	confs = []
-	if True:
+	if False:
 		for slow_dev in ["ebs-gp2"]:
 			conf = Conf(slow_dev)
 			for j in range(num_exp_per_conf):
@@ -125,6 +125,43 @@ def Job_2LevelMutantLatencyBySstMigTempThresholdsToMeasureStorageUsage():
 			params["rocksdb-quizup-runs"].append(dict(p1))
 		#Cons.P(pprint.pformat(params))
 		LaunchJob(params)
+
+	# Run unmodified RocksDB too for a comparison
+	params = { \
+			# us-east-1, which is where the S3 buckets for experiment are.
+			"region": "us-east-1"
+			, "inst_type": "c3.2xlarge"
+			, "spot_req_max_price": 1.0
+			# RocksDB can use the same AMI
+			, "init_script": "mutant-cassandra-server-dev"
+			, "ami_name": "mutant-cassandra-server"
+			, "block_storage_devs": []
+			, "unzip_quizup_data": "true"
+			, "run_cassandra_server": "false"
+			# For now, it doesn't do much other than checking out the code and building.
+			, "rocksdb": { }
+			, "rocksdb-quizup-runs": []
+			, "terminate_inst_when_done": "true"
+			}
+	p1 = { \
+			"exp_desc": "Mutant latency by cold storge devices by SSTable migration temperature thresholds"
+			, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
+			, "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
+			, "init_db_to_90p_loaded": "false"
+			, "evict_cached_data": "true"
+			, "memory_limit_in_mb": 9.0 * 1024
+
+			, "cache_filter_index_at_all_levels": "false"
+			, "monitor_temp": "false"
+			, "migrate_sstables": "false"
+			, "workload_start_from": -1.0
+			, "workload_stop_at":    -1.0
+			, "simulation_time_dur_in_sec": 20000
+			, "sst_migration_temperature_threshold": 0
+			}
+	params["rocksdb-quizup-runs"].append(dict(p1))
+	#Cons.P(pprint.pformat(params))
+	LaunchJob(params)
 
 
 def Job_UnmodifiedRocksDbWithWithoutMetadataCachingByStgDevs():
