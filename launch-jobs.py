@@ -216,7 +216,7 @@ def Job_2LevelMutantBySstMigTempThresholdsToMeasureStorageUsage():
 
 		for mt in conf.sst_mig_temp_thrds:
 			p1 = { \
-					"exp_desc": "Mutant latency by cold storge devices by SSTable migration temperature thresholds"
+					"exp_desc": inspect.currentframe().f_code.co_name[4:]
 					, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
 					, "slow_dev_paths": {"t1": "/mnt/%s/rocksdb-data-quizup-t1" % conf.slow_dev}
 					, "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
@@ -254,7 +254,7 @@ def Job_2LevelMutantBySstMigTempThresholdsToMeasureStorageUsage():
 			, "terminate_inst_when_done": "true"
 			}
 	p1 = { \
-			"exp_desc": "Mutant latency by cold storge devices by SSTable migration temperature thresholds"
+			"exp_desc": inspect.currentframe().f_code.co_name[4:]
 			, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
 			, "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
 			, "init_db_to_90p_loaded": "false"
@@ -294,7 +294,7 @@ def Job_2LevelMutantBySstMigTempThresholdsToMeasureStorageUsage():
 			, "terminate_inst_when_done": "true"
 			}
 	p1 = { \
-			"exp_desc": "Mutant latency by cold storge devices by SSTable migration temperature thresholds"
+			"exp_desc": inspect.currentframe().f_code.co_name[4:]
 			, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
 			, "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
 			, "init_db_to_90p_loaded": "false"
@@ -379,7 +379,7 @@ def Job_UnmodifiedRocksDbWithWithoutMetadataCachingByStgDevs():
 			raise RuntimeError("Unexpected")
 
 		p1 = { \
-				"exp_desc": "Unmodified RocksDB latency with and without aggresive metadata caching"
+				"exp_desc": inspect.currentframe().f_code.co_name[4:]
 				, "fast_dev_path": "/mnt/%s/rocksdb-data" % conf.stg_dev
 				, "db_path": "/mnt/%s/rocksdb-data/quizup" % conf.stg_dev
 				, "init_db_to_90p_loaded": "true"
@@ -519,7 +519,7 @@ def Job_2LevelMutantLatencyByColdStgBySstMigTempThresholds():
 
 		for mt in conf.sst_mig_temp_thrds:
 			p1 = { \
-					"exp_desc": "Mutant latency by cold storge devices by SSTable migration temperature thresholds"
+					"exp_desc": inspect.currentframe().f_code.co_name[4:]
 					, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
 					, "slow_dev_paths": {"t1": "/mnt/%s/rocksdb-data-quizup-t1" % conf.slow_dev}
 					, "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
@@ -577,7 +577,7 @@ def Job_MutantStorageSizeByTime():
 			, "terminate_inst_when_done": "true"
 			}
 	p1 = { \
-			"exp_desc": "Mutant storage usage measurement"
+			"exp_desc": inspect.currentframe().f_code.co_name[4:]
 			, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
 			, "slow_dev_paths": {"t1": "/mnt/ebs-gp2/rocksdb-data-quizup-t1"}
 			, "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
@@ -693,7 +693,7 @@ def Job_UnmodifiedRocksDBLatencyByMemorySizes():
 			raise RuntimeError("Unexpected")
 
 		p1 = { \
-				"exp_desc": "Unmodified RocksDB latency by different memory sizes"
+				"exp_desc": inspect.currentframe().f_code.co_name[4:]
 				, "fast_dev_path": "/mnt/%s/rocksdb-data" % conf.stg_dev
 				, "db_path": "/mnt/%s/rocksdb-data/quizup" % conf.stg_dev
 				, "init_db_to_90p_loaded": "true"
