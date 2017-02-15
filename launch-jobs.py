@@ -93,7 +93,7 @@ def Job_LowSstMigTempThresholds_LocalSsd1EbsSt1():
 	# 95% to 100% time range experiments for measuring latency and the number of IOs.
 	if True:
 		class Conf:
-			exp_per_ec2inst = 5
+			exp_per_ec2inst = 3
 			def __init__(self):
 				self.sst_mig_temp_thrds = []
 			def Full(self):
@@ -110,7 +110,8 @@ def Job_LowSstMigTempThresholds_LocalSsd1EbsSt1():
 		conf = Conf()
 		for j in range(num_exp_per_conf):
 			# From 2^-10 = 0.0009765625 down to 2^-36
-			for i in range(-10, -38, -2):
+			#for i in range(-10, -38, -2):
+			for i in range(10, -10, -2):
 				if conf.Full():
 					confs.append(conf)
 					conf = Conf()
@@ -119,9 +120,12 @@ def Job_LowSstMigTempThresholds_LocalSsd1EbsSt1():
 		if conf.Size() > 0:
 			confs.append(conf)
 
+		# A one-time patch
+		confs = confs[3:]
+
 		Cons.P("%d machines" % len(confs))
 		Cons.P(pprint.pformat(confs, width=100))
-		#sys.exit(1)
+		sys.exit(1)
 
 		for conf in confs:
 			params["rocksdb-quizup-runs"] = []
@@ -139,7 +143,11 @@ def Job_LowSstMigTempThresholds_LocalSsd1EbsSt1():
 						# Not caching metadata might be a better idea. So the story is you
 						# present each of the optimizations separately, followed by the
 						# combined result.
-						, "cache_filter_index_at_all_levels": "false"
+						#, "cache_filter_index_at_all_levels": "false"
+
+						# Cache metadata for a comparison
+						, "cache_filter_index_at_all_levels": "true"
+
 						, "monitor_temp": "true"
 						, "migrate_sstables": "true"
 						, "workload_start_from": 0.899
@@ -148,8 +156,8 @@ def Job_LowSstMigTempThresholds_LocalSsd1EbsSt1():
 						, "sst_migration_temperature_threshold": mt
 						}
 				params["rocksdb-quizup-runs"].append(dict(p1))
-			#Cons.P(pprint.pformat(params))
-			LaunchJob(params)
+			Cons.P(pprint.pformat(params))
+			#LaunchJob(params)
 
 
 def Job_LowSstMigTempThresholds_LocalSsd1Only():
@@ -230,7 +238,7 @@ def Job_LowSstMigTempThresholds_LocalSsd1Only():
 
 		Cons.P("%d machines" % len(confs))
 		Cons.P(pprint.pformat(confs, width=100))
-		#sys.exit(1)
+		sys.exit(1)
 
 		for conf in confs:
 			params["rocksdb-quizup-runs"] = []
