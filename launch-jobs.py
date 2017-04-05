@@ -43,6 +43,89 @@ def main(argv):
 	globals()[job]()
 
 
+def Job_Simple():
+	params = { \
+			"region": "us-east-1"
+			, "inst_type": "c3.2xlarge"
+			, "spot_req_max_price": 1.0
+			, "init_script": "mutant-cassandra-server-dev"
+			, "ami_name": "mutant-cassandra-server"
+			, "block_storage_devs": [{"VolumeType": "st1", "VolumeSize": 100, "DeviceName": "e"}]
+			, "unzip_quizup_data": "true"
+			, "run_cassandra_server": "false"
+			# For now, it doesn't do much other than checking out the code and building.
+			, "rocksdb": { }
+			, "rocksdb-quizup-runs": []
+			, "terminate_inst_when_done": "true"
+			}
+
+	# 95% to 100% time range experiments for measuring latency and the number of IOs.
+	if True:
+		class Conf:
+			exp_per_ec2inst = 1
+			def __init__(self):
+				self.sst_mig_temp_thrds = []
+			def Full(self):
+				return (len(self.sst_mig_temp_thrds) >= Conf.exp_per_ec2inst)
+			def Add(self, smtt):
+				self.sst_mig_temp_thrds.append(smtt)
+			def Size(self):
+				return len(self.sst_mig_temp_thrds)
+			def __repr__(self):
+				return "(%s)" % (self.sst_mig_temp_thrds)
+
+		num_exp_per_conf = 2
+		confs = []
+		conf = Conf()
+		for j in range(num_exp_per_conf):
+			# From 2^-10 = 0.0009765625 down to 2^-36
+			#for i in range(-10, -38, -2):
+			for i in range(10, 6, -2):
+				if conf.Full():
+					confs.append(conf)
+					conf = Conf()
+				mig_temp_thrds = math.pow(2, i)
+				conf.Add(mig_temp_thrds)
+		if conf.Size() > 0:
+			confs.append(conf)
+
+		Cons.P("%d machines" % len(confs))
+		Cons.P(pprint.pformat(confs, width=100))
+		#sys.exit(1)
+
+		for conf in confs:
+			params["rocksdb-quizup-runs"] = []
+			for mt in conf.sst_mig_temp_thrds:
+				p1 = { \
+						# Use the current function name since you always forget to set this
+						"exp_desc": inspect.currentframe().f_code.co_name[4:]
+						, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
+						, "slow_dev_paths": {"t1": "/mnt/ebs-st1/rocksdb-data-quizup-t1"}
+						, "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
+						, "init_db_to_90p_loaded": "true"
+						, "evict_cached_data": "true"
+						, "memory_limit_in_mb": 2.0 * 1024
+
+						# Not caching metadata might be a better idea. So the story is you
+						# present each of the optimizations separately, followed by the
+						# combined result.
+						#, "cache_filter_index_at_all_levels": "false"
+
+						# Cache metadata for a comparison
+						, "cache_filter_index_at_all_levels": "true"
+
+						, "monitor_temp": "true"
+						, "migrate_sstables": "true"
+						, "workload_start_from": 0.899
+						, "workload_stop_at":    -1.0
+						, "simulation_time_dur_in_sec": 60000
+						, "sst_migration_temperature_threshold": mt
+						}
+				params["rocksdb-quizup-runs"].append(dict(p1))
+			#Cons.P(pprint.pformat(params))
+			LaunchJob(params)
+
+
 def Job_LowSstMigTempThresholds_LocalSsd1EbsSt1():
 	params = { \
 			"region": "us-east-1"
@@ -125,7 +208,7 @@ def Job_LowSstMigTempThresholds_LocalSsd1EbsSt1():
 
 		Cons.P("%d machines" % len(confs))
 		Cons.P(pprint.pformat(confs, width=100))
-		sys.exit(1)
+		#sys.exit(1)
 
 		for conf in confs:
 			params["rocksdb-quizup-runs"] = []
@@ -156,8 +239,8 @@ def Job_LowSstMigTempThresholds_LocalSsd1EbsSt1():
 						, "sst_migration_temperature_threshold": mt
 						}
 				params["rocksdb-quizup-runs"].append(dict(p1))
-			Cons.P(pprint.pformat(params))
-			#LaunchJob(params)
+			#Cons.P(pprint.pformat(params))
+			LaunchJob(params)
 
 
 def Job_LowSstMigTempThresholds_LocalSsd1Only():
