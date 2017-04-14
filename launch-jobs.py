@@ -43,90 +43,101 @@ def main(argv):
 	globals()[job]()
 
 
-def Job_Simple():
-	params = { \
-			"region": "us-east-1"
-			, "inst_type": "c3.2xlarge"
-			, "spot_req_max_price": 1.0
-			, "init_script": "mutant-cassandra-server-dev"
-			, "ami_name": "mutant-cassandra-server"
-			, "block_storage_devs": [{"VolumeType": "st1", "VolumeSize": 100, "DeviceName": "e"}]
-			, "unzip_quizup_data": "true"
-			, "run_cassandra_server": "false"
-			# For now, it doesn't do much other than checking out the code and building.
-			, "rocksdb": { }
-			, "rocksdb-quizup-runs": []
-			, "terminate_inst_when_done": "true"
-			}
+def Job_2LevelMutantStorageUsageBySstMigTempThresholds():
+	class Conf:
+		exp_per_ec2inst = 1
+		def __init__(self, slow_dev):
+			self.slow_dev = slow_dev
+			self.sst_mig_temp_thrds = []
+		def Full(self):
+			return (len(self.sst_mig_temp_thrds) >= Conf.exp_per_ec2inst)
+		def Add(self, mem_size):
+			self.sst_mig_temp_thrds.append(mem_size)
+		def Size(self):
+			return len(self.sst_mig_temp_thrds)
+		def __repr__(self):
+			return "(%s, %s)" % (self.slow_dev, self.sst_mig_temp_thrds)
 
-	# 95% to 100% time range experiments for measuring latency and the number of IOs.
-	if True:
-		class Conf:
-			exp_per_ec2inst = 1
-			def __init__(self):
-				self.sst_mig_temp_thrds = []
-			def Full(self):
-				return (len(self.sst_mig_temp_thrds) >= Conf.exp_per_ec2inst)
-			def Add(self, smtt):
-				self.sst_mig_temp_thrds.append(smtt)
-			def Size(self):
-				return len(self.sst_mig_temp_thrds)
-			def __repr__(self):
-				return "(%s)" % (self.sst_mig_temp_thrds)
+	# [0.25, 256]
+	for i in range(-2, 9):
+		#Cons.P("%d %f" % (i, math.pow(2, i)))
+		mig_temp_thrds = math.pow(2, i)
 
-		num_exp_per_conf = 2
-		confs = []
-		conf = Conf()
+	num_exp_per_conf = 2
+	confs = []
+	for slow_dev in ["ebs-gp2"]:
+		conf = Conf(slow_dev)
 		for j in range(num_exp_per_conf):
-			# From 2^-10 = 0.0009765625 down to 2^-36
-			#for i in range(-10, -38, -2):
-			for i in range(10, 6, -2):
+			for sst_mig_temp_thrds in [
+					0.00390625,	# 2^(-8)
+					0.015625,
+					0.0625,
+					0.25,
+					1.0,
+					4.0,
+					16.0,
+					64.0,
+					256.0,
+					1024.0]:	# 2^10
 				if conf.Full():
 					confs.append(conf)
-					conf = Conf()
-				mig_temp_thrds = math.pow(2, i)
-				conf.Add(mig_temp_thrds)
+					conf = Conf(slow_dev)
+				conf.Add(sst_mig_temp_thrds)
 		if conf.Size() > 0:
 			confs.append(conf)
 
-		Cons.P("%d machines" % len(confs))
-		Cons.P(pprint.pformat(confs, width=100))
-		#sys.exit(1)
+	Cons.P("%d machines" % len(confs))
+	Cons.P(pprint.pformat(confs, width=100))
+	#sys.exit(1)
 
-		for conf in confs:
-			params["rocksdb-quizup-runs"] = []
-			for mt in conf.sst_mig_temp_thrds:
-				p1 = { \
-						# Use the current function name since you always forget to set this
-						"exp_desc": inspect.currentframe().f_code.co_name[4:]
-						, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
-						, "slow_dev_paths": {"t1": "/mnt/ebs-st1/rocksdb-data-quizup-t1"}
-						, "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
-						, "init_db_to_90p_loaded": "true"
-						, "evict_cached_data": "true"
-						, "memory_limit_in_mb": 2.0 * 1024
+	for conf in confs:
+		params = { \
+				# us-east-1, which is where the S3 buckets for experiment are.
+				"region": "us-east-1"
+				, "inst_type": "c3.2xlarge"
+				, "spot_req_max_price": 1.0
+				# RocksDB can use the same AMI
+				, "init_script": "mutant-cassandra-server-dev"
+				, "ami_name": "mutant-cassandra-server"
+				, "block_storage_devs": []
+				, "unzip_quizup_data": "true"
+				, "run_cassandra_server": "false"
+				# For now, it doesn't do much other than checking out the code and building.
+				, "rocksdb": { }
+				, "rocksdb-quizup-runs": []
+				, "terminate_inst_when_done": "true"
+				}
+		if conf.slow_dev == "ebs-gp2":
+			# 100GB gp2: 300 baseline IOPS. 2,000 burst IOPS.
+			params["block_storage_devs"].append({"VolumeType": "gp2", "VolumeSize": 100, "DeviceName": "d"})
+		else:
+			raise RuntimeError("Unexpected")
 
-						# Not caching metadata might be a better idea. So the story is you
-						# present each of the optimizations separately, followed by the
-						# combined result.
-						#, "cache_filter_index_at_all_levels": "false"
+		for mt in conf.sst_mig_temp_thrds:
+			p1 = { \
+					"exp_desc": inspect.currentframe().f_code.co_name[4:]
+					, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
+					, "slow_dev_paths": {"t1": "/mnt/%s/rocksdb-data-quizup-t1" % conf.slow_dev}
+					, "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
+					, "init_db_to_90p_loaded": "false"
+					, "evict_cached_data": "true"
+					# 9GB memory to cache everything in memory.
+					, "memory_limit_in_mb": 9.0 * 1024
 
-						# Cache metadata for a comparison
-						, "cache_filter_index_at_all_levels": "true"
-
-						, "monitor_temp": "true"
-						, "migrate_sstables": "true"
-						, "workload_start_from": 0.899
-						, "workload_stop_at":    -1.0
-						, "simulation_time_dur_in_sec": 60000
-						, "sst_migration_temperature_threshold": mt
-						}
-				params["rocksdb-quizup-runs"].append(dict(p1))
-			#Cons.P(pprint.pformat(params))
-			LaunchJob(params)
+					, "cache_filter_index_at_all_levels": "true"
+					, "monitor_temp": "true"
+					, "migrate_sstables": "true"
+					, "workload_start_from": -1.0
+					, "workload_stop_at":    -1.0
+					, "simulation_time_dur_in_sec": 2000
+					, "sst_migration_temperature_threshold": mt
+					}
+			params["rocksdb-quizup-runs"].append(dict(p1))
+		#Cons.P(pprint.pformat(params))
+		LaunchJob(params)
 
 
-def Job_LowSstMigTempThresholds_LocalSsd1EbsSt1():
+def Job_SstMigTempThresholds_LocalSsd1EbsSt1():
 	params = { \
 			"region": "us-east-1"
 			, "inst_type": "c3.2xlarge"
@@ -142,17 +153,29 @@ def Job_LowSstMigTempThresholds_LocalSsd1EbsSt1():
 			, "terminate_inst_when_done": "true"
 			}
 
-	# Full time range experiments. I don't need this until I am convinced by the
-	# performance test.
-	if False:
-		# From 2^-10 = 0.0009765625 down to 2^-36
-		for i in range(-10, -38, -2):
-			sst_mig_temp_thrds = pow(2, i)
+	simulate_full_time_range = True
+	simulate_from_90p_time_range = False
+
+	# Full time range experiments. For calculating the storage cost.
+	if simulate_full_time_range:
+		for sst_mig_temp_thrds in [
+				0.00390625,	# 2^(-8)
+				0.015625,
+				0.0625,
+				0.25,
+				1.0,
+				4.0,
+				16.0,
+				64.0,
+				256.0,
+				1024.0]:	# 2^10
 			p1 = { \
 					# Use the current function name since you always forget to set this
 					"exp_desc": inspect.currentframe().f_code.co_name[4:]
 					, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
-					, "slow_dev_paths": {"t1": "/mnt/ebs-st1/rocksdb-data-quizup-t1"}
+					, "slow_dev_paths": {"t1": "/mnt/local-ssd1/rocksdb-data-quizup/t1"}
+					# You don't need to use the slow device for calculating cost
+					#, "slow_dev_paths": {"t1": "/mnt/ebs-st1/rocksdb-data-quizup-t1"}
 					, "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
 					, "init_db_to_90p_loaded": "false"
 					, "evict_cached_data": "true"
@@ -165,16 +188,16 @@ def Job_LowSstMigTempThresholds_LocalSsd1EbsSt1():
 					, "migrate_sstables": "true"
 					, "workload_start_from": -1.0
 					, "workload_stop_at":    -1.0
-					, "simulation_time_dur_in_sec": 20000
+					, "simulation_time_dur_in_sec": 2000
 					, "sst_migration_temperature_threshold": sst_mig_temp_thrds
 					}
 			params["rocksdb-quizup-runs"] = []
 			params["rocksdb-quizup-runs"].append(dict(p1))
-			#Cons.P(pprint.pformat(params))
-			LaunchJob(params)
+			Cons.P(pprint.pformat(params))
+			#LaunchJob(params)
 
 	# 95% to 100% time range experiments for measuring latency and the number of IOs.
-	if True:
+	if simulate_from_90p_time_range:
 		class Conf:
 			exp_per_ec2inst = 3
 			def __init__(self):
@@ -194,21 +217,18 @@ def Job_LowSstMigTempThresholds_LocalSsd1EbsSt1():
 		for j in range(num_exp_per_conf):
 			# From 2^-10 = 0.0009765625 down to 2^-36
 			#for i in range(-10, -38, -2):
-			for i in range(10, -10, -2):
+			#for i in range(10, -10, -2):
+			for sst_mig_temp_thrds in [0.0009765625, 0.0015, 0.0020]:
 				if conf.Full():
 					confs.append(conf)
 					conf = Conf()
-				mig_temp_thrds = math.pow(2, i)
-				conf.Add(mig_temp_thrds)
+				conf.Add(sst_mig_temp_thrds)
 		if conf.Size() > 0:
 			confs.append(conf)
 
-		# A one-time patch
-		confs = confs[3:]
-
 		Cons.P("%d machines" % len(confs))
 		Cons.P(pprint.pformat(confs, width=100))
-		#sys.exit(1)
+		sys.exit(1)
 
 		for conf in confs:
 			params["rocksdb-quizup-runs"] = []
@@ -352,7 +372,8 @@ def Job_LowSstMigTempThresholds_LocalSsd1Only():
 			LaunchJob(params)
 
 
-def Job_2LevelMutantBySstMigTempThresholdsToMeasureStorageUsage():
+# TODO: clean up
+def Job_ToCleanup2LevelMutantBySstMigTempThresholdsToMeasureStorageUsage():
 	class Conf:
 		exp_per_ec2inst = 2
 		def __init__(self, slow_dev):
@@ -374,7 +395,7 @@ def Job_2LevelMutantBySstMigTempThresholdsToMeasureStorageUsage():
 
 	num_exp_per_conf = 2
 	confs = []
-	if False:
+	if True:
 		for slow_dev in ["ebs-gp2"]:
 			conf = Conf(slow_dev)
 			for j in range(num_exp_per_conf):
@@ -435,6 +456,7 @@ def Job_2LevelMutantBySstMigTempThresholdsToMeasureStorageUsage():
 			params["rocksdb-quizup-runs"].append(dict(p1))
 		#Cons.P(pprint.pformat(params))
 		LaunchJob(params)
+	return
 
 	# RocksDB with temperature monitoring and no sstable migration for a comparision
 	params = { \
