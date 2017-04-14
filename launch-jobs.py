@@ -88,7 +88,7 @@ def Job_2LevelMutantStorageUsageBySstMigTempThresholds():
 
 	Cons.P("%d machines" % len(confs))
 	Cons.P(pprint.pformat(confs, width=100))
-	#sys.exit(1)
+	sys.exit(1)
 
 	for conf in confs:
 		params = { \
