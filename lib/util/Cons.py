@@ -98,21 +98,24 @@ class MT:
 
 # No new-line
 class MTnnl:
-	def __init__(self, msg):
+	def __init__(self, msg, print_time=True):
 		self.msg = msg
+		self.print_time = print_time
 
 	def __enter__(self):
 		global _ind_len, _ind
 		Pnnl(self.msg)
 		_ind_len += 2
 		_ind += "  "
-		self.start_time = time.time()
+		if self.print_time:
+			self.start_time = time.time()
 		return self
 
 	def __exit__(self, type, value, traceback):
 		global _ind_len, _ind
-		dur = time.time() - self.start_time
-		P("%.0f ms" % (dur * 1000.0))
+		if self.print_time:
+			dur = time.time() - self.start_time
+			P("%.0f ms" % (dur * 1000.0))
 		_ind_len -= 2
 		_ind = _ind[: len(_ind) - 2]
 
