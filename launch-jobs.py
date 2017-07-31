@@ -52,7 +52,6 @@ def Job_YcsbBaseline():
     # Run multiple experiments of the same workload type on the same EC2 instance. This avoids having to initialize the device every time.
     exp_per_ec2inst = 5
 
-    # TODO: Num threads, load (IOPS)
     def __init__(self):
       self.target_iopses = []
 
@@ -64,6 +63,8 @@ def Job_YcsbBaseline():
       return len(self.target_iopses)
     def __repr__(self):
       return "%s" % (self.target_iopses)
+
+  db_stg_dev = "local-ssd"
 
   confs = []
   # Target IOPSes
@@ -97,9 +98,13 @@ def Job_YcsbBaseline():
         , "ycsb-runs": []
         , "terminate_inst_when_done": "false"
         }
-    if conf.slow_dev == "ebs-gp2":
+    if db_stg_dev == "local-ssd":
+			pass
+    elif db_stg_dev == "ebs-gp2":
       # 100GB gp2: 300 baseline IOPS. 2,000 burst IOPS.
       params["block_storage_devs"].append({"VolumeType": "gp2", "VolumeSize": 100, "DeviceName": "d"})
+    elif db_stg_dev == "ebs-st1":
+      params["block_storage_devs"].append({"VolumeType": "st1", "VolumeSize": 3000, "DeviceName": "e"})
     else:
       raise RuntimeError("Unexpected")
 
@@ -107,7 +112,7 @@ def Job_YcsbBaseline():
       p1 = { \
           "exp_desc": inspect.currentframe().f_code.co_name[4:]
           , "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
-          , "slow_dev_paths": {"t1": "/mnt/%s/rocksdb-data-t1" % conf.slow_dev}
+          , "slow_dev_paths": {"t1": "/mnt/%s/rocksdb-data-t1" % db_stg_dev}
           , "db_path": "/mnt/local-ssd1/rocksdb-data/ycsb"
           , "evict_cached_data": "true"
           # TODO: figure out how much memory you will need! Make it a bit smaller than the DB size
@@ -118,6 +123,7 @@ def Job_YcsbBaseline():
           , "monitor_temp": "true"
           , "migrate_sstables": "true"
 
+					# Do you want to explore the number of threads? Probably not. Just figure out the optimal number.
 					, "workload_type": "d"
           , "target_iops": t
 
