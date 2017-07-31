@@ -64,7 +64,7 @@ def Job_YcsbBaseline():
     def __repr__(self):
       return "%s" % (self.target_iopses)
 
-  db_stg_dev = "local-ssd"
+  slow_stg_dev = "local-ssd"
 
   confs = []
   # Target IOPSes
@@ -99,12 +99,12 @@ def Job_YcsbBaseline():
         , "ycsb-runs": []
         , "terminate_inst_when_done": "false"
         }
-    if db_stg_dev == "local-ssd":
+    if slow_stg_dev == "local-ssd":
 			pass
-    elif db_stg_dev == "ebs-gp2":
+    elif slow_stg_dev == "ebs-gp2":
       # 100GB gp2: 300 baseline IOPS. 2,000 burst IOPS.
       params["block_storage_devs"].append({"VolumeType": "gp2", "VolumeSize": 100, "DeviceName": "d"})
-    elif db_stg_dev == "ebs-st1":
+    elif slow_stg_dev == "ebs-st1":
       params["block_storage_devs"].append({"VolumeType": "st1", "VolumeSize": 3000, "DeviceName": "e"})
     else:
       raise RuntimeError("Unexpected")
@@ -113,7 +113,7 @@ def Job_YcsbBaseline():
       p1 = { \
           "exp_desc": inspect.currentframe().f_code.co_name[4:]
           , "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
-          , "slow_dev_paths": {"t1": "/mnt/%s/rocksdb-data-t1" % db_stg_dev}
+          #, "slow_dev_paths": {"t1": "/mnt/%s/rocksdb-data-t1" % slow_stg_dev}
           , "db_path": "/mnt/local-ssd1/rocksdb-data/ycsb"
           , "evict_cached_data": "true"
           # TODO: figure out how much memory you will need! Make it a bit smaller than the DB size

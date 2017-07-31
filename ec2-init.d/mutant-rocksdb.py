@@ -41,12 +41,7 @@ def main(argv):
 		if Ec2InitUtil.GetParam(["unzip_quizup_data"]) == "true":
 			UnzipQuizupData()
 		RunRocksDBQuizup()
-
-		if Ec2InitUtil.GetParam(["run_cassandra_server"]) == "true":
-			EditCassConf()
-
-		if Ec2InitUtil.GetParam(["run_cassandra_server"]) == "true":
-			RunCassandra()
+		RunYcsb()
 
 		# Terminate instance
 		if Ec2InitUtil.GetParam(["terminate_inst_when_done"]) == "true":
@@ -380,6 +375,57 @@ def RunRocksDBQuizup():
 				params1.append("--sst_migration_temperature_threshold=%s" % params["sst_migration_temperature_threshold"])
 
 			cmd = "cd %s/work/mutant/misc/rocksdb/quizup && stdbuf -i0 -o0 -e0 ./run.py %s" \
+					% (os.path.expanduser("~"), " ".join(params1))
+			Util.RunSubp(cmd)
+
+
+def RunYcsb():
+	for params in Ec2InitUtil.GetParam(["ycsb-runs"]):
+		with Cons.MT("Running YCSB workload ..."):
+			Cons.P(pprint.pformat(params))
+
+			params1 = []
+
+			# Parameters for restart-dstat-run-ycsb.sh
+			if "fast_dev_path" in params:
+				params1.append("--fast_dev_path=%s" % params["fast_dev_path"])
+			if "slow_dev_paths" in params:
+				slow_dev_paths = params["slow_dev_paths"]
+				for k, v in slow_dev_paths.iteritems():
+					params1.append("--slow_dev%s_path=%s" % (k[-1:], v))
+			if "db_path" in params:
+				params1.append("--db_path=%s" % params["db_path"])
+			if "evict_cached_data" in params:
+				params1.append("--evict_cached_data=%s" % params["evict_cached_data"])
+			if "memory_limit_in_mb" in params:
+				params1.append("--memory_limit_in_mb=%s" % params["memory_limit_in_mb"])
+			params1.append("--upload_result_to_s3")
+			if "workload_type" in params:
+				params1.append("--workload_type=%s" % params["workload_type"])
+			if "target_iops" in params:
+				params1.append("--target_iops=%s" % params["target_iops"])
+
+			# Parameters for the quizup binary
+			if "exp_desc" in params:
+				params1.append("--exp_desc=%s" % base64.b64encode(params["exp_desc"]))
+
+			if "cache_filter_index_at_all_levels" in params:
+				params1.append("--cache_filter_index_at_all_levels=%s" % params["cache_filter_index_at_all_levels"])
+
+			if "monitor_temp" in params:
+				params1.append("--monitor_temp=%s" % params["monitor_temp"])
+			if "migrate_sstables" in params:
+				params1.append("--migrate_sstables=%s" % params["migrate_sstables"])
+			if "workload_start_from" in params:
+				params1.append("--workload_start_from=%s" % params["workload_start_from"])
+			if "workload_stop_at" in params:
+				params1.append("--workload_stop_at=%s" % params["workload_stop_at"])
+			if "simulation_time_dur_in_sec" in params:
+				params1.append("--simulation_time_dur_in_sec=%s" % params["simulation_time_dur_in_sec"])
+			if "sst_migration_temperature_threshold" in params:
+				params1.append("--sst_migration_temperature_threshold=%s" % params["sst_migration_temperature_threshold"])
+
+			cmd = "cd %s/work/mutant/misc/rocksdb/ycsb && stdbuf -i0 -o0 -e0 ./restart-dstat-run-ycsb.py %s" \
 					% (os.path.expanduser("~"), " ".join(params1))
 			Util.RunSubp(cmd)
 
