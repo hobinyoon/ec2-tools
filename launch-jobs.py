@@ -91,6 +91,7 @@ def Job_YcsbBaseline():
         , "init_script": "mutant-rocksdb"
         , "ami_name": "mutant-cassandra-server"
         , "block_storage_devs": []
+        , "erase_local_ssd": "false"
         , "unzip_quizup_data": "false"
         , "run_cassandra_server": "false"
         , "rocksdb": { }  # This doesn't do much other than checking out the code and building.

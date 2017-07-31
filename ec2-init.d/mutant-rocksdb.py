@@ -109,16 +109,18 @@ def PrepareBlockDevs():
 		if inst_type.startswith("c3."):
 			Util.RunSubp("sudo umount /dev/xvdb || true")
 			Util.RunSubp("sudo umount /dev/xvdc || true")
-			# tee has a problem of not stopping. For now, you can give up on ssd1.
-			# - https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=89224
-			#
-			# "count" one less than what it says below: 81909 - 1
-			#
-			# 81908+0 records in
-			# 81908+0 records out
-			# 85886763008 bytes (86 GB) copied, 1631.16 s, 52.7 MB/s
-			# 1683187 ms = 28 mins
-			Util.RunSubp("sudo sh -c \"dd if=/dev/zero bs=1M count=81908 | tee /dev/xvdb > /dev/xvdc\"", measure_time=True)
+
+			if Ec2InitUtil.GetParam(["erase_local_ssd"]) == "true":
+				# tee has a problem of not stopping. For now, you can give up on ssd1.
+				# - https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=89224
+				#
+				# "count" one less than what it says below: 81909 - 1
+				#
+				# 81908+0 records in
+				# 81908+0 records out
+				# 85886763008 bytes (86 GB) copied, 1631.16 s, 52.7 MB/s
+				# 1683187 ms = 28 mins
+				Util.RunSubp("sudo sh -c \"dd if=/dev/zero bs=1M count=81908 | tee /dev/xvdb > /dev/xvdc\"", measure_time=True)
 
 			#
 			# sudo dd if=/dev/zero bs=1M of=/dev/xvdb || true
