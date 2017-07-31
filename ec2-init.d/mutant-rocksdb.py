@@ -49,7 +49,7 @@ def main(argv):
 			RunCassandra()
 
 		# Terminate instance
-		if Ec2InitUtil.GetParam(["terminate_inst_when_done"]):
+		if Ec2InitUtil.GetParam(["terminate_inst_when_done"]) == "true":
 			Util.RunSubp("sudo shutdown -h now")
 	except Exception as e:
 		msg = "Exception: %s\n%s" % (e, traceback.format_exc())
