@@ -89,7 +89,7 @@ def Job_YcsbBaseline():
         , "spot_req_max_price": 1.0
         # RocksDB can use the same AMI
         , "init_script": "mutant-rocksdb"
-        , "ami_name": "mutant-cassandra-server"
+        , "ami_name": "mutant-rocksdb"
         , "block_storage_devs": []
         , "erase_local_ssd": "false"
         , "unzip_quizup_data": "false"
