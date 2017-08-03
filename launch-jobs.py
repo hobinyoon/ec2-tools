@@ -94,7 +94,7 @@ def Job_YcsbBaseline():
         , "erase_local_ssd": "false"
         , "unzip_quizup_data": "false"
         , "run_cassandra_server": "false"
-        , "rocksdb": { }  # This doesn't do much other than checking out the code and building.
+        , "rocksdb": {}  # This doesn't do much other than checking out the code and building.
         , "rocksdb-quizup-runs": []
         , "ycsb-runs": []
         , "terminate_inst_when_done": "false"
@@ -109,30 +109,29 @@ def Job_YcsbBaseline():
     else:
       raise RuntimeError("Unexpected")
 
-    for t in conf.target_iopses:
-      p1 = { \
-          "exp_desc": inspect.currentframe().f_code.co_name[4:]
-          , "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
-          #, "slow_dev_paths": {"t1": "/mnt/%s/rocksdb-data-t1" % slow_stg_dev}
-          , "db_path": "/mnt/local-ssd1/rocksdb-data/ycsb"
-          , "evict_cached_data": "true"
-          # TODO: figure out how much memory you will need! Make it a bit smaller than the DB size
-          # TODO: Enforce this limit after the load phase.
-          , "memory_limit_in_mb": 4.0 * 1024
-
-          , "cache_filter_index_at_all_levels": "false"
-          , "monitor_temp": "true"
-          , "migrate_sstables": "true"
-
-					# Do you want to explore the number of threads? Probably not. Just figure out the optimal number.
-					, "workload_type": "d"
-          , "target_iops": t
-
-          #, "simulation_time_dur_in_sec": 2000
-          #, "sst_migration_temperature_threshold": mt
-          }
-      params["ycsb-runs"].append(dict(p1))
-    #Cons.P(pprint.pformat(params))
+    params["ycsb-runs"].append({
+      "exp_desc": inspect.currentframe().f_code.co_name[4:]
+      , "env": {
+        "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
+        #, "slow_dev_paths": {"t1": "/mnt/%s/rocksdb-data-t1" % slow_stg_dev}
+        , "db_path": "/mnt/local-ssd1/rocksdb-data/ycsb"
+        , "evict_cached_data": "true"
+        , "cache_filter_index_at_all_levels": "false"
+        , "monitor_temp": "true"
+        , "migrate_sstables": "true"
+				, "workload_type": "d"
+        }
+      , "load": {"ycsb_params": " -p recordcount=5000"}
+      , "run": [
+        {
+          # 4G of memory should be good to see what happens with 5G of data.
+          "memory_limit_in_mb": 4.0 * 1024
+          , "ycsb_params": " -p recordcount=5000 -p operationcount=5000 -p readproportion=0.95 -p insertproportion=0.05 -target 10000"}
+        ]
+        # TODO: Increase recordcount to 5M, which will generate a bit bigger than 5G of data.
+        # TODO: Wait... monitor how many writes and reads are there? Check out the log file
+      }
+      )
     LaunchJob(params)
 
 
