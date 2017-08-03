@@ -121,17 +121,29 @@ def Job_YcsbBaseline():
         , "migrate_sstables": "true"
 				, "workload_type": "d"
         }
-      , "load": {"ycsb_params": " -p recordcount=5000"}
+      # The load phase needs to be slow.
+      #   Without throttling, the SSTables get too big.
+      #   The pending compactions will affect the performance of the later experiment.
+      #   It take too long. 16 mins. With -target 10000
+      #
+      #   Upzipping with pbzip2 takes 3 mins. Downloading takes about 1 mins.
+      , "load": {
+        "unzip-preloaded-db": "ycsb-d.tar.bz2"
+        , "ycsb_params": " -p recordcount=10000000 -target 10000"}
+
       , "run": [
-        {
-          # 4G of memory should be good to see what happens with 5G of data.
-          "memory_limit_in_mb": 4.0 * 1024
-          , "ycsb_params": " -p recordcount=5000 -p operationcount=5000 -p readproportion=0.95 -p insertproportion=0.05 -target 10000"}
+        #{
+        #  # 4G of memory should be good to see what happens with 5G of data.
+        #  "memory_limit_in_mb": 4.0 * 1024
+        #  , "ycsb_params": " -p recordcount=10000000 -p operationcount=30000 -p readproportion=0.95 -p insertproportion=0.05"
+        #}
+        #, {
+        #  "memory_limit_in_mb": 4.0 * 1024
+        #  , "ycsb_params": " -p recordcount=10000000 -p operationcount=30000 -p readproportion=0.95 -p insertproportion=0.05 -target 20000"
+        #}
         ]
-        # TODO: Increase recordcount to 5M, which will generate a bit bigger than 5G of data.
-        # TODO: Wait... monitor how many writes and reads are there? Check out the log file
-      }
-      )
+      })
+      # TODO: Wait... monitor how many writes and reads are there? Check out the log file
     LaunchJob(params)
 
 
