@@ -121,6 +121,7 @@ def Job_YcsbBaseline():
         , "migrate_sstables": "true"
 				, "workload_type": "d"
         }
+
       # The load phase needs to be slow.
       #   Without throttling, the SSTables get too big.
       #   The pending compactions will affect the performance of the later experiment.
@@ -128,15 +129,16 @@ def Job_YcsbBaseline():
       #
       #   Upzipping with pbzip2 takes 3 mins. Downloading takes about 1 mins.
       , "load": {
-        "unzip-preloaded-db": "ycsb-d.tar.bz2"
+        "unzip-preloaded-db": "ycsb-d-10M-records"
         , "ycsb_params": " -p recordcount=10000000 -target 10000"}
 
       , "run": [
-        #{
-        #  # 4G of memory should be good to see what happens with 5G of data.
-        #  "memory_limit_in_mb": 4.0 * 1024
-        #  , "ycsb_params": " -p recordcount=10000000 -p operationcount=30000 -p readproportion=0.95 -p insertproportion=0.05"
-        #}
+        {
+          # 11G of data. Let's see if 4GB is enough and the jvm doesn't get crashed.
+          "memory_limit_in_mb": 4.0 * 1024,
+          # TODO: so what does the workload d do? what portion of the latest records does it read? how is it different from Zipfian workload?
+          "ycsb_params": " -p recordcount=10000000 -p operationcount=10000000 -p readproportion=0.95 -p insertproportion=0.05"
+        }
         #, {
         #  "memory_limit_in_mb": 4.0 * 1024
         #  , "ycsb_params": " -p recordcount=10000000 -p operationcount=30000 -p readproportion=0.95 -p insertproportion=0.05 -target 20000"
