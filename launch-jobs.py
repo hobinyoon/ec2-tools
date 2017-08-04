@@ -50,7 +50,7 @@ def Job_YcsbBaseline():
   # Job conf per EC2 inst
   class ConfEc2Inst:
     # Run multiple experiments of the same workload type on the same EC2 instance. This avoids having to initialize the device every time.
-    exp_per_ec2inst = 2
+    exp_per_ec2inst = 4
 
     def __init__(self):
       self.target_iopses = []
@@ -69,19 +69,20 @@ def Job_YcsbBaseline():
   confs = []
   # Target IOPSes
   conf = ConfEc2Inst()
-  for i in [ \
-        150000, 10000 \
-      , 140000, 20000 \
-      , 130000, 30000 \
-      , 120000, 40000 \
-      , 110000, 50000 \
-      , 100000, 60000 \
-      ,  90000, 70000 \
-      ,  80000]:
-    if conf.Full():
-      confs.append(conf)
-      conf = ConfEc2Inst()
-    conf.Add(i)
+  for j in range(5):
+    for i in [ \
+          150000, 10000 \
+        , 140000, 20000 \
+        , 130000, 30000 \
+        , 120000, 40000 \
+        , 110000, 50000 \
+        , 100000, 60000 \
+        ,  90000, 70000 \
+        ,  80000]:
+      if conf.Full():
+        confs.append(conf)
+        conf = ConfEc2Inst()
+      conf.Add(i)
   if conf.Size() > 0:
     confs.append(conf)
 
