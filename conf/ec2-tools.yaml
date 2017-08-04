@@ -3,7 +3,7 @@ region_ami:
     us-east-1: ami-5fceeb24
 
   mutant-rocksdb:
-    us-east-1: ami-fc795987
+    us-east-1: ami-b2d6f5c9
 
   mutant-client:
     us-east-1: ami-f585a7e2
