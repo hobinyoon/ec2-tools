@@ -21,7 +21,10 @@ def SetParams(v):
 # This function takes either a key or a list of keys.
 # When a key is given as a parameter, it returns _params[k1].
 # When a list, [k1, k2, ...], is given as a parameter, it returns _params[k1][k2][...].
-def GetParam(k):
+def GetParam(k = None):
+	if k is None:
+		return _params
+
 	if isinstance(k, list):
 		n = _params
 		for k1 in k:
@@ -29,11 +32,11 @@ def GetParam(k):
 				return None
 			n = n[k1]
 		return n
+
+	if k not in _params:
+		return None
 	else:
-		if k not in _params:
-			return None
-		else:
-			return _params[k]
+		return _params[k]
 
 
 def GetJobId():
