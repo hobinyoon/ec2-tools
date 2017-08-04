@@ -50,7 +50,7 @@ def Job_YcsbBaseline():
   # Job conf per EC2 inst
   class ConfEc2Inst:
     # Run multiple experiments of the same workload type on the same EC2 instance. This avoids having to initialize the device every time.
-    exp_per_ec2inst = 7
+    exp_per_ec2inst = 2
 
     def __init__(self):
       self.target_iopses = []
@@ -69,32 +69,21 @@ def Job_YcsbBaseline():
   confs = []
   # Target IOPSes
   conf = ConfEc2Inst()
-  for j in range(5):
-    for i in [ \
-        150000 \
-        , 140000 \
-        , 130000 \
-        , 120000 \
-        , 110000 \
-        , 100000 \
-        ,  90000 \
-        ,  80000 \
-        ,  70000 \
-        ,  60000 \
-        ,  50000 \
-        ,  40000 \
-        ,  30000 \
-        ,  20000 \
-        ,  10000]:
-      if conf.Full():
-        confs.append(conf)
-        conf = ConfEc2Inst()
-      conf.Add(i)
+  for i in [ \
+        150000, 10000 \
+      , 140000, 20000 \
+      , 130000, 30000 \
+      , 120000, 40000 \
+      , 110000, 50000 \
+      , 100000, 60000 \
+      ,  90000, 70000 \
+      ,  80000]:
+    if conf.Full():
+      confs.append(conf)
+      conf = ConfEc2Inst()
+    conf.Add(i)
   if conf.Size() > 0:
     confs.append(conf)
-
-  # Debuging
-  confs = confs[0:1]
 
   Cons.P("%d machine(s)" % len(confs))
   Cons.P(pprint.pformat(confs, width=100))
@@ -111,14 +100,12 @@ def Job_YcsbBaseline():
         , "ami_name": "mutant-rocksdb"
         , "block_storage_devs": []
         # Initialize local SSD by erasing. Some EC2 instance types need this.
-        # TODO
-        , "erase_local_ssd": "false"
+        , "erase_local_ssd": "true"
         , "unzip_quizup_data": "false"
         , "run_cassandra_server": "false"
         , "rocksdb": {}  # This doesn't do much other than checking out the code and building.
         , "rocksdb-quizup-runs": []
         , "ycsb-runs": []
-        # TODO
         , "terminate_inst_when_done": "false"
         }
     if slow_stg_dev == "local-ssd":
