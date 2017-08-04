@@ -98,7 +98,7 @@ def Job_YcsbBaseline():
 
   Cons.P("%d machine(s)" % len(confs))
   Cons.P(pprint.pformat(confs, width=100))
-  sys.exit(1)
+  #sys.exit(1)
 
   for conf in confs:
     params = { \
@@ -111,12 +111,14 @@ def Job_YcsbBaseline():
         , "ami_name": "mutant-rocksdb"
         , "block_storage_devs": []
         # Initialize local SSD by erasing. Some EC2 instance types need this.
-        , "erase_local_ssd": "true"
+        # TODO
+        , "erase_local_ssd": "false"
         , "unzip_quizup_data": "false"
         , "run_cassandra_server": "false"
         , "rocksdb": {}  # This doesn't do much other than checking out the code and building.
         , "rocksdb-quizup-runs": []
         , "ycsb-runs": []
+        # TODO
         , "terminate_inst_when_done": "false"
         }
     if slow_stg_dev == "local-ssd":
@@ -130,18 +132,16 @@ def Job_YcsbBaseline():
       raise RuntimeError("Unexpected")
 
     ycsb_runs = {
-      "exp_desc": inspect.currentframe().f_code.co_name[4:]
-      , "env": {
-        "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
-        #, "slow_dev_paths": {"t1": "/mnt/%s/rocksdb-data-t1" % slow_stg_dev}
-        , "db_path": "/mnt/local-ssd1/rocksdb-data/ycsb"
-        , "evict_cached_data": "true"
-        , "cache_filter_index_at_all_levels": "false"
-        , "monitor_temp": "true"
-        , "migrate_sstables": "true"
-				, "workload_type": "d"
-        }
-      , "run": {
+      "exp_desc": inspect.currentframe().f_code.co_name[4:]  # Don't think this is used here. Leave it for now.
+			, "workload_type": "d"
+      , "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
+      #, "slow_dev_paths": {"t1": "/mnt/%s/rocksdb-data-t1" % slow_stg_dev}
+      , "db_path": "/mnt/local-ssd1/rocksdb-data/ycsb"
+      , "runs": []
+      }
+
+    for t in conf.target_iopses:
+      ycsb_runs["runs"].append({
         # The load phase needs to be slow.
         #   Without throttling, the SSTables get too big.
         #   The pending compactions will affect the performance of the later experiment.
@@ -150,37 +150,32 @@ def Job_YcsbBaseline():
         #   Upzipping with pbzip2 takes 3 mins. Downloading takes about 1 mins.
         "load": {
           "unzip-preloaded-db": "ycsb-d-10M-records"
-          , "ycsb_params": " -p recordcount=10000000 -target 10000"}
+          , "ycsb_params": " -p recordcount=10000000 -target 10000"},
+        # Without memory throttling, 10M reqs: 101 sec.
+        #                            30M reqs: 248 sec
+        # With a 4GB memory throttling, 10M reqs: 119 sec. Not a lot of difference. Hmm.
+        #                               30M reqs: 305 sec. Okay.
+        #
+        # Those are how long it takes when the system gets saturated.
+        #
+        # TODO: So, what do you want to see? The scalability test.
+        #
+        # TODO: so what does the workload d do? what portion of the latest records does it read? how is it different from Zipfian workload?
 
-        , "run": []
-            # {
-            # Without memory throttling, 10M reqs: 101 sec.
-            #                            30M reqs: 248 sec
-            # With a 4GB memory throttling, 10M reqs: 119 sec. Not a lot of difference. Hmm.
-            #                               30M reqs: 305 sec. Okay.
-            #
-            # Those are how long it takes when the system gets saturated.
-            #
-            # TODO: So, what do you want to see? The scalability test.
-            #
-            # TODO: so what does the workload d do? what portion of the latest records does it read? how is it different from Zipfian workload?
+        # 11G of data. With 4GB, JVM seems to be doing just fine.
+        #"memory_limit_in_mb": 4.0 * 1024,
+        # Out of the 30M operations, 0.95 of them are reads; 0.05 are writes.
+        "run": {
+          "evict_cached_data": "true"
+          , "cache_filter_index_at_all_levels": "false"
+          , "monitor_temp": "false"
+          , "migrate_sstables": "false"
+          , "memory_limit_in_mb": 4.0 * 1024
+          , "ycsb_params": " -p recordcount=10000000 -p operationcount=30000000 -p readproportion=0.95 -p insertproportion=0.05 -target %d" % t
+          }
+        })
 
-            # 11G of data. With 4GB, JVM seems to be doing just fine.
-            #"memory_limit_in_mb": 4.0 * 1024,
-            # Out of the 30M operations, 0.95 of them are reads; 0.05 are writes.
-            #"ycsb_params": " -p recordcount=10000000 -p operationcount=30000000 -p readproportion=0.95 -p insertproportion=0.05"
-            # }
-        }
-      }
-
-    for t in conf.target_iopses:
-      ycsb_runs["run"]["run"] = [{
-            "memory_limit_in_mb": 4.0 * 1024,
-            "ycsb_params": " -p recordcount=10000000 -p operationcount=300000 -p readproportion=0.95 -p insertproportion=0.05 -target %d" % t
-            #"ycsb_params": " -p recordcount=10000000 -p operationcount=30000000 -p readproportion=0.95 -p insertproportion=0.05 -target %d" % t
-          }]
-      params["ycsb-runs"].append(ycsb_runs)
-
+    params["ycsb-runs"] = dict(ycsb_runs)
     LaunchJob(params)
 
 
