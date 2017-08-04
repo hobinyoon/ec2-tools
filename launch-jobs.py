@@ -106,7 +106,7 @@ def Job_YcsbBaseline():
         , "rocksdb": {}  # This doesn't do much other than checking out the code and building.
         , "rocksdb-quizup-runs": []
         , "ycsb-runs": []
-        , "terminate_inst_when_done": "false"
+        , "terminate_inst_when_done": "true"
         }
     if slow_stg_dev == "local-ssd":
 			pass
