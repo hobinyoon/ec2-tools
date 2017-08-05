@@ -153,12 +153,14 @@ def Job_YcsbBaseline():
         # 11G of data. With 4GB, JVM seems to be doing just fine.
         #"memory_limit_in_mb": 4.0 * 1024,
         # Out of the 30M operations, 0.95 of them are reads; 0.05 are writes.
+        #
+        # Try 5GB. Cause now you are using more memory with the raw latency logging. Hope this reduces the jitter too.
         "run": {
           "evict_cached_data": "true"
           , "cache_filter_index_at_all_levels": "false"
           , "monitor_temp": "false"
           , "migrate_sstables": "false"
-          , "memory_limit_in_mb": 4.0 * 1024
+          , "memory_limit_in_mb": 5.0 * 1024
           , "ycsb_params": " -p recordcount=10000000 -p operationcount=30000000 -p readproportion=0.95 -p insertproportion=0.05 -target %d" % t
           }
         })
