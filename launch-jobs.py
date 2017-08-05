@@ -64,11 +64,13 @@ def Job_YcsbBaseline():
     def __repr__(self):
       return "%s" % (self.target_iopses)
 
-  slow_stg_dev = "local-ssd"
+  # Note: Not needed here. You will need it for Mutant
+  #slow_stg_dev = "local-ssd"
+  db_stg_dev = "ebs-st1"
 
-  confs = []
+  confs_ec2 = []
   # Target IOPSes
-  conf = ConfEc2Inst()
+  conf_ec2 = ConfEc2Inst()
   for j in range(5):
     for i in [ \
           150000, 10000 \
@@ -79,18 +81,18 @@ def Job_YcsbBaseline():
         , 100000, 60000 \
         ,  90000, 70000 \
         ,  80000]:
-      if conf.Full():
-        confs.append(conf)
-        conf = ConfEc2Inst()
-      conf.Add(i)
-  if conf.Size() > 0:
-    confs.append(conf)
+      if conf_ec2.Full():
+        confs_ec2.append(conf_ec2)
+        conf_ec2 = ConfEc2Inst()
+      conf_ec2.Add(i)
+  if conf_ec2.Size() > 0:
+    confs_ec2.append(conf_ec2)
 
-  Cons.P("%d machine(s)" % len(confs))
-  Cons.P(pprint.pformat(confs, width=100))
+  Cons.P("%d machine(s)" % len(confs_ec2))
+  Cons.P(pprint.pformat(confs_ec2, width=100))
   #sys.exit(1)
 
-  for conf in confs:
+  for conf_ec2 in confs_ec2:
     params = { \
         # us-east-1, which is where the S3 buckets for experiment are.
         "region": "us-east-1"
@@ -109,26 +111,45 @@ def Job_YcsbBaseline():
         , "ycsb-runs": []
         , "terminate_inst_when_done": "true"
         }
-    if slow_stg_dev == "local-ssd":
+    if db_stg_dev == "local-ssd":
 			pass
-    elif slow_stg_dev == "ebs-gp2":
-      # 100GB gp2: 300 baseline IOPS. 2,000 burst IOPS.
-      params["block_storage_devs"].append({"VolumeType": "gp2", "VolumeSize": 100, "DeviceName": "d"})
-    elif slow_stg_dev == "ebs-st1":
+    elif db_stg_dev == "ebs-st1":
+      # 40 MiB/s/TiB. With 3 TiB, 120 MiB/sec. This should be good enough.
+      #   With a local SSD experiment, the average throughput tops at 35 MB/s. Although 99th percentile goes up to 260 MB/s.
+      #   You can check with the dstat local ssd log.
       params["block_storage_devs"].append({"VolumeType": "st1", "VolumeSize": 3000, "DeviceName": "e"})
     else:
       raise RuntimeError("Unexpected")
 
+    # TODO: clean up
+    #if slow_stg_dev == "local-ssd":
+		#	pass
+    #elif slow_stg_dev == "ebs-gp2":
+    #  # 100GB gp2: 300 baseline IOPS. 2,000 burst IOPS.
+    #  params["block_storage_devs"].append({"VolumeType": "gp2", "VolumeSize": 100, "DeviceName": "d"})
+    #elif slow_stg_dev == "ebs-st1":
+    #  params["block_storage_devs"].append({"VolumeType": "st1", "VolumeSize": 3000, "DeviceName": "e"})
+    #else:
+    #  raise RuntimeError("Unexpected")
+
     ycsb_runs = {
       "exp_desc": inspect.currentframe().f_code.co_name[4:]  # Don't think this is used here. Leave it for now.
 			, "workload_type": "d"
-      , "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
+      , "db_stg_dev": db_stg_dev
+      # TODO: clean up
+      #, "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
       #, "slow_dev_paths": {"t1": "/mnt/%s/rocksdb-data-t1" % slow_stg_dev}
-      , "db_path": "/mnt/local-ssd1/rocksdb-data/ycsb"
       , "runs": []
       }
 
-    for t in conf.target_iopses:
+    if db_stg_dev == "local-ssd":
+      ycsb_runs["db_path"] = "/mnt/local-ssd1/rocksdb-data/ycsb"
+    elif db_stg_dev == "ebs-st1":
+      ycsb_runs["db_path"] = "/mnt/ebs-st1/rocksdb-data/ycsb"
+    else:
+      raise RuntimeError("Unexpected")
+
+    for t in conf_ec2.target_iopses:
       ycsb_runs["runs"].append({
         # The load phase needs to be slow.
         #   Without throttling, the SSTables get too big.
@@ -146,9 +167,9 @@ def Job_YcsbBaseline():
         #
         # Those are how long it takes when the system gets saturated.
         #
-        # TODO: So, what do you want to see? The scalability test.
+        # TODO: what do you want to see? The scalability test.
         #
-        # TODO: so what does the workload d do? what portion of the latest records does it read? how is it different from Zipfian workload?
+        # TODO: what does the workload d do? what portion of the latest records does it read? how is it different from Zipfian workload?
 
         # 11G of data. With 4GB, JVM seems to be doing just fine.
         #"memory_limit_in_mb": 4.0 * 1024,
