@@ -72,15 +72,16 @@ def Job_YcsbBaseline():
   # Target IOPSes
   conf_ec2 = ConfEc2Inst()
   for j in range(5):
+    # Step by 1000 for st1
     for i in [ \
-          150000, 10000 \
-        , 140000, 20000 \
-        , 130000, 30000 \
-        , 120000, 40000 \
-        , 110000, 50000 \
-        , 100000, 60000 \
-        ,  90000, 70000 \
-        ,  80000]:
+          15000, 1000 \
+        , 14000, 2000 \
+        , 13000, 3000 \
+        , 12000, 4000 \
+        , 11000, 5000 \
+        , 10000, 6000 \
+        ,  9000, 7000 \
+        ,  8000]:
       if conf_ec2.Full():
         confs_ec2.append(conf_ec2)
         conf_ec2 = ConfEc2Inst()
@@ -88,9 +89,10 @@ def Job_YcsbBaseline():
   if conf_ec2.Size() > 0:
     confs_ec2.append(conf_ec2)
 
+  #confs_ec2 = confs_ec2[0:1]
   Cons.P("%d machine(s)" % len(confs_ec2))
   Cons.P(pprint.pformat(confs_ec2, width=100))
-  #sys.exit(1)
+  sys.exit(1)
 
   for conf_ec2 in confs_ec2:
     params = { \
@@ -133,7 +135,7 @@ def Job_YcsbBaseline():
     #  raise RuntimeError("Unexpected")
 
     ycsb_runs = {
-      "exp_desc": inspect.currentframe().f_code.co_name[4:]  # Don't think this is used here. Leave it for now.
+      "exp_desc": [inspect.currentframe().f_code.co_name[4:], "rocksdb-st1-ycsb-d"]
 			, "workload_type": "d"
       , "db_stg_dev": db_stg_dev
       # TODO: clean up
