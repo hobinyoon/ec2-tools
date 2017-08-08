@@ -43,14 +43,11 @@ def main(argv):
   globals()[job]()
 
 
-# TODO: Run baseline exp first. RocksDB with local SSD, RocksDB with EBS Mag.
-
-# A workload type per an EC2 instance since you need to initialize the DB. You can't mix different workload in a run.
+# A workload type per an EC2 instance for now. Nothing's stopping you running different types of workloads in an instance.
 def Job_YcsbBaseline():
   # Job conf per EC2 inst
   class ConfEc2Inst:
-    # Run multiple experiments of the same workload type on the same EC2 instance. This avoids having to initialize the device every time.
-    exp_per_ec2inst = 4
+    exp_per_ec2inst = 1
 
     def __init__(self):
       self.target_iopses = []
@@ -66,12 +63,15 @@ def Job_YcsbBaseline():
 
   # Note: Not needed here. You will need it for Mutant
   #slow_stg_dev = "local-ssd"
-  db_stg_dev = "ebs-st1"
+
+  db_stg_dev = "local-ssd"
+  #db_stg_dev = "ebs-st1"
 
   confs_ec2 = []
   # Target IOPSes
   conf_ec2 = ConfEc2Inst()
   for j in range(5):
+    # Step by 10000 for localssd
     # Step by 1000 for st1
     for i in [ \
           15000, 1000 \
@@ -89,7 +89,6 @@ def Job_YcsbBaseline():
   if conf_ec2.Size() > 0:
     confs_ec2.append(conf_ec2)
 
-  #confs_ec2 = confs_ec2[0:1]
   Cons.P("%d machine(s)" % len(confs_ec2))
   Cons.P(pprint.pformat(confs_ec2, width=100))
   sys.exit(1)
