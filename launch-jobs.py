@@ -47,19 +47,18 @@ def main(argv):
 def Job_YcsbMutant():
   # Job conf per EC2 inst
   class ConfEc2Inst:
-    exp_per_ec2inst = 1
+    exp_per_ec2inst = 7
 
     def __init__(self):
-      self.target_iopses = []
-
+      self.params = []
     def Full(self):
-      return (len(self.target_iopses) >= ConfEc2Inst.exp_per_ec2inst)
-    def Add(self, target_iops):
-      self.target_iopses.append(target_iops)
+      return (len(self.params) >= ConfEc2Inst.exp_per_ec2inst)
+    def Add(self, params):
+      self.params.append(params)
     def Size(self):
-      return len(self.target_iopses)
+      return len(self.params)
     def __repr__(self):
-      return "%s" % (self.target_iopses)
+      return "%s" % (self.params)
 
   fast_stg_dev = "local-ssd"
   slow_stg_dev = "ebs-st1"
@@ -67,9 +66,9 @@ def Job_YcsbMutant():
   confs_ec2 = []
   # Target IOPSes
   conf_ec2 = ConfEc2Inst()
-  for j in range(5):
-    # TODO: Figure out good parameters.
-    # Let's try target_iops of 10000 first.
+  for i in range(5):
+    # TODO: Figure out good parameters. Let's try target_iops of 10000 first.
+    target_iops = 10000
     # SSTable OTT (organization temperature threshold)
     for sst_ott in [
         0.00390625,  # 2^(-8)
@@ -82,42 +81,29 @@ def Job_YcsbMutant():
         64.0,
         256.0,
         1024.0]:  # 2^10
-      pass
-
-    # Step by 10000 for localssd
-    # Step by 1000 for st1
-    #for i in [ \
-    #      150000, 10000 \
-    #    , 140000, 20000 \
-    #    , 130000, 30000 \
-    #    , 120000, 40000 \
-    #    , 110000, 50000 \
-    #    , 100000, 60000 \
-    #    ,  90000, 70000 \
-    #    ,  80000, 1000]:
-    #  if conf_ec2.Full():
-    #    confs_ec2.append(conf_ec2)
-    #    conf_ec2 = ConfEc2Inst()
-    #  conf_ec2.Add(i)
-
+      if conf_ec2.Full():
+        confs_ec2.append(conf_ec2)
+        conf_ec2 = ConfEc2Inst()
+      conf_ec2.Add((target_iops, sst_ott))
   if conf_ec2.Size() > 0:
     confs_ec2.append(conf_ec2)
 
-
-
+  confs_ec2 = confs_ec2[0:1]
   Cons.P("%d machine(s)" % len(confs_ec2))
-  Cons.P(pprint.pformat(confs_ec2, width=100))
-  sys.exit(1)
+  Cons.P(pprint.pformat(confs_ec2, width=150))
+  #sys.exit(1)
 
   for conf_ec2 in confs_ec2:
     params = { \
         # us-east-1, which is where the S3 buckets for experiment are.
+        # TODO: may have to move to other regions when the quora is up
         "region": "us-east-1"
         , "inst_type": "c3.2xlarge"
         , "spot_req_max_price": 1.0
         , "init_script": "mutant-rocksdb"
         , "ami_name": "mutant-rocksdb"
         , "block_storage_devs": []
+        , "ec2_tag_Name": inspect.currentframe().f_code.co_name[4:]
         # Initialize local SSD by erasing. Some EC2 instance types need this.
         , "erase_local_ssd": "true"
         , "unzip_quizup_data": "false"
@@ -136,15 +122,17 @@ def Job_YcsbMutant():
     ycsb_runs = {
       "exp_desc": [inspect.currentframe().f_code.co_name[4:], "mutant-ycsb-d"]
 			, "workload_type": "d"
-      , "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
-      , "slow_dev_paths": {"t1": "/mnt/%s/rocksdb-data-t1" % slow_stg_dev}
+      , "fast_dev_db_path": "/mnt/local-ssd1/rocksdb-data/ycsb"
+      , "slow_dev_db_paths": {"t1": "/mnt/%s/rocksdb-data-t1" % slow_stg_dev}
       , "runs": []
       }
 
     # TODO: I'm concerned about the initial bulk SSTable migration. Or should I?
     #   We'll see the result and think about it. We'll have to gather all raw log files.
     #   If that's the case, we'll have to exclude the initial warm up period.
-    for t in conf_ec2.target_iopses:
+    for p in conf_ec2.params:
+      target_iops = p[0]
+      sst_ott = p[1]
       ycsb_runs["runs"].append({
         "load": {
           "unzip-preloaded-db": "ycsb-d-10M-records"
@@ -153,10 +141,11 @@ def Job_YcsbMutant():
           "evict_cached_data": "true"
           , "memory_limit_in_mb": 5.0 * 1024
           # TODO: Check what were the default values of these. Make sure the RocksDB experiment didn't trigger any of the Mutant mechanism.
-          , "cache_filter_index_at_all_levels": "false"
-          , "monitor_temp": "false"
-          , "migrate_sstables": "false"
-          , "ycsb_params": " -p recordcount=10000000 -p operationcount=30000000 -p readproportion=0.95 -p insertproportion=0.05 -target %d" % t
+          , "cache_filter_index_at_all_levels": "true"
+          , "monitor_temp": "true"
+          , "migrate_sstables": "true"
+          , "sst_ott": "true"
+          , "ycsb_params": " -p recordcount=10000000 -p operationcount=30000000 -p readproportion=0.95 -p insertproportion=0.05 -target %d" % target_iops
           }
         })
 
@@ -222,11 +211,11 @@ def Job_YcsbRocksdb():
         , "init_script": "mutant-rocksdb"
         , "ami_name": "mutant-rocksdb"
         , "block_storage_devs": []
+        , "ec2_tag_Name": inspect.currentframe().f_code.co_name[4:]
         # Initialize local SSD by erasing. Some EC2 instance types need this.
         , "erase_local_ssd": "true"
         , "unzip_quizup_data": "false"
         , "run_cassandra_server": "false"
-        , "ec2_tag_Name": inspect.currentframe().f_code.co_name[4:]
         , "rocksdb": {}  # This doesn't do much other than checking out the code and building.
         , "rocksdb-quizup-runs": []
         , "ycsb-runs": []
@@ -251,9 +240,9 @@ def Job_YcsbRocksdb():
       }
 
     if db_stg_dev == "local-ssd":
-      ycsb_runs["db_path"] = "/mnt/local-ssd1/rocksdb-data/ycsb"
+      ycsb_runs["fast_dev_db_path"] = "/mnt/local-ssd1/rocksdb-data/ycsb"
     elif db_stg_dev == "ebs-st1":
-      ycsb_runs["db_path"] = "/mnt/ebs-st1/rocksdb-data/ycsb"
+      ycsb_runs["fast_dev_db_path"] = "/mnt/ebs-st1/rocksdb-data/ycsb"
     else:
       raise RuntimeError("Unexpected")
 
