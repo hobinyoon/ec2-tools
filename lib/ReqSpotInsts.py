@@ -225,7 +225,10 @@ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ubuntu@localhost
 		# Go with minimal tags for now.
 		tags = {
 				"job_id": self.job_id
-				, "name": self.spot_req_infos.NodeName(inst_id)
+        # Experiment name to prevent your collaborator accidentally killing your VM
+				, "Name": self.params["ec2_tag_Name"]
+
+				#, "Name": self.spot_req_infos.NodeName(inst_id)
 				# Note: node expiration time can be added here for auto cleaning. dev
 				# nodes don't have them.
 				}
