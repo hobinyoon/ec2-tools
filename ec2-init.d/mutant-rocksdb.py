@@ -322,14 +322,19 @@ def _CloneAndBuildYcsb():
 		Util.RunSubp("rm -rf /home/ubuntu/work/mutant/YCSB")
 		Util.RunSubp("ln -s /mnt/local-ssd0/mutant/YCSB /home/ubuntu/work/mutant/YCSB")
 
-		# Build
-		Util.RunSubp("cd /home/ubuntu/work/mutant/YCSB && mvn -pl com.yahoo.ycsb:cassandra-binding -am clean package -DskipTests >/dev/null 2>&1")
-
 		# Edit the git source repository for easy development.
 		Util.RunSubp("sed -i 's/" \
 				"^\\turl = https:\\/\\/github.com\\/hobinyoon\\/YCSB" \
 				"/\\turl = git@github.com:hobinyoon\/YCSB.git" \
 				"/g' %s" % "~/work/mutant/YCSB/.git/config")
+
+		# Switch to mutant branch
+		Util.RunSubp("cd /home/ubuntu/work/mutant/YCSB" \
+		" && git branch -f mutant origin/mutant" \
+		" && git checkout mutant")
+
+		# Build
+		Util.RunSubp("cd /home/ubuntu/work/mutant/YCSB && mvn -pl com.yahoo.ycsb:cassandra-binding -am clean package -DskipTests >/dev/null 2>&1")
 
 
 def RunRocksDBQuizup():
