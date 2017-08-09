@@ -140,11 +140,12 @@ def Job_YcsbMutant():
         "run": {
           "evict_cached_data": "true"
           , "memory_limit_in_mb": 5.0 * 1024
-          # TODO: Check what were the default values of these. Make sure the RocksDB experiment didn't trigger any of the Mutant mechanism.
-          , "cache_filter_index_at_all_levels": "true"
-          , "monitor_temp": "true"
-          , "migrate_sstables": "true"
-          , "sst_ott": "true"
+          # Mutant doesn't trigger any of these by default: it behaves like unmodified RocksDB.
+          , "mutant_options": {
+            "cache_filter_index_at_all_levels": "true"
+            , "monitor_temp": "true"
+            , "migrate_sstables": "true"
+            , "sst_ott": sst_ott}
           , "ycsb_params": " -p recordcount=10000000 -p operationcount=30000000 -p readproportion=0.95 -p insertproportion=0.05 -target %d" % target_iops
           }
         })
