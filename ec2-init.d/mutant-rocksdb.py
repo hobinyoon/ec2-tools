@@ -334,7 +334,8 @@ def _CloneAndBuildYcsb():
 		" && git checkout mutant")
 
 		# Build
-		Util.RunSubp("cd /home/ubuntu/work/mutant/YCSB && mvn -pl com.yahoo.ycsb:cassandra-binding -am clean package -DskipTests >/dev/null 2>&1")
+		#Util.RunSubp("cd /home/ubuntu/work/mutant/YCSB && mvn -pl com.yahoo.ycsb:cassandra-binding -am clean package -DskipTests >/dev/null 2>&1")
+		Util.RunSubp("cd /home/ubuntu/work/mutant/YCSB && mvn -pl com.yahoo.ycsb:rocksdb-binding -am clean package -DskipTests >/dev/null 2>&1")
 
 
 def RunRocksDBQuizup():
