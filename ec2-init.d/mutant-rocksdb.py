@@ -268,8 +268,8 @@ def _CloneAndBuildRocksDb():
 		" && git branch -f mutant origin/mutant" \
 		" && git checkout mutant")
 
-		# Build. Takes about 5 mins
-		Util.RunSubp("cd /home/ubuntu/work/mutant/rocksdb && make -j16 shared_lib", measure_time=True)
+		# Build. Takes about 5 mins. You can save the pre-built one in the AMI.
+		Util.RunSubp("cd /home/ubuntu/work/mutant/rocksdb && make -j16 shared_lib && (make -j16 rocksdbjavastatic || make -j16 rocksdbjavastatic)", measure_time=True)
 
 		# Create data directory
 		dn = "/mnt/local-ssd1/rocksdb-data"

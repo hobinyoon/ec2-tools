@@ -96,7 +96,6 @@ def Job_YcsbMutant():
   for conf_ec2 in confs_ec2:
     params = { \
         # us-east-1, which is where the S3 buckets for experiment are.
-        # TODO: may have to move to other regions when the quora is up
         "region": "us-east-1"
         , "inst_type": "c3.2xlarge"
         , "spot_req_max_price": 1.0
@@ -122,8 +121,10 @@ def Job_YcsbMutant():
     ycsb_runs = {
       "exp_desc": [inspect.currentframe().f_code.co_name[4:], "mutant-ycsb-d"]
 			, "workload_type": "d"
-      , "fast_dev_db_path": "/mnt/local-ssd1/rocksdb-data/ycsb"
-      , "slow_dev_db_paths": {"t1": "/mnt/%s/rocksdb-data-t1" % slow_stg_dev}
+      , "db_path": "/mnt/local-ssd1/rocksdb-data/ycsb"
+      , "db_stg_dev_paths": [
+          "/mnt/local-ssd1/rocksdb-data/ycsb/t0"
+          , "/mnt/%s/rocksdb-data-t1" % slow_stg_dev]
       , "runs": []
       }
 
@@ -135,7 +136,8 @@ def Job_YcsbMutant():
       sst_ott = p[1]
       ycsb_runs["runs"].append({
         "load": {
-          "unzip-preloaded-db": "ycsb-d-10M-records"
+          #"use-preloaded-db": ""
+          "use-preloaded-db": "ycsb-d-10M-records-mutant"
           , "ycsb_params": " -p recordcount=10000000 -target 10000"},
         "run": {
           "evict_cached_data": "true"
@@ -145,7 +147,9 @@ def Job_YcsbMutant():
             "cache_filter_index_at_all_levels": "true"
             , "monitor_temp": "true"
             , "migrate_sstables": "true"
-            , "sst_ott": sst_ott}
+            , "sst_ott": sst_ott
+            , "db_stg_dev_paths": ycsb_runs["db_stg_dev_paths"]
+            }
           , "ycsb_params": " -p recordcount=10000000 -p operationcount=30000000 -p readproportion=0.95 -p insertproportion=0.05 -target %d" % target_iops
           }
         })
@@ -254,7 +258,7 @@ def Job_YcsbRocksdb():
         #   However, with a slow loading like with -target 10000, it takes 16 mins.
         # Decided to keep the DB image in S3 and sync. Takes about 1 min.
         "load": {
-          "unzip-preloaded-db": "ycsb-d-10M-records"
+          "unzip-preloaded-db": "ycsb-d-10M-records-rocksdb"
           , "ycsb_params": " -p recordcount=10000000 -target 10000"},
         # How long it takes when the system gets saturated.
         #   Without memory throttling, 10M reqs: 101 sec.
