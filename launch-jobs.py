@@ -71,16 +71,13 @@ def Job_YcsbMutant():
     target_iops = 10000
     # SSTable OTT (organization temperature threshold)
     for sst_ott in [
-        0.00390625,  # 2^(-8)
-        0.015625,
-        0.0625,
         0.25,
         1.0,
         4.0,
         16.0,
         64.0,
         256.0,
-        1024.0]:  # 2^10
+        1024.0]:
       if conf_ec2.Full():
         confs_ec2.append(conf_ec2)
         conf_ec2 = ConfEc2Inst()
@@ -138,16 +135,22 @@ def Job_YcsbMutant():
         "load": {
           #"use-preloaded-db": ""
           "use-preloaded-db": "ycsb-d-10M-records-mutant"
-          , "ycsb_params": " -p recordcount=10000000 -target 10000"},
-        "run": {
+          , "ycsb_params": " -p recordcount=10000000 -target 10000"
+          }
+        , "run": {
           "evict_cached_data": "true"
           , "memory_limit_in_mb": 5.0 * 1024
           # Mutant doesn't trigger any of these by default: it behaves like unmodified RocksDB.
           , "mutant_options": {
-            "cache_filter_index_at_all_levels": "true"
-            , "monitor_temp": "true"
+            "monitor_temp": "true"
             , "migrate_sstables": "true"
             , "sst_ott": sst_ott
+            , "cache_filter_index_at_all_levels": "true"
+            # Replaying a workload in the past
+            #, "replaying": {
+            #  "simulated_time_dur_sec": 1365709.587
+            #  , "simulation_time_dur_sec": 60000
+            #  }
             , "db_stg_dev_paths": ycsb_runs["db_stg_dev_paths"]
             }
           , "ycsb_params": " -p recordcount=10000000 -p operationcount=30000000 -p readproportion=0.95 -p insertproportion=0.05 -target %d" % target_iops
