@@ -47,7 +47,7 @@ def main(argv):
 def Job_YcsbMutant():
   # Job conf per EC2 inst
   class ConfEc2Inst:
-    exp_per_ec2inst = 7
+    exp_per_ec2inst = 37
 
     def __init__(self):
       self.params = []
@@ -67,27 +67,30 @@ def Job_YcsbMutant():
   # Target IOPSes
   conf_ec2 = ConfEc2Inst()
   for i in range(5):
-    # TODO: Figure out good parameters. Let's try target_iops of 10000 first.
-    target_iops = 10000
-    # SSTable OTT (organization temperature threshold)
-    for sst_ott in [
-        0.25,
-        1.0,
-        4.0,
-        16.0,
-        64.0,
-        256.0,
-        1024.0]:
-      if conf_ec2.Full():
-        confs_ec2.append(conf_ec2)
-        conf_ec2 = ConfEc2Inst()
-      conf_ec2.Add((target_iops, sst_ott))
+    # Target IOPS
+    for ti in [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000]:
+      # SSTable OTT (organization temperature threshold)
+      for sst_ott in [
+          2**(-8),
+          2**(-6),
+          2**(-4),
+          2**(-2),
+          2**(0),
+          4.0,
+          16.0,
+          64.0,
+          256.0,
+          1024.0]:
+        if conf_ec2.Full():
+          confs_ec2.append(conf_ec2)
+          conf_ec2 = ConfEc2Inst()
+        conf_ec2.Add((ti, sst_ott))
   if conf_ec2.Size() > 0:
     confs_ec2.append(conf_ec2)
 
-  confs_ec2 = confs_ec2[0:1]
+  #confs_ec2 = confs_ec2[0:1]
   Cons.P("%d machine(s)" % len(confs_ec2))
-  Cons.P(pprint.pformat(confs_ec2, width=150))
+  Cons.P(pprint.pformat(confs_ec2, width=100))
   #sys.exit(1)
 
   for conf_ec2 in confs_ec2:
@@ -153,7 +156,7 @@ def Job_YcsbMutant():
             #  }
             , "db_stg_dev_paths": ycsb_runs["db_stg_dev_paths"]
             }
-          , "ycsb_params": " -p recordcount=10000000 -p operationcount=30000000 -p readproportion=0.95 -p insertproportion=0.05 -target %d" % target_iops
+          , "ycsb_params": " -p recordcount=10000000 -p operationcount=10000000 -p readproportion=0.95 -p insertproportion=0.05 -target %d" % target_iops
           }
         })
 
