@@ -324,9 +324,9 @@ def _CloneMisc():
         "/g' %s" % "~/work/mutant/misc/.git/config")
 
 
-    def _CloneAndBuildYcsb():
-      with Cons.MT("Cloning YCSB and build ..."):
-        # Git clone
+def _CloneAndBuildYcsb():
+  with Cons.MT("Cloning YCSB and build ..."):
+    # Git clone
     Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/YCSB")
     Util.RunSubp("git clone https://github.com/hobinyoon/YCSB /mnt/local-ssd0/mutant/YCSB")
 
