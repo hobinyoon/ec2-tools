@@ -307,9 +307,9 @@ def _CloneCassandra2x():
         "/g' %s" % "~/work/mutant/cassandra-2.2.3/.git/config")
 
 
-    def _CloneMisc():
-      with Cons.MT("Cloning misc ..."):
-        # Git clone
+def _CloneMisc():
+  with Cons.MT("Cloning misc ..."):
+    # Git clone
     Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/misc")
     Util.RunSubp("git clone https://github.com/hobinyoon/mutant-misc /mnt/local-ssd0/mutant/misc")
 
