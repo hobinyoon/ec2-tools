@@ -140,8 +140,8 @@ def Job_YcsbMutant():
       sst_ott = p[1]
       ycsb_runs["runs"].append({
         "load": {
-          #"use-preloaded-db": ""
-          "use-preloaded-db": "ycsb-d-10M-records-mutant"
+          #"use_preloaded_db": ""
+          "use_preloaded_db": "ycsb-d-10M-records-mutant"
           , "ycsb_params": " -p recordcount=10000000 -target 10000"
           }
         , "run": {
@@ -257,9 +257,9 @@ def Job_YcsbRocksdb():
         #   However, with a slow loading like with -target 10000, it takes 16 mins.
         # Decided to keep the DB image in S3. Takes about 1 min to sync.
         "load": {
-          #"use-preloaded-db": ""
+          #"use_preloaded_db": ""
           # This can be used for any devices. Now the name is misleading, but ok.
-          "use-preloaded-db": "ycsb-d-10M-records-rocksdb-st1"
+          "use_preloaded_db": "ycsb-d-10M-records-rocksdb-st1"
           , "ycsb_params": " -p recordcount=10000000 -target 10000"
           }
         # How long it takes when the system gets saturated.
@@ -339,7 +339,7 @@ def Job_Ycsb_A_Rocksdb():
   if conf_ec2.Size() > 0:
     confs_ec2.append(conf_ec2)
 
-  confs_ec2 = confs_ec2[0:1]
+  #confs_ec2 = confs_ec2[0:1]
   Cons.P("%d machine(s)" % len(confs_ec2))
   Cons.P(pprint.pformat(confs_ec2, width=100))
   #sys.exit(1)
@@ -383,32 +383,33 @@ def Job_Ycsb_A_Rocksdb():
     for target_iops in conf_ec2.params:
       ycsb_runs["runs"].append({
         "load": {
-          "use-preloaded-db": ""
-          #"use-preloaded-db": "ycsb-d-10M-records-rocksdb"
+          #"use_preloaded_db": ""
+          "use_preloaded_db": "ycsb-%s-10M-records-rocksdb" % workload_type
           # For some reason, using the preloaded rocksdb to st1 didn't work. Make a DB snapshot that was loaded on st1.
-          #"use-preloaded-db": "ycsb-d-10M-records-rocksdb-st1"
+          #"use_preloaded_db": "ycsb-d-10M-records-rocksdb-st1"
           # Let's try the same one for local ssd. Hope it works. Hope the difference is the separate t0 directory.
           , "ycsb_params": " -p recordcount=10000000 -target 10000"
+          # Useful when taking DB snapshots
+          , "stop_after_load": "false"
           }
-        , "run": {}
-        #, "run": {
-        #  "evict_cached_data": "true"
-        #  , "memory_limit_in_mb": 5.0 * 1024
-        #  # Mutant doesn't trigger any of these by default: it behaves like unmodified RocksDB.
-        #  , "mutant_options": {
-        #    "monitor_temp": "false"
-        #    , "migrate_sstables": "false"
-        #    , "sst_ott": 0
-        #    , "cache_filter_index_at_all_levels": "false"
-        #    # Replaying a workload in the past
-        #    #, "replaying": {
-        #    #  "simulated_time_dur_sec": 1365709.587
-        #    #  , "simulation_time_dur_sec": 60000
-        #    #  }
-        #    , "db_stg_dev_paths": ycsb_runs["db_stg_dev_paths"]
-        #    }
-        #  , "ycsb_params": " -p recordcount=10000000 -p operationcount=10000000 -p readproportion=0.95 -p insertproportion=0.05 -target %d" % target_iops
-        #  }
+        , "run": {
+          "evict_cached_data": "true"
+          , "memory_limit_in_mb": 5.0 * 1024
+          # Mutant doesn't trigger any of these by default: it behaves like unmodified RocksDB.
+          , "ycsb_params": " -p recordcount=10000000 -p operationcount=10000000 -target %d" % target_iops
+          }
+        , "mutant_options": {
+          "monitor_temp": "false"
+          , "migrate_sstables": "false"
+          , "sst_ott": 0
+          , "cache_filter_index_at_all_levels": "false"
+          # Replaying a workload in the past
+          #, "replaying": {
+          #  "simulated_time_dur_sec": 1365709.587
+          #  , "simulation_time_dur_sec": 60000
+          #  }
+          , "db_stg_dev_paths": ycsb_runs["db_stg_dev_paths"]
+          }
         })
 
     params["ycsb-runs"] = dict(ycsb_runs)
