@@ -179,8 +179,8 @@ def Job_YcsbRocksdb():
     def __repr__(self):
       return "%s" % (self.params)
 
-  #db_stg_dev = "ebs-st1"
-  db_stg_dev = "local-ssd1"
+  db_stg_dev = "ebs-st1"
+  #db_stg_dev = "local-ssd1"
 
   confs_ec2 = []
   # Target IOPSes
@@ -240,7 +240,9 @@ def Job_YcsbRocksdb():
       ycsb_runs["runs"].append({
         "load": {
           #"use-preloaded-db": ""
-          "use-preloaded-db": "ycsb-d-10M-records-rocksdb"
+          #"use-preloaded-db": "ycsb-d-10M-records-rocksdb"
+          # For some reason, using the preloaded rocksdb to st1 didn't work. Make a DB snapshot that was loaded on st1.
+          "use-preloaded-db": "ycsb-d-10M-records-rocksdb-st1"
           , "ycsb_params": " -p recordcount=10000000 -target 10000"
           }
         , "run": {
