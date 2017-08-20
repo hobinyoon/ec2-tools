@@ -268,8 +268,20 @@ def _CloneAndBuildRocksDb():
 		" && git branch -f mutant origin/mutant" \
 		" && git checkout mutant")
 
-		# Build. Takes about 5 mins. You can save the pre-built one in the AMI.
-		Util.RunSubp("cd /home/ubuntu/work/mutant/rocksdb && make -j16 shared_lib && (make -j16 rocksdbjavastatic || make -j16 rocksdbjavastatic)", measure_time=True)
+		# Build. Takes about 5 mins. You can save the pre-built one in the AMI. JNI build fails sometimes and succeeds the next time.
+    #   Must be some race condition in the build. Build 10x until it builds.
+		Util.RunSubp("cd /home/ubuntu/work/mutant/rocksdb && make -j16 shared_lib && (make -j16 rocksdbjavastatic" \
+        " || make -j16 rocksdbjavastatic" \
+        " || make -j16 rocksdbjavastatic" \
+        " || make -j16 rocksdbjavastatic" \
+        " || make -j16 rocksdbjavastatic" \
+        " || make -j16 rocksdbjavastatic" \
+        " || make -j16 rocksdbjavastatic" \
+        " || make -j16 rocksdbjavastatic" \
+        " || make -j16 rocksdbjavastatic" \
+        " || make -j16 rocksdbjavastatic" \
+        ")"
+        , measure_time=True)
 
 		# Create data directory
 		dn = "/mnt/local-ssd1/rocksdb-data"
