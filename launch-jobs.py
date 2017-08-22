@@ -180,7 +180,7 @@ def Job_Ycsb_D_Mutant():
 def Job_Ycsb_A_Rocksdb():
   # Job conf per EC2 inst
   class ConfEc2Inst:
-    exp_per_ec2inst = 3
+    exp_per_ec2inst = 4
 
     def __init__(self):
       self.params = []
@@ -195,14 +195,13 @@ def Job_Ycsb_A_Rocksdb():
 
   workload_type = "a"
 
-  #db_stg_dev = "ebs-st1"
-  db_stg_dev = "local-ssd1"
+  db_stg_dev = "ebs-st1"
+  #db_stg_dev = "local-ssd1"
 
   if db_stg_dev == "local-ssd1":
     target_iops_range = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000 \
         , 11000, 12000, 13000, 14000, 15000, 16000, 17000, 18000, 19000, 20000]
   elif db_stg_dev == "ebs-st1":
-    raise RuntimeError("Shorten the experiment time. Reduce the number of reqs like by 1/10th")
     target_iops_range = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
   random.shuffle(target_iops_range)
 
@@ -258,6 +257,9 @@ def Job_Ycsb_A_Rocksdb():
       }
 
     for target_iops in conf_ec2.params:
+      op_cnt = 10000000 / 2
+      if target_iops < 10000:
+        op_cnt = op_cnt / 10
       ycsb_runs["runs"].append({
         # The load phase needs to be slow. Otherwise, the SSTables get too big. Probably because of the pending compactions,
         #   which will affect the performance of in the run phase.
@@ -282,7 +284,7 @@ def Job_Ycsb_A_Rocksdb():
           "evict_cached_data": "true"
           , "memory_limit_in_mb": 5.0 * 1024
           # Mutant doesn't trigger any of these by default: it behaves like unmodified RocksDB.
-          , "ycsb_params": " -p recordcount=10000000 -p operationcount=10000000 -p readproportion=0.95 -p insertproportion=0.05 -target %d" % target_iops
+          , "ycsb_params": " -p recordcount=10000000 -p operationcount=%s -p readproportion=0.95 -p insertproportion=0.05 -target %d" % (op_cnt, target_iops)
           }
         , "mutant_options": {
           "monitor_temp": "false"
