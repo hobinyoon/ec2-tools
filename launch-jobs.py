@@ -45,7 +45,7 @@ def main(argv):
 
 
 # A workload type per an EC2 instance for now, but nothing's stopping you running different types of workloads in an instance.
-def Job_YcsbMutant():
+def Job_Ycsb_D_Mutant():
   # Job conf per EC2 inst
   class ConfEc2Inst:
     exp_per_ec2inst = 13
@@ -61,8 +61,8 @@ def Job_YcsbMutant():
     def __repr__(self):
       return "%s" % (self.params)
 
+  workload_type = "d"
   slow_stg_dev = "ebs-st1"
-  workload_type = "a"
 
   confs_ec2 = []
   conf_ec2 = ConfEc2Inst()
@@ -75,6 +75,8 @@ def Job_YcsbMutant():
     , 2**(16): [1000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]
     , 2**(18): [1000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]
     }
+  for sst_ott, targetiops in sstott_targetiops.iteritems():
+    random.shuffle(sstott_targetiops[sst_ott])
 
   for i in range(5):
     for sst_ott, targetiops in sorted(sstott_targetiops.iteritems()):
@@ -139,7 +141,7 @@ def Job_YcsbMutant():
       ycsb_runs["runs"].append({
         "load": {
           #"use_preloaded_db": ""
-          "use_preloaded_db": "ycsb-%s-10M-records-mutant" % workload_type
+          "use_preloaded_db": "ycsb-%s-10M-records-rocksdb" % workload_type
           , "ycsb_params": " -p recordcount=10000000 -target 10000"
           }
         , "run": {
