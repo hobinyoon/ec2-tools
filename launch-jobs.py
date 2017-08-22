@@ -47,7 +47,7 @@ def main(argv):
 def Job_YcsbMutant():
   # Job conf per EC2 inst
   class ConfEc2Inst:
-    exp_per_ec2inst = 37
+    exp_per_ec2inst = 31
 
     def __init__(self):
       self.params = []
@@ -62,6 +62,8 @@ def Job_YcsbMutant():
 
   slow_stg_dev = "ebs-st1"
 
+  workload_type = "a"
+
   confs_ec2 = []
   # Target IOPSes
   conf_ec2 = ConfEc2Inst()
@@ -70,8 +72,6 @@ def Job_YcsbMutant():
     for ti in [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000]:
       # SSTable OTT (organization temperature threshold)
       for sst_ott in [
-          2**(-8),
-          2**(-6),
           2**(-4),
           2**(-2),
           2**(0),
@@ -90,7 +90,7 @@ def Job_YcsbMutant():
   #confs_ec2 = confs_ec2[0:1]
   Cons.P("%d machine(s)" % len(confs_ec2))
   Cons.P(pprint.pformat(confs_ec2, width=100))
-  #sys.exit(1)
+  sys.exit(1)
 
   for conf_ec2 in confs_ec2:
     params = { \
@@ -123,8 +123,8 @@ def Job_YcsbMutant():
       raise RuntimeError("Unexpected")
 
     ycsb_runs = {
-      "exp_desc": [inspect.currentframe().f_code.co_name[4:], "mutant-ycsb-d"]
-			, "workload_type": "d"
+      "exp_desc": inspect.currentframe().f_code.co_name[4:]
+			, "workload_type": workload_type
       , "db_path": "/mnt/local-ssd1/rocksdb-data/ycsb"
       , "db_stg_dev_paths": [
           "/mnt/local-ssd1/rocksdb-data/ycsb/t0"
@@ -141,26 +141,26 @@ def Job_YcsbMutant():
       ycsb_runs["runs"].append({
         "load": {
           #"use_preloaded_db": ""
-          "use_preloaded_db": "ycsb-d-10M-records-mutant"
+          "use_preloaded_db": "ycsb-%s-10M-records-mutant" % workload_type
           , "ycsb_params": " -p recordcount=10000000 -target 10000"
           }
         , "run": {
           "evict_cached_data": "true"
           , "memory_limit_in_mb": 5.0 * 1024
-          # Mutant doesn't trigger any of these by default: it behaves like unmodified RocksDB.
-          , "mutant_options": {
-            "monitor_temp": "true"
-            , "migrate_sstables": "true"
-            , "sst_ott": sst_ott
-            , "cache_filter_index_at_all_levels": "true"
-            # Replaying a workload in the past
-            #, "replaying": {
-            #  "simulated_time_dur_sec": 1365709.587
-            #  , "simulation_time_dur_sec": 60000
-            #  }
-            , "db_stg_dev_paths": ycsb_runs["db_stg_dev_paths"]
-            }
           , "ycsb_params": " -p recordcount=10000000 -p operationcount=10000000 -p readproportion=0.95 -p insertproportion=0.05 -target %d" % target_iops
+          }
+        # Mutant doesn't trigger any of these by default: it behaves like unmodified RocksDB.
+        , "mutant_options": {
+          "monitor_temp": "true"
+          , "migrate_sstables": "true"
+          , "sst_ott": sst_ott
+          , "cache_filter_index_at_all_levels": "true"
+          # Replaying a workload in the past
+          #, "replaying": {
+          #  "simulated_time_dur_sec": 1365709.587
+          #  , "simulation_time_dur_sec": 60000
+          #  }
+          , "db_stg_dev_paths": ycsb_runs["db_stg_dev_paths"]
           }
         })
 
@@ -298,10 +298,10 @@ def Job_YcsbRocksdb():
 # TODO: How are workload d and Zipfian different?
 #   what does the workload d do? what portion of the latest records does it read?
 
-def Job_Ycsb_A_Rocksdb():
+def Job_Ycsb_B_Rocksdb():
   # Job conf per EC2 inst
   class ConfEc2Inst:
-    exp_per_ec2inst = 5
+    exp_per_ec2inst = 7
 
     def __init__(self):
       self.params = []
@@ -317,7 +317,7 @@ def Job_Ycsb_A_Rocksdb():
   #db_stg_dev = "ebs-st1"
   db_stg_dev = "local-ssd1"
 
-  workload_type = "a"
+  workload_type = "b"
 
   if db_stg_dev == "local-ssd1":
     target_iops_range = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, \
