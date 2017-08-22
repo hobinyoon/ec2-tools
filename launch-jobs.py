@@ -273,19 +273,19 @@ def Job_Ycsb_A_Rocksdb():
           "evict_cached_data": "true"
           , "memory_limit_in_mb": 5.0 * 1024
           # Mutant doesn't trigger any of these by default: it behaves like unmodified RocksDB.
-          , "mutant_options": {
-            "monitor_temp": "false"
-            , "migrate_sstables": "false"
-            , "sst_ott": 0
-            , "cache_filter_index_at_all_levels": "false"
-            # Replaying a workload in the past
-            #, "replaying": {
-            #  "simulated_time_dur_sec": 1365709.587
-            #  , "simulation_time_dur_sec": 60000
-            #  }
-            , "db_stg_dev_paths": ycsb_runs["db_stg_dev_paths"]
-            }
           , "ycsb_params": " -p recordcount=10000000 -p operationcount=10000000 -p readproportion=0.95 -p insertproportion=0.05 -target %d" % target_iops
+          }
+        , "mutant_options": {
+          "monitor_temp": "false"
+          , "migrate_sstables": "false"
+          , "sst_ott": 0
+          , "cache_filter_index_at_all_levels": "false"
+          # Replaying a workload in the past
+          #, "replaying": {
+          #  "simulated_time_dur_sec": 1365709.587
+          #  , "simulation_time_dur_sec": 60000
+          #  }
+          , "db_stg_dev_paths": ycsb_runs["db_stg_dev_paths"]
           }
         })
 
