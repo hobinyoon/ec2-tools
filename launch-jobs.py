@@ -43,11 +43,11 @@ def main(argv):
   globals()[job]()
 
 
-# A workload type per an EC2 instance for now. Nothing's stopping you running different types of workloads in an instance.
+# A workload type per an EC2 instance for now, but nothing's stopping you running different types of workloads in an instance.
 def Job_YcsbMutant():
   # Job conf per EC2 inst
   class ConfEc2Inst:
-    exp_per_ec2inst = 31
+    exp_per_ec2inst = 13
 
     def __init__(self):
       self.params = []
@@ -65,21 +65,20 @@ def Job_YcsbMutant():
   workload_type = "a"
 
   confs_ec2 = []
-  # Target IOPSes
   conf_ec2 = ConfEc2Inst()
+
+  # SSTable OTT (organization temperature threshold)
+  # Target IOPSes
+  sstott_targetiops = {
+    2**(12): [1000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]
+    , 2**(14): [1000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]
+    , 2**(16): [1000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]
+    , 2**(18): [1000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]
+    }
+
   for i in range(5):
-    # Target IOPS
-    for ti in [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000]:
-      # SSTable OTT (organization temperature threshold)
-      for sst_ott in [
-          2**(-4),
-          2**(-2),
-          2**(0),
-          2**(2),
-          2**(4),
-          2**(6),
-          2**(8),
-          2**(10)]:
+    for sst_ott, targetiops in sorted(sstott_targetiops.iteritems()):
+      for ti in targetiops:
         if conf_ec2.Full():
           confs_ec2.append(conf_ec2)
           conf_ec2 = ConfEc2Inst()
@@ -87,7 +86,6 @@ def Job_YcsbMutant():
   if conf_ec2.Size() > 0:
     confs_ec2.append(conf_ec2)
 
-  #confs_ec2 = confs_ec2[0:1]
   Cons.P("%d machine(s)" % len(confs_ec2))
   Cons.P(pprint.pformat(confs_ec2, width=100))
   sys.exit(1)
