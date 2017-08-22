@@ -7,6 +7,7 @@ import json
 import math
 import os
 import pprint
+import random
 import sys
 import time
 import types
@@ -61,7 +62,6 @@ def Job_YcsbMutant():
       return "%s" % (self.params)
 
   slow_stg_dev = "ebs-st1"
-
   workload_type = "a"
 
   confs_ec2 = []
@@ -166,10 +166,10 @@ def Job_YcsbMutant():
     LaunchJob(params)
 
 
-def Job_YcsbRocksdb():
+def Job_Ycsb_A_Rocksdb():
   # Job conf per EC2 inst
   class ConfEc2Inst:
-    exp_per_ec2inst = 5
+    exp_per_ec2inst = 3
 
     def __init__(self):
       self.params = []
@@ -182,21 +182,22 @@ def Job_YcsbRocksdb():
     def __repr__(self):
       return "%s" % (self.params)
 
-  db_stg_dev = "ebs-st1"
-  #db_stg_dev = "local-ssd1"
+  workload_type = "a"
+
+  #db_stg_dev = "ebs-st1"
+  db_stg_dev = "local-ssd1"
 
   if db_stg_dev == "local-ssd1":
-    target_iops_range = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, \
-          10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, \
-          100000, 110000, 120000]
+    target_iops_range = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000 \
+        , 11000, 12000, 13000, 14000, 15000, 16000, 17000, 18000, 19000, 20000]
   elif db_stg_dev == "ebs-st1":
-    target_iops_range = [1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000]
+    raise RuntimeError("Shorten the experiment time. Reduce the number of reqs like by 1/10th")
+    target_iops_range = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
+  random.shuffle(target_iops_range)
 
   confs_ec2 = []
-  # Target IOPSes
   conf_ec2 = ConfEc2Inst()
   for i in range(5):
-    # Target IOPS
     for ti in target_iops_range:
       if conf_ec2.Full():
         confs_ec2.append(conf_ec2)
@@ -205,9 +206,6 @@ def Job_YcsbRocksdb():
   if conf_ec2.Size() > 0:
     confs_ec2.append(conf_ec2)
 
-  workload_type = "d"
-
-  #confs_ec2 = confs_ec2[0:1]
   Cons.P("%d machine(s)" % len(confs_ec2))
   Cons.P(pprint.pformat(confs_ec2, width=100))
   sys.exit(1)
@@ -257,7 +255,7 @@ def Job_YcsbRocksdb():
         "load": {
           #"use_preloaded_db": ""
           # This can be used for any devices. Now the name is misleading, but ok.
-          "use_preloaded_db": "ycsb-d-10M-records-rocksdb-st1"
+          "use_preloaded_db": "ycsb-%s-10M-records-rocksdb" % workload_type
           , "ycsb_params": " -p recordcount=10000000 -target 10000"
           }
         # How long it takes when the system gets saturated.
