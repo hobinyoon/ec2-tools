@@ -48,7 +48,7 @@ def main(argv):
 def Job_Ycsb_D_Mutant():
   # Job conf per EC2 inst
   class ConfEc2Inst:
-    exp_per_ec2inst = 13
+    exp_per_ec2inst = 31
 
     def __init__(self):
       self.params = []
@@ -64,20 +64,26 @@ def Job_Ycsb_D_Mutant():
   workload_type = "d"
   slow_stg_dev = "ebs-st1"
 
-  confs_ec2 = []
-  conf_ec2 = ConfEc2Inst()
-
   # SSTable OTT (organization temperature threshold)
   # Target IOPSes
   sstott_targetiops = {
-    2**(12): [1000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]
-    , 2**(14): [1000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]
-    , 2**(16): [1000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]
-    , 2**(18): [1000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]
+      2**(-12): [1000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]
+    , 2**(-10): [1000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]
+    , 2**(-8):  [1000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]
+    , 2**(-6):  [1000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]
+    , 2**(-4):  [1000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]
+    , 2**(-2):  [1000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]
+    , 2**(0):   [1000, 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]
+    , 2**(12): [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000]
+    , 2**(14): [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000]
+    , 2**(16): [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000]
+    , 2**(18): [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000]
     }
   for sst_ott, targetiops in sstott_targetiops.iteritems():
     random.shuffle(sstott_targetiops[sst_ott])
 
+  confs_ec2 = []
+  conf_ec2 = ConfEc2Inst()
   for i in range(5):
     for sst_ott, targetiops in sorted(sstott_targetiops.iteritems()):
       for ti in targetiops:
@@ -138,6 +144,9 @@ def Job_Ycsb_D_Mutant():
     for p in conf_ec2.params:
       target_iops = p[0]
       sst_ott = p[1]
+      op_cnt = 10000000 / 2
+      if target_iops < 10000:
+        op_cnt = op_cnt / 10
       ycsb_runs["runs"].append({
         "load": {
           #"use_preloaded_db": ""
@@ -147,7 +156,7 @@ def Job_Ycsb_D_Mutant():
         , "run": {
           "evict_cached_data": "true"
           , "memory_limit_in_mb": 5.0 * 1024
-          , "ycsb_params": " -p recordcount=10000000 -p operationcount=10000000 -p readproportion=0.95 -p insertproportion=0.05 -target %d" % target_iops
+          , "ycsb_params": " -p recordcount=10000000 -p operationcount=%d -p readproportion=0.95 -p insertproportion=0.05 -target %d" % (op_cnt, target_iops)
           }
         # Mutant doesn't trigger any of these by default: it behaves like unmodified RocksDB.
         , "mutant_options": {
@@ -323,6 +332,7 @@ def Job_Ycsb_B_Rocksdb():
           100000, 110000, 120000]
   elif db_stg_dev == "ebs-st1":
     target_iops_range = [1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000]
+  random.shuffle(target_iops_range)
 
   confs_ec2 = []
   # Target IOPSes
