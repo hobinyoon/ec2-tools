@@ -426,7 +426,7 @@ def Job_Ycsb_B_Rocksdb():
     LaunchJob(params)
 
 
-def Job_2LevelMutantStorageUsageBySstMigTempThresholds():
+def Job_Quizup2LevelMutantStorageUsageBySstMigTempThresholds():
   class Conf:
     exp_per_ec2inst = 1
     def __init__(self, slow_dev):
@@ -521,7 +521,7 @@ def Job_2LevelMutantStorageUsageBySstMigTempThresholds():
     LaunchJob(params)
 
 
-def Job_SstMigTempThresholds_LocalSsd1EbsSt1():
+def Job_QuizupSstMigTempThresholds_LocalSsd1EbsSt1():
   params = { \
       "region": "us-east-1"
       , "inst_type": "c3.2xlarge"
@@ -647,7 +647,7 @@ def Job_SstMigTempThresholds_LocalSsd1EbsSt1():
       LaunchJob(params)
 
 
-def Job_LowSstMigTempThresholds_LocalSsd1Only():
+def Job_QuizupLowSstMigTempThresholds_LocalSsd1Only():
   params = { \
       "region": "us-east-1"
       , "inst_type": "c3.2xlarge"
@@ -757,7 +757,7 @@ def Job_LowSstMigTempThresholds_LocalSsd1Only():
 
 
 # TODO: clean up
-def Job_ToCleanup2LevelMutantBySstMigTempThresholdsToMeasureStorageUsage():
+def Job_QuizupToCleanup2LevelMutantBySstMigTempThresholdsToMeasureStorageUsage():
   class Conf:
     exp_per_ec2inst = 2
     def __init__(self, slow_dev):
@@ -920,7 +920,7 @@ def Job_ToCleanup2LevelMutantBySstMigTempThresholdsToMeasureStorageUsage():
   LaunchJob(params)
 
 
-def Job_UnmodifiedRocksDbWithWithoutMetadataCachingByStgDevs():
+def Job_QuizupUnmodifiedRocksDbWithWithoutMetadataCachingByStgDevs():
   class Conf:
     exp_per_ec2inst = 5
     def __init__(self, stg_dev):
@@ -1008,7 +1008,7 @@ def Job_UnmodifiedRocksDbWithWithoutMetadataCachingByStgDevs():
     LaunchJob(params)
 
 
-def Job_2LevelMutantLatencyByColdStgBySstMigTempThresholds():
+def Job_Quizup2LevelMutantLatencyByColdStgBySstMigTempThresholds():
   class Conf:
     exp_per_ec2inst = 7
     def __init__(self, slow_dev):
@@ -1164,7 +1164,7 @@ def Job_TestServer():
   LaunchJob(params)
 
 
-def Job_MutantStorageSizeByTime():
+def Job_QuizupMutantStorageSizeByTime():
   params = { \
       # us-east-1, which is where the S3 buckets for experiment are.
       "region": "us-east-1"
@@ -1201,7 +1201,7 @@ def Job_MutantStorageSizeByTime():
   LaunchJob(params)
 
 
-def Job_UnmodifiedRocksDBLatencyByMemorySizes():
+def Job_QuizupUnmodifiedRocksDBLatencyByMemorySizes():
   class Conf:
     exp_per_ec2inst = 8
     def __init__(self, stg_dev):
