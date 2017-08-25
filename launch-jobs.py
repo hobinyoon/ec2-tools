@@ -426,6 +426,52 @@ def Job_Ycsb_B_Rocksdb():
     LaunchJob(params)
 
 
+def Job_QuizupMutantSlaAdmin():
+  params = {
+      "region": "us-east-1"
+      , "inst_type": "c3.2xlarge"
+      , "spot_req_max_price": 1.0
+      , "init_script": "mutant-rocksdb"
+      , "ami_name": "mutant-rocksdb"
+      , "block_storage_devs": [{"VolumeType": "st1", "VolumeSize": 3000, "DeviceName": "e"}]
+      , "ec2_tag_Name": inspect.currentframe().f_code.co_name[4:]
+      , "erase_local_ssd": "true"
+      , "unzip_quizup_data": "true"
+      , "run_cassandra_server": "false"
+      # For now, it doesn't do much other than checking out the code and building.
+      , "rocksdb": { }
+      , "rocksdb-quizup-runs": [
+        {
+          # Use the current function name since you always forget to set this
+          "exp_desc": inspect.currentframe().f_code.co_name[4:]
+          , "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
+          , "slow_dev_paths": {"t1": "/mnt/ebs-st1/rocksdb-data-quizup-t1"}
+          , "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
+          , "init_db_to_90p_loaded": "true"
+          , "evict_cached_data": "true"
+          , "memory_limit_in_mb": 2.0 * 1024
+
+          # Not caching metadata might be a better idea. So the story is you
+          # present each of the optimizations separately, followed by the
+          # combined result.
+          #, "cache_filter_index_at_all_levels": "false"
+
+          # Cache metadata for a comparison
+          , "cache_filter_index_at_all_levels": "true"
+
+          , "monitor_temp": "true"
+          , "migrate_sstables": "true"
+          , "workload_start_from": 0.899
+          , "workload_stop_at":    -1.0
+          , "simulation_time_dur_in_sec": 60000
+          , "sst_migration_temperature_threshold": 1.0
+          }
+        ]
+      , "terminate_inst_when_done": "false"
+      }
+  LaunchJob(params)
+
+
 def Job_Quizup2LevelMutantStorageUsageBySstMigTempThresholds():
   class Conf:
     exp_per_ec2inst = 1
