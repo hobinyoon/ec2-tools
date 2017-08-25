@@ -391,8 +391,8 @@ def RunRocksDBQuizup():
         params1.append("--workload_stop_at=%s" % params["workload_stop_at"])
       if "simulation_time_dur_in_sec" in params:
         params1.append("--simulation_time_dur_in_sec=%s" % params["simulation_time_dur_in_sec"])
-      if "sst_migration_temperature_threshold" in params:
-        params1.append("--sst_migration_temperature_threshold=%s" % params["sst_migration_temperature_threshold"])
+      if "sst_ott" in params:
+        params1.append("--sst_ott=%s" % params["sst_ott"])
 
       cmd = "cd %s/work/mutant/misc/rocksdb/quizup && stdbuf -i0 -o0 -e0 ./run.py %s" \
           % (os.path.expanduser("~"), " ".join(params1))
