@@ -385,14 +385,16 @@ def RunRocksDBQuizup():
         params1.append("--monitor_temp=%s" % params["monitor_temp"])
       if "migrate_sstables" in params:
         params1.append("--migrate_sstables=%s" % params["migrate_sstables"])
+      if "sst_ott" in params:
+        params1.append("--sst_ott=%s" % params["sst_ott"])
       if "workload_start_from" in params:
         params1.append("--workload_start_from=%s" % params["workload_start_from"])
       if "workload_stop_at" in params:
         params1.append("--workload_stop_at=%s" % params["workload_stop_at"])
       if "simulation_time_dur_in_sec" in params:
         params1.append("--simulation_time_dur_in_sec=%s" % params["simulation_time_dur_in_sec"])
-      if "sst_ott" in params:
-        params1.append("--sst_ott=%s" % params["sst_ott"])
+      if "121x_speed_replay" in params:
+        params1.append("--121x_speed_replay=%s" % params["121x_speed_replay"])
 
       cmd = "cd %s/work/mutant/misc/rocksdb/quizup && stdbuf -i0 -o0 -e0 ./run.py %s" \
           % (os.path.expanduser("~"), " ".join(params1))
