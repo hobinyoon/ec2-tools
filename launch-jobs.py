@@ -462,9 +462,10 @@ def Job_QuizupMutantSlaAdmin():
           , "monitor_temp": "true"
           , "migrate_sstables": "true"
           , "workload_start_from": 0.899
-          , "workload_stop_at":    -1.0
+          , "workload_stop_at":    0.930
           , "simulation_time_dur_in_sec": 60000
-          , "sst_migration_temperature_threshold": 1.0
+          , "sst_ott": 40.0
+          , "121x_speed_replay": "true"
           }
         ]
       , "terminate_inst_when_done": "false"
@@ -560,7 +561,7 @@ def Job_Quizup2LevelMutantStorageUsageBySstMigTempThresholds():
           , "workload_start_from": -1.0
           , "workload_stop_at":    -1.0
           , "simulation_time_dur_in_sec": 2000
-          , "sst_migration_temperature_threshold": mt
+          , "sst_ott": mt
           }
       params["rocksdb-quizup-runs"].append(dict(p1))
     #Cons.P(pprint.pformat(params))
@@ -619,7 +620,7 @@ def Job_QuizupSstMigTempThresholds_LocalSsd1EbsSt1():
           , "workload_start_from": -1.0
           , "workload_stop_at":    -1.0
           , "simulation_time_dur_in_sec": 2000
-          , "sst_migration_temperature_threshold": sst_mig_temp_thrds
+          , "sst_ott": sst_mig_temp_thrds
           }
       params["rocksdb-quizup-runs"] = []
       params["rocksdb-quizup-runs"].append(dict(p1))
@@ -686,7 +687,7 @@ def Job_QuizupSstMigTempThresholds_LocalSsd1EbsSt1():
             , "workload_start_from": 0.899
             , "workload_stop_at":    -1.0
             , "simulation_time_dur_in_sec": 60000
-            , "sst_migration_temperature_threshold": mt
+            , "sst_ott": mt
             }
         params["rocksdb-quizup-runs"].append(dict(p1))
       #Cons.P(pprint.pformat(params))
@@ -733,7 +734,7 @@ def Job_QuizupLowSstMigTempThresholds_LocalSsd1Only():
           , "workload_start_from": -1.0
           , "workload_stop_at":    -1.0
           , "simulation_time_dur_in_sec": 20000
-          , "sst_migration_temperature_threshold": sst_mig_temp_thrds
+          , "sst_ott": sst_mig_temp_thrds
           }
       params["rocksdb-quizup-runs"] = []
       params["rocksdb-quizup-runs"].append(dict(p1))
@@ -795,7 +796,7 @@ def Job_QuizupLowSstMigTempThresholds_LocalSsd1Only():
             , "workload_start_from": 0.899
             , "workload_stop_at":    -1.0
             , "simulation_time_dur_in_sec": 60000
-            , "sst_migration_temperature_threshold": mt
+            , "sst_ott": mt
             }
         params["rocksdb-quizup-runs"].append(dict(p1))
       #Cons.P(pprint.pformat(params))
@@ -881,7 +882,7 @@ def Job_QuizupToCleanup2LevelMutantBySstMigTempThresholdsToMeasureStorageUsage()
           , "workload_start_from": -1.0
           , "workload_stop_at":    -1.0
           , "simulation_time_dur_in_sec": 20000
-          , "sst_migration_temperature_threshold": mt
+          , "sst_ott": mt
           }
       params["rocksdb-quizup-runs"].append(dict(p1))
     #Cons.P(pprint.pformat(params))
@@ -921,7 +922,7 @@ def Job_QuizupToCleanup2LevelMutantBySstMigTempThresholdsToMeasureStorageUsage()
       , "workload_start_from": -1.0
       , "workload_stop_at":    -1.0
       , "simulation_time_dur_in_sec": 20000
-      , "sst_migration_temperature_threshold": 0
+      , "sst_ott": 0
       }
   params["rocksdb-quizup-runs"].append(dict(p1))
   #Cons.P(pprint.pformat(params))
@@ -959,7 +960,7 @@ def Job_QuizupToCleanup2LevelMutantBySstMigTempThresholdsToMeasureStorageUsage()
       , "workload_start_from": -1.0
       , "workload_stop_at":    -1.0
       , "simulation_time_dur_in_sec": 20000
-      , "sst_migration_temperature_threshold": 0
+      , "sst_ott": 0
       }
   params["rocksdb-quizup-runs"].append(dict(p1))
   #Cons.P(pprint.pformat(params))
@@ -1183,7 +1184,7 @@ def Job_Quizup2LevelMutantLatencyByColdStgBySstMigTempThresholds():
           , "workload_start_from": 0.899
           , "workload_stop_at":    -1.0
           , "simulation_time_dur_in_sec": 60000
-          , "sst_migration_temperature_threshold": mt
+          , "sst_ott": mt
           }
       params["rocksdb-quizup-runs"].append(dict(p1))
     #Cons.P(pprint.pformat(params))
@@ -1241,7 +1242,7 @@ def Job_QuizupMutantStorageSizeByTime():
       , "workload_start_from": -1.0
       , "workload_stop_at":    -1.0
       , "simulation_time_dur_in_sec": 60000
-      , "sst_migration_temperature_threshold": 10
+      , "sst_ott": 10
       }
   params["rocksdb-quizup-runs"].append(dict(p1))
   LaunchJob(params)
