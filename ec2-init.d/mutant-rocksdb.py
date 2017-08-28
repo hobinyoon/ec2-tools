@@ -358,6 +358,7 @@ def RunRocksDBQuizup():
       params1 = []
 
       # Parameters for run.sh
+      params1.append("--job_id=%s" % Ec2InitUtil.GetJobId())
       if "fast_dev_path" in params:
         params1.append("--fast_dev_path=%s" % params["fast_dev_path"])
       if "slow_dev_paths" in params:
