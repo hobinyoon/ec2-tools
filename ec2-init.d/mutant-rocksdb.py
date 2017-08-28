@@ -402,6 +402,8 @@ def RunRocksDBQuizup():
 
 
 def RunYcsb():
+  if Ec2InitUtil.GetParam(["ycsb-runs"]) is None:
+    return
   params_encoded = base64.b64encode(zlib.compress(json.dumps(Ec2InitUtil.GetParam(["ycsb-runs"]))))
   cmd = "cd %s/work/mutant/misc/rocksdb/ycsb && stdbuf -i0 -o0 -e0 ./restart-dstat-run-ycsb.py %s" \
       % (os.path.expanduser("~"), params_encoded)
