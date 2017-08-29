@@ -461,10 +461,14 @@ def Job_QuizupMutantSlaAdmin():
 
           , "monitor_temp": "true"
           , "migrate_sstables": "true"
-          , "workload_start_from": 0.899
-          , "workload_stop_at":    0.930
-          , "simulation_time_dur_in_sec": 60000
-          , "sst_ott": 40.0
+          , "sst_ott": 80.0
+          , "organize_L0_sstables": "true"
+          #, "workload_start_from": 0.899
+          #, "workload_stop_at":    0.930
+          #, "simulation_time_dur_in_sec": 60000
+          , "workload_start_from": -1
+          , "workload_stop_at":    0.2
+          , "simulation_time_dur_in_sec": 1500
           , "121x_speed_replay": "true"
           }
         ]
