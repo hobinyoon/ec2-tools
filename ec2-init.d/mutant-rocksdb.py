@@ -388,6 +388,8 @@ def RunRocksDBQuizup():
         params1.append("--migrate_sstables=%s" % params["migrate_sstables"])
       if "sst_ott" in params:
         params1.append("--sst_ott=%s" % params["sst_ott"])
+      if "organize_L0_sstables" in params:
+        params1.append("--organize_L0_sstables=%s" % params["organize_L0_sstables"])
       if "workload_start_from" in params:
         params1.append("--workload_start_from=%s" % params["workload_start_from"])
       if "workload_stop_at" in params:
