@@ -447,9 +447,9 @@ def Job_QuizupMutantSlaAdmin():
           , "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
           , "slow_dev_paths": {"t1": "/mnt/ebs-st1/rocksdb-data-quizup-t1"}
           , "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
-          , "init_db_to_90p_loaded": "true"
+          , "init_db_to_90p_loaded": "false"
           , "evict_cached_data": "true"
-          , "memory_limit_in_mb": 2.0 * 1024
+          , "memory_limit_in_mb": 2.2 * 1024
 
           # Not caching metadata might be a better idea. So the story is you
           # present each of the optimizations separately, followed by the
