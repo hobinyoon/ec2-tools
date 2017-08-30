@@ -399,7 +399,7 @@ def RunRocksDBQuizup():
       if "121x_speed_replay" in params:
         params1.append("--121x_speed_replay=%s" % params["121x_speed_replay"])
 
-      cmd = "cd %s/work/mutant/misc/rocksdb/quizup && stdbuf -i0 -o0 -e0 ./run.py %s" \
+      cmd = "cd %s/work/mutant/misc/rocksdb/quizup/quizup && stdbuf -i0 -o0 -e0 ./run.py %s" \
           % (os.path.expanduser("~"), " ".join(params1))
       Util.RunSubp(cmd)
 
