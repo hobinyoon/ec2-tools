@@ -449,7 +449,7 @@ def Job_QuizupMutantSlaAdmin():
           , "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
           , "init_db_to_90p_loaded": "false"
           , "evict_cached_data": "true"
-          , "memory_limit_in_mb": 2.2 * 1024
+          , "memory_limit_in_mb": 8.0 * 1024
 
           # Not caching metadata might be a better idea. So the story is you
           # present each of the optimizations separately, followed by the
@@ -461,14 +461,15 @@ def Job_QuizupMutantSlaAdmin():
 
           , "monitor_temp": "true"
           , "migrate_sstables": "true"
-          , "sst_ott": 80.0
+          , "sst_ott": 10.0
           , "organize_L0_sstables": "true"
           #, "workload_start_from": 0.899
           #, "workload_stop_at":    0.930
           #, "simulation_time_dur_in_sec": 60000
           , "workload_start_from": -1
-          , "workload_stop_at":    0.2
-          , "simulation_time_dur_in_sec": 1500
+          , "workload_stop_at":    0.1
+          # Load takes 750 sec.
+          , "simulation_time_dur_in_sec": 1600
           , "121x_speed_replay": "true"
           }
         ]
