@@ -398,6 +398,8 @@ def RunRocksDBQuizup():
         params1.append("--simulation_time_dur_in_sec=%s" % params["simulation_time_dur_in_sec"])
       if "121x_speed_replay" in params:
         params1.append("--121x_speed_replay=%s" % params["121x_speed_replay"])
+      if "pid_params" in params:
+        params1.append("--pid_params=%s" % params["pid_params"])
 
       cmd = "cd %s/work/mutant/misc/rocksdb/quizup/quizup && stdbuf -i0 -o0 -e0 ./run.py %s" \
           % (os.path.expanduser("~"), " ".join(params1))

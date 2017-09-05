@@ -471,6 +471,9 @@ def Job_QuizupMutantSlaAdmin():
           # Load takes 750 sec.
           , "simulation_time_dur_in_sec": 1600
           , "121x_speed_replay": "true"
+
+          # Target latency, constans of P, I, and D.
+          , "pid_params": "22,0.1,0,0"
           }
         ]
       , "terminate_inst_when_done": "false"
