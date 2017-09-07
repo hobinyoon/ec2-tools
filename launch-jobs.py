@@ -449,7 +449,7 @@ def Job_QuizupMutantSlaAdmin():
           , "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
           , "init_db_to_90p_loaded": "false"
           , "evict_cached_data": "true"
-          , "memory_limit_in_mb": 9.0 * 1024
+          #, "memory_limit_in_mb": 9.0 * 1024
 
           # Not caching metadata might be a better idea. So the story is you
           # present each of the optimizations separately, followed by the
@@ -461,24 +461,44 @@ def Job_QuizupMutantSlaAdmin():
 
           , "monitor_temp": "true"
           , "migrate_sstables": "true"
-          , "sst_ott": 0.1
+          #, "sst_ott": 0.0
           , "organize_L0_sstables": "true"
           #, "workload_start_from": 0.899
           #, "workload_stop_at":    0.930
           #, "simulation_time_dur_in_sec": 60000
           , "workload_start_from": -1
-          , "workload_stop_at":    0.2
+          #, "workload_stop_at":    0.2
           # Load 960 secs. Run 3200 sec. About 70 mins total.
-          , "simulation_time_dur_in_sec": 4400
+          #, "simulation_time_dur_in_sec": 4400
+
+          # 7 times longer running time
+          #, "simulation_time_dur_in_sec": 23920
           , "121x_speed_replay": "true"
 
+          # Full experiment. Might be a good one to see how the workload fluctuate.
+          #, "workload_stop_at":   -1
+
           # Target latency, constans of P, I, and D.
-          , "pid_params": "27,0.1,0,0"
+          #, "pid_params": "34,1.0,0.0,0.02"
+
+          , "memory_limit_in_mb": 9.0 * 1024
+
+          , "simulation_time_dur_in_sec": 10800
+          , "workload_stop_at": 0.3
+          , "record_size": 10000
+
+          # No PID control
+          , "pid_params": "30,0,0,0"
+          , "sst_ott": 30.0
           }
         ]
-      , "terminate_inst_when_done": "false"
+      , "terminate_inst_when_done": "true"
       }
-  LaunchJob(params)
+
+  for sst_ott in [10, 20, 40, 80, 160, 320]:
+    params["rocksdb-quizup-runs"][0]["sst_ott"] = sst_ott
+    for i in range(2):
+      LaunchJob(params)
 
 
 def Job_Quizup2LevelMutantStorageUsageBySstMigTempThresholds():
