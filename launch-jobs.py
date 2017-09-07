@@ -479,7 +479,7 @@ def Job_QuizupMutantSlaAdmin():
           #, "workload_stop_at":   -1
 
           # Target latency, constans of P, I, and D.
-          #, "pid_params": "34,1.0,0.0,0.02"
+          , "pid_params": "34,1.0,0.0,0.02"
 
           , "memory_limit_in_mb": 9.0 * 1024
 
@@ -487,18 +487,23 @@ def Job_QuizupMutantSlaAdmin():
           , "workload_stop_at": 0.3
           , "record_size": 10000
 
-          # No PID control
-          , "pid_params": "30,0,0,0"
           , "sst_ott": 30.0
+
+          # No PID control
+          , "sla_admin": false
           }
         ]
-      , "terminate_inst_when_done": "true"
+      , "terminate_inst_when_done": "false"
       }
 
-  for sst_ott in [10, 20, 40, 80, 160, 320]:
+  #for sst_ott in [0.005, 0.0125, 0.025, 0.05, 0.1, 0.2, 0.625, 1.25, 2.5, 5]:
+  #  params["rocksdb-quizup-runs"][0]["sst_ott"] = sst_ott
+  #  LaunchJob(params)
+
+  params["rocksdb-quizup-runs"][0]["workload_stop_at"] = 0.2
+  for sst_ott in [0.05, 0.1, 0.2, 0.625, 1.25, 2.5, 5]:
     params["rocksdb-quizup-runs"][0]["sst_ott"] = sst_ott
-    for i in range(2):
-      LaunchJob(params)
+    LaunchJob(params)
 
 
 def Job_Quizup2LevelMutantStorageUsageBySstMigTempThresholds():

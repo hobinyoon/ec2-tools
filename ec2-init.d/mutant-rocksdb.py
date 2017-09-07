@@ -401,6 +401,9 @@ def RunRocksDBQuizup():
       if "pid_params" in params:
         params1.append("--pid_params=%s" % params["pid_params"])
 
+      if "sla_admin" in params:
+        params1.append("--sla_admin=%s" % params["sla_admin"])
+
       cmd = "cd %s/work/mutant/misc/rocksdb/quizup/quizup && stdbuf -i0 -o0 -e0 ./run.py %s" \
           % (os.path.expanduser("~"), " ".join(params1))
       Util.RunSubp(cmd)
