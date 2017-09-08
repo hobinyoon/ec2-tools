@@ -479,31 +479,52 @@ def Job_QuizupMutantSlaAdmin():
           #, "workload_stop_at":   -1
 
           # Target latency, constans of P, I, and D.
-          , "pid_params": "34,1.0,0.0,0.02"
+          , "pid_params": "33,1.0,0.0,0.02"
 
           , "memory_limit_in_mb": 9.0 * 1024
 
-          , "simulation_time_dur_in_sec": 10800
+          #, "simulation_time_dur_in_sec": 10800
           , "workload_stop_at": 0.3
           , "record_size": 10000
 
           , "sst_ott": 30.0
 
-          # No PID control
-          , "sla_admin": false
+          , "sla_admin": "true"
+
+          # Fast loading phase and SLA admin-enabled run phase.
+          #   Load: 17 mins
+          #   Run : 50 mins
+          #, "simulation_time_dur_in_sec": 7200
+
+          # The latenc is still high even when all sstables are in SSD.. The system is not satured.
+          #, "simulation_time_dur_in_sec": 14400
+
+          # The lowest latency with this. Going either way make it higher. 6, 24, 48, 96
+          #, "simulation_time_dur_in_sec": 12*3600
+
+          # Back to 6 hours. Increase the read rate by changing the simulation time.
+          , "simulation_time_dur_in_sec": 6*3600
+
+          , "extra_reads": "true"
+          , "xr_queue_size": 500
+          , "xr_rate": 100
           }
         ]
       , "terminate_inst_when_done": "false"
       }
 
-  #for sst_ott in [0.005, 0.0125, 0.025, 0.05, 0.1, 0.2, 0.625, 1.25, 2.5, 5]:
+  for sst_ott in [0.005]:
+    params["rocksdb-quizup-runs"][0]["sst_ott"] = sst_ott
+    LaunchJob(params)
+
+  #for sst_ott in [0.0125, 0.025, 0.05, 0.1, 0.2, 0.625, 1.25, 2.5, 5, 10, 20, 40, 80, 160, 320]:
   #  params["rocksdb-quizup-runs"][0]["sst_ott"] = sst_ott
   #  LaunchJob(params)
 
-  params["rocksdb-quizup-runs"][0]["workload_stop_at"] = 0.2
-  for sst_ott in [0.05, 0.1, 0.2, 0.625, 1.25, 2.5, 5]:
-    params["rocksdb-quizup-runs"][0]["sst_ott"] = sst_ott
-    LaunchJob(params)
+  #params["rocksdb-quizup-runs"][0]["workload_stop_at"] = 0.2
+  #for sst_ott in [0.05, 0.1, 0.2, 0.625, 1.25, 2.5, 5]:
+  #  params["rocksdb-quizup-runs"][0]["sst_ott"] = sst_ott
+  #  LaunchJob(params)
 
 
 def Job_Quizup2LevelMutantStorageUsageBySstMigTempThresholds():
