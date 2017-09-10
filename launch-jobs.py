@@ -479,7 +479,7 @@ def Job_QuizupMutantSlaAdmin():
           #, "workload_stop_at":   -1
 
           # Target latency, constans of P, I, and D.
-          , "pid_params": "33,1.0,0.0,0.02"
+          #, "pid_params": "33,1.0,0.0,0.02"
 
           , "memory_limit_in_mb": 9.0 * 1024
 
@@ -506,8 +506,10 @@ def Job_QuizupMutantSlaAdmin():
           , "simulation_time_dur_in_sec": 6*3600
 
           , "extra_reads": "true"
-          , "xr_queue_size": 500
-          , "xr_rate": 100
+          , "xr_queue_size": 1000
+          , "xr_rate": 600
+
+          , "pid_params": "45,1.0,0.0,0.02"
           }
         ]
       , "terminate_inst_when_done": "false"
