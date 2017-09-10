@@ -1,9 +1,9 @@
 region_ami:
   mutant-cassandra-server:
-    us-east-1: ami-5edac425
+    us-east-1: ami-15dbc56e
 
   mutant-rocksdb:
-    us-east-1: ami-5edac425
+    us-east-1: ami-15dbc56e
 
   mutant-client:
     us-east-1: ami-f585a7e2
