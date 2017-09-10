@@ -382,6 +382,9 @@ def RunRocksDBQuizup():
       if "cache_filter_index_at_all_levels" in params:
         params1.append("--cache_filter_index_at_all_levels=%s" % params["cache_filter_index_at_all_levels"])
 
+      if "record_size" in params:
+        params1.append("--record_size=%s" % params["record_size"])
+
       if "monitor_temp" in params:
         params1.append("--monitor_temp=%s" % params["monitor_temp"])
       if "migrate_sstables" in params:
@@ -403,6 +406,8 @@ def RunRocksDBQuizup():
 
       if "sla_admin" in params:
         params1.append("--sla_admin=%s" % params["sla_admin"])
+      if "lat_hist_q_size" in params:
+        params1.append("--lat_hist_q_size=%s" % params["lat_hist_q_size"])
 
       if "extra_reads" in params:
         params1.append("--extra_reads=%s" % params["extra_reads"])
