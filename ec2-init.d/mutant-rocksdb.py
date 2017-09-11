@@ -408,6 +408,8 @@ def RunRocksDBQuizup():
         params1.append("--sla_admin=%s" % params["sla_admin"])
       if "lat_hist_q_size" in params:
         params1.append("--lat_hist_q_size=%s" % params["lat_hist_q_size"])
+      if "sst_ott_adj_ranges" in params:
+        params1.append("--sst_ott_adj_ranges=%s" % params["sst_ott_adj_ranges"])
 
       if "extra_reads" in params:
         params1.append("--extra_reads=%s" % params["extra_reads"])

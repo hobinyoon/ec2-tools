@@ -489,7 +489,7 @@ def Job_QuizupMutantSlaAdmin():
 
           , "sst_ott": 0.0
 
-          , "sla_admin": "true"
+          #, "sla_admin": "true"
 
           # Fast loading phase and SLA admin-enabled run phase.
           #   Load: 17 mins
@@ -503,7 +503,7 @@ def Job_QuizupMutantSlaAdmin():
           #, "simulation_time_dur_in_sec": 12*3600
 
           # Back to 6 hours. Increase the read rate by changing the simulation time.
-          , "simulation_time_dur_in_sec": 6*3600
+          #, "simulation_time_dur_in_sec": 6*3600
 
           , "extra_reads": "true"
           , "xr_queue_size": 1000
@@ -511,12 +511,22 @@ def Job_QuizupMutantSlaAdmin():
 
           , "pid_params": "45,1.0,0.0,0.02"
 
-          , "lat_hist_q_size": 30
+          #, "lat_hist_q_size": 30
+
+          #, "sla_admin": "false"
+
+          , "sla_admin": "false"
+          , "lat_hist_q_size": 10
+
+          # TODO: adjust Init2() params
+          , "simulation_time_dur_in_sec": 2*3600
+
+          # TODO: test
+          , "sst_ott_adj_ranges": "-0.107,-0.025"
           }
         ]
       , "terminate_inst_when_done": "false"
       }
-
   LaunchJob(params)
 
   #params["rocksdb-quizup-runs"][0]["xr_rate"] = 900
