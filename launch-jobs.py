@@ -484,7 +484,7 @@ def Job_QuizupMutantSlaAdmin():
           , "memory_limit_in_mb": 9.0 * 1024
 
           #, "simulation_time_dur_in_sec": 10800
-          , "workload_stop_at": 0.3
+          #, "workload_stop_at": 0.3
           , "record_size": 10000
 
           , "sst_ott": 0.0
@@ -503,7 +503,8 @@ def Job_QuizupMutantSlaAdmin():
           #, "simulation_time_dur_in_sec": 12*3600
 
           # Back to 6 hours. Increase the read rate by changing the simulation time.
-          #, "simulation_time_dur_in_sec": 6*3600
+          , "simulation_time_dur_in_sec": 6*3600
+          , "workload_stop_at": 0.3
 
           , "extra_reads": "true"
           , "xr_queue_size": 1000
@@ -512,21 +513,23 @@ def Job_QuizupMutantSlaAdmin():
           , "pid_params": "45,1.0,0.0,0.02"
 
           #, "lat_hist_q_size": 30
-
           #, "sla_admin": "false"
 
-          , "sla_admin": "false"
+          , "sla_admin": "true"
           , "lat_hist_q_size": 10
 
-          # TODO: adjust Init2() params
-          , "simulation_time_dur_in_sec": 2*3600
-
-          # TODO: test
-          , "sst_ott_adj_ranges": "-0.107,-0.025"
+          , "sst_ott_adj_ranges": "-0.10,-0.025"
           }
         ]
       , "terminate_inst_when_done": "false"
       }
+
+  # Run for 2 hours
+  std_in_min = 2 * 60
+  workload_stop_at = 0.00026218181818181818 * (std_in_min - 30) + 0.21348
+  params["rocksdb-quizup-runs"][0]["simulation_time_dur_in_sec"] = std_in_min * 60
+  params["rocksdb-quizup-runs"][0]["workload_stop_at"] = workload_stop_at
+
   LaunchJob(params)
 
   #params["rocksdb-quizup-runs"][0]["xr_rate"] = 900
