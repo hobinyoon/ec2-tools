@@ -507,10 +507,10 @@ def Job_QuizupMutantSlaAdmin():
           , "workload_stop_at": 0.3
 
           , "extra_reads": "true"
-          , "xr_queue_size": 1000
-          , "xr_rate": 600
+          #, "xr_queue_size": 1000
+          #, "xr_rate": 600
 
-          , "pid_params": "45,1.0,0.0,0.02"
+          #, "pid_params": "45,1.0,0.0,0.02"
 
           #, "lat_hist_q_size": 30
           #, "sla_admin": "false"
@@ -519,6 +519,9 @@ def Job_QuizupMutantSlaAdmin():
           , "lat_hist_q_size": 10
 
           , "sst_ott_adj_ranges": "-0.10,-0.025"
+          , "xr_queue_size": 3000
+          , "xr_rate": 500
+          , "pid_params": "55,1.0,0.0,0.02"
           }
         ]
       , "terminate_inst_when_done": "false"
@@ -530,25 +533,10 @@ def Job_QuizupMutantSlaAdmin():
   params["rocksdb-quizup-runs"][0]["simulation_time_dur_in_sec"] = std_in_min * 60
   params["rocksdb-quizup-runs"][0]["workload_stop_at"] = workload_stop_at
 
+  # I don't see any read IO to st1. Increase the xr_queue_size and decrease the rate
+
+  params["rocksdb-quizup-runs"][0]["xr_rate"] = 600
   LaunchJob(params)
-
-  #params["rocksdb-quizup-runs"][0]["xr_rate"] = 900
-  #LaunchJob(params)
-
-  #params["rocksdb-quizup-runs"][0]["xr_rate"] = 1200
-  #LaunchJob(params)
-
-  #params["rocksdb-quizup-runs"][0]["xr_rate"] = 1500
-  #LaunchJob(params)
-
-  #for sst_ott in [0.0125, 0.025, 0.05, 0.1, 0.2, 0.625, 1.25, 2.5, 5, 10, 20, 40, 80, 160, 320]:
-  #  params["rocksdb-quizup-runs"][0]["sst_ott"] = sst_ott
-  #  LaunchJob(params)
-
-  #params["rocksdb-quizup-runs"][0]["workload_stop_at"] = 0.2
-  #for sst_ott in [0.05, 0.1, 0.2, 0.625, 1.25, 2.5, 5]:
-  #  params["rocksdb-quizup-runs"][0]["sst_ott"] = sst_ott
-  #  LaunchJob(params)
 
 
 def Job_Quizup2LevelMutantStorageUsageBySstMigTempThresholds():
