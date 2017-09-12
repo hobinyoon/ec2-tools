@@ -415,8 +415,8 @@ def RunRocksDBQuizup():
         params1.append("--extra_reads=%s" % params["extra_reads"])
       if "xr_queue_size" in params:
         params1.append("--xr_queue_size=%s" % params["xr_queue_size"])
-      if "xr_rate" in params:
-        params1.append("--xr_rate=%s" % params["xr_rate"])
+      if "xr_thread_sleep_ms" in params:
+        params1.append("--xr_thread_sleep_ms=%s" % params["xr_thread_sleep_ms"])
 
       cmd = "cd %s/work/mutant/misc/rocksdb/quizup/quizup && stdbuf -i0 -o0 -e0 ./run.py %s" \
           % (os.path.expanduser("~"), " ".join(params1))

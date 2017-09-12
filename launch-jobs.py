@@ -518,10 +518,14 @@ def Job_QuizupMutantSlaAdmin():
           , "sla_admin": "true"
           , "lat_hist_q_size": 10
 
-          , "sst_ott_adj_ranges": "-0.10,-0.025"
-          , "xr_queue_size": 3000
-          , "xr_rate": 500
-          , "pid_params": "55,1.0,0.0,0.02"
+          , "sst_ott_adj_ranges": "-0.11,-0.035"
+          , "xr_queue_size": 10000
+
+          # ms each thread sleeps for
+          #   * 2: for the upper range of rand()
+          #   * 1000: there are 1000 threads
+          , "xr_thread_sleep_ms": (1000.0 / 1500) * 2 * 1000
+          , "pid_params": "65,1.0,0.0,0.02"
           }
         ]
       , "terminate_inst_when_done": "false"
@@ -535,7 +539,7 @@ def Job_QuizupMutantSlaAdmin():
 
   # I don't see any read IO to st1. Increase the xr_queue_size and decrease the rate
 
-  params["rocksdb-quizup-runs"][0]["xr_rate"] = 600
+  #params["rocksdb-quizup-runs"][0]["xr_rate"] = 600
   LaunchJob(params)
 
 
