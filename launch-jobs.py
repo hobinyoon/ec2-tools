@@ -522,10 +522,14 @@ def Job_QuizupMutantSlaAdmin():
           , "xr_queue_size": 10000
 
           # ms each thread sleeps for
-          #   * 2: for the upper range of rand()
+          #   / 1500: Read IOPS (reads / sec). Now sure if it's too big. Might be ok. Big for st1 for sure.
+          #   * 2   : for the upper range of rand()
           #   * 1000: there are 1000 threads
-          , "xr_thread_sleep_ms": (1000.0 / 1500) * 2 * 1000
-          , "pid_params": "65,1.0,0.0,0.02"
+          , "xr_thread_sleep_ms": (1000.0 / 50) * 2 * 1000
+          , "xr_gets_per_key": 10
+          , "pid_params": "0.00001,1.0,0.0,0.02"
+
+          # TODO: See if you can get a stable read latency
           }
         ]
       , "terminate_inst_when_done": "false"
