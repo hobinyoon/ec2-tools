@@ -130,7 +130,7 @@ def Job_Ycsb_D_Mutant():
 
     ycsb_runs = {
       "exp_desc": inspect.currentframe().f_code.co_name[4:]
-			, "workload_type": workload_type
+      , "workload_type": workload_type
       , "db_path": "/mnt/local-ssd1/rocksdb-data/ycsb"
       , "db_stg_dev_paths": [
           "/mnt/local-ssd1/rocksdb-data/ycsb/t0"
@@ -440,110 +440,153 @@ def Job_QuizupMutantSlaAdmin():
       , "run_cassandra_server": "false"
       # For now, it doesn't do much other than checking out the code and building.
       , "rocksdb": { }
-      , "rocksdb-quizup-runs": [
-        {
-          # Use the current function name since you always forget to set this
-          "exp_desc": inspect.currentframe().f_code.co_name[4:]
-          , "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
-          , "slow_dev_paths": {"t1": "/mnt/ebs-st1/rocksdb-data-quizup-t1"}
-          , "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
-          , "init_db_to_90p_loaded": "false"
-          , "evict_cached_data": "true"
-          #, "memory_limit_in_mb": 9.0 * 1024
-
-          # Not caching metadata might be a better idea. So the story is you
-          # present each of the optimizations separately, followed by the
-          # combined result.
-          #, "cache_filter_index_at_all_levels": "false"
-
-          # Cache metadata for a comparison
-          , "cache_filter_index_at_all_levels": "true"
-
-          , "monitor_temp": "true"
-          , "migrate_sstables": "true"
-          #, "sst_ott": 0.0
-          , "organize_L0_sstables": "true"
-          #, "workload_start_from": 0.899
-          #, "workload_stop_at":    0.930
-          #, "simulation_time_dur_in_sec": 60000
-          , "workload_start_from": -1
-          #, "workload_stop_at":    0.2
-          # Load 960 secs. Run 3200 sec. About 70 mins total.
-          #, "simulation_time_dur_in_sec": 4400
-
-          # 7 times longer running time
-          #, "simulation_time_dur_in_sec": 23920
-          , "121x_speed_replay": "true"
-
-          # Full experiment. Might be a good one to see how the workload fluctuate.
-          #, "workload_stop_at":   -1
-
-          # Target latency, constans of P, I, and D.
-          #, "pid_params": "33,1.0,0.0,0.02"
-
-          , "memory_limit_in_mb": 9.0 * 1024
-
-          #, "simulation_time_dur_in_sec": 10800
-          #, "workload_stop_at": 0.3
-          , "record_size": 10000
-
-          , "sst_ott": 0.0
-
-          #, "sla_admin": "true"
-
-          # Fast loading phase and SLA admin-enabled run phase.
-          #   Load: 17 mins
-          #   Run : 50 mins
-          #, "simulation_time_dur_in_sec": 7200
-
-          # The latenc is still high even when all sstables are in SSD.. The system is not satured.
-          #, "simulation_time_dur_in_sec": 14400
-
-          # The lowest latency with this. Going either way make it higher. 6, 24, 48, 96
-          #, "simulation_time_dur_in_sec": 12*3600
-
-          # Back to 6 hours. Increase the read rate by changing the simulation time.
-          , "simulation_time_dur_in_sec": 6*3600
-          , "workload_stop_at": 0.3
-
-          , "extra_reads": "true"
-          #, "xr_queue_size": 1000
-          #, "xr_rate": 600
-
-          #, "pid_params": "45,1.0,0.0,0.02"
-
-          #, "lat_hist_q_size": 30
-          #, "sla_admin": "false"
-
-          , "sla_admin": "true"
-          , "lat_hist_q_size": 10
-
-          , "sst_ott_adj_ranges": "-0.11,-0.035"
-          , "xr_queue_size": 10000
-
-          # ms each thread sleeps for
-          #   / 1500: Read IOPS (reads / sec). Now sure if it's too big. Might be ok. Big for st1 for sure.
-          #   * 2   : for the upper range of rand()
-          #   * 1000: there are 1000 threads
-          , "xr_thread_sleep_ms": (1000.0 / 50) * 2 * 1000
-          , "xr_gets_per_key": 10
-          , "pid_params": "0.00001,1.0,0.0,0.02"
-
-          # TODO: See if you can get a stable read latency
-          }
-        ]
+      , "rocksdb-quizup-runs": []
       , "terminate_inst_when_done": "false"
+      }
+
+  qz_run = {
+      # Use the current function name since you always forget to set this
+      "exp_desc": inspect.currentframe().f_code.co_name[4:]
+      , "fast_dev_path": "/mnt/local-ssd1/rocksdb-data"
+      , "slow_dev_paths": {"t1": "/mnt/ebs-st1/rocksdb-data-quizup-t1"}
+      , "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
+      , "init_db_to_90p_loaded": "false"
+      , "evict_cached_data": "true"
+      #, "memory_limit_in_mb": 9.0 * 1024
+
+      # Not caching metadata might be a better idea. So the story is you
+      # present each of the optimizations separately, followed by the
+      # combined result.
+      #, "cache_filter_index_at_all_levels": "false"
+
+      # Cache metadata for a comparison
+      , "cache_filter_index_at_all_levels": "true"
+
+      , "monitor_temp": "true"
+      , "migrate_sstables": "true"
+      #, "sst_ott": 0.0
+      , "organize_L0_sstables": "true"
+      #, "workload_start_from": 0.899
+      #, "workload_stop_at":    0.930
+      #, "simulation_time_dur_in_sec": 60000
+      , "workload_start_from": -1
+      #, "workload_stop_at":    0.2
+      # Load 960 secs. Run 3200 sec. About 70 mins total.
+      #, "simulation_time_dur_in_sec": 4400
+
+      # 7 times longer running time
+      #, "simulation_time_dur_in_sec": 23920
+      , "121x_speed_replay": "true"
+
+      # Full experiment. Might be a good one to see how the workload fluctuate.
+      #, "workload_stop_at":   -1
+
+      # Target latency, constans of P, I, and D.
+      #, "pid_params": "33,1.0,0.0,0.02"
+
+      , "memory_limit_in_mb": 9.0 * 1024
+
+      #, "simulation_time_dur_in_sec": 10800
+      #, "workload_stop_at": 0.3
+      , "record_size": 10000
+
+      , "sst_ott": 0.0
+
+      #, "sla_admin": "true"
+
+      # Fast loading phase and SLA admin-enabled run phase.
+      #   Load: 17 mins
+      #   Run : 50 mins
+      #, "simulation_time_dur_in_sec": 7200
+
+      # The latenc is still high even when all sstables are in SSD.. The system is not satured.
+      #, "simulation_time_dur_in_sec": 14400
+
+      # The lowest latency with this. Going either way make it higher. 6, 24, 48, 96
+      #, "simulation_time_dur_in_sec": 12*3600
+
+      # Back to 6 hours. Increase the read rate by changing the simulation time.
+      , "simulation_time_dur_in_sec": 6*3600
+      , "workload_stop_at": 0.3
+
+      , "extra_reads": "true"
+      #, "xr_queue_size": 1000
+      #, "xr_rate": 600
+
+      #, "pid_params": "45,1.0,0.0,0.02"
+
+      #, "lat_hist_q_size": 30
+      #, "sla_admin": "false"
+
+      , "sla_admin": "true"
+      , "lat_hist_q_size": 10
+
+      , "sst_ott_adj_ranges": "-0.11,-0.035"
+      , "xr_queue_size": 10000
+
+      # ms each thread sleeps for
+      #   / 1500: Read IOPS (reads / sec). Now sure if it's too big. Might be ok. Big for st1 for sure.
+      #   * 2   : for the upper range of rand()
+      #   * 1000: there are 1000 threads
+      , "xr_thread_sleep_ms": (1000.0 / 25) * 2 * 1000
+      , "xr_gets_per_key": 10
+      #, "pid_params": "0.00001,1.0,0.0,0.02"
+
+      # Make everything to go to EBS st1
+      , "pid_params": "10000.0,1.0,0.0,0.02"
       }
 
   # Run for 2 hours
   std_in_min = 2 * 60
   workload_stop_at = 0.00026218181818181818 * (std_in_min - 30) + 0.21348
-  params["rocksdb-quizup-runs"][0]["simulation_time_dur_in_sec"] = std_in_min * 60
-  params["rocksdb-quizup-runs"][0]["workload_stop_at"] = workload_stop_at
+  qz_run["simulation_time_dur_in_sec"] = std_in_min * 60
+  qz_run["workload_stop_at"] = workload_stop_at
 
-  # I don't see any read IO to st1. Increase the xr_queue_size and decrease the rate
+  # For local SSD, the latency keeps decreasing. Might be from the IO batching.
+  # iops_range = [1000.0, 1500.0, 2000.0, 2500.0, 3000.0]:
 
-  #params["rocksdb-quizup-runs"][0]["xr_rate"] = 600
+  # For EBS st1, even 15 (actually 1.5) reads/sec causes a big latency
+  #iops_range = [ \
+  #          15.0 \
+  #    ,     30.0 \
+  #    ,     60.0 \
+  #    ,    120.0 \
+  #    ,    250.0 \
+  #    ,    500.0 \
+  #    ,   1000.0 \
+  #    ,   2000.0 \
+  #    ,   4000.0 \
+  #    ,   8000.0 \
+  #    ]
+  #random.shuffle(iops_range)
+
+  xr_iops = 6000
+  xr_gets_per_key = 10
+  qz_run["xr_iops"] = xr_iops
+  qz_run["xr_gets_per_key"] = xr_gets_per_key
+  params["rocksdb-quizup-runs"].append(dict(qz_run))
+  LaunchJob(params)
+  sys.exit(0)
+
+  # For a mix of LS and EBS st1. Do LS first and see how much load makes sense.
+  iops_range = [ \
+           6000.0 \
+      ,   12000.0 \
+      ,   25000.0 \
+      ,   50000.0 \
+      ,  100000.0 \
+      ,  200000.0 \
+      ,  400000.0 \
+      ,  800000.0 \
+      , 1600000.0 \
+      ]
+
+  for xr_iops in iops_range:
+    xr_gets_per_key = 10
+    qz_run["xr_iops"] = xr_iops
+    qz_run["xr_gets_per_key"] = xr_gets_per_key
+    params["rocksdb-quizup-runs"].append(dict(qz_run))
+
   LaunchJob(params)
 
 

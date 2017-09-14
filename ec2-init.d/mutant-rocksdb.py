@@ -415,8 +415,8 @@ def RunRocksDBQuizup():
         params1.append("--extra_reads=%s" % params["extra_reads"])
       if "xr_queue_size" in params:
         params1.append("--xr_queue_size=%s" % params["xr_queue_size"])
-      if "xr_thread_sleep_ms" in params:
-        params1.append("--xr_thread_sleep_ms=%s" % params["xr_thread_sleep_ms"])
+      if "xr_iops" in params:
+        params1.append("--xr_iops=%s" % params["xr_iops"])
       if "xr_gets_per_key" in params:
         params1.append("--xr_gets_per_key=%s" % params["xr_gets_per_key"])
 
