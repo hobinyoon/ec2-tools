@@ -493,8 +493,6 @@ def Job_QuizupMutantSlaAdmin():
 
       , "sst_ott": 0.0
 
-      #, "sla_admin": "true"
-
       # Fast loading phase and SLA admin-enabled run phase.
       #   Load: 17 mins
       #   Run : 50 mins
@@ -516,11 +514,7 @@ def Job_QuizupMutantSlaAdmin():
 
       #, "pid_params": "45,1.0,0.0,0.02"
 
-      #, "lat_hist_q_size": 30
-      #, "sla_admin": "false"
-
-      #, "sla_admin": "true"
-      , "lat_hist_q_size": 10
+      , "sla_observed_value_hist_q_size": 10
 
       , "sst_ott_adj_ranges": "-0.11,-0.035"
       , "xr_queue_size": 10000
@@ -531,6 +525,11 @@ def Job_QuizupMutantSlaAdmin():
 
       # Make all SSTables go to LS
       , "pid_params": "0.000001.0,1.0,0.0,0.02"
+
+      # none, latency, or slow_dev_r_iops
+      , "sla_admin_type": "slow_dev_r_iops"
+      , "slow_dev": "xvde"
+      , "slow_dev_target_r_iops": 250
       }
 
   # Run for 2 hours
@@ -542,12 +541,10 @@ def Job_QuizupMutantSlaAdmin():
   qz_run["xr_iops"] = 100000
   qz_run["xr_gets_per_key"] = 10
 
-  qz_run["sla_admin"] = "true"
-
-  for l in [30, 40, 50, 60, 70]:
-    qz_run["pid_params"] = "%d,1.0,0.0,0.02" % l
-    params["rocksdb-quizup-runs"] = [dict(qz_run)]
-    LaunchJob(params)
+  # When you adjust sst_ott with slow_dev_r_iops, target latency doesn't matter.
+  qz_run["pid_params"] = "10,1.0,0.0,0.02"
+  params["rocksdb-quizup-runs"] = [dict(qz_run)]
+  LaunchJob(params)
 
 
   # For local SSD, the latency keeps decreasing. Might be from the IO batching.

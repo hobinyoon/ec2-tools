@@ -404,12 +404,16 @@ def RunRocksDBQuizup():
       if "pid_params" in params:
         params1.append("--pid_params=%s" % params["pid_params"])
 
-      if "sla_admin" in params:
-        params1.append("--sla_admin=%s" % params["sla_admin"])
-      if "lat_hist_q_size" in params:
-        params1.append("--lat_hist_q_size=%s" % params["lat_hist_q_size"])
+      if "sla_admin_type" in params:
+        params1.append("--sla_admin_type=%s" % params["sla_admin_type"])
+      if "sla_observed_value_hist_q_size" in params:
+        params1.append("--sla_observed_value_hist_q_size=%s" % params["sla_observed_value_hist_q_size"])
       if "sst_ott_adj_ranges" in params:
         params1.append("--sst_ott_adj_ranges=%s" % params["sst_ott_adj_ranges"])
+      if "slow_dev" in params:
+        params1.append("--slow_dev=%s" % params["slow_dev"])
+      if "slow_dev_target_r_iops" in params:
+        params1.append("--slow_dev_target_r_iops=%s" % params["slow_dev_target_r_iops"])
 
       if "extra_reads" in params:
         params1.append("--extra_reads=%s" % params["extra_reads"])
