@@ -428,9 +428,8 @@ def Job_Ycsb_B_Rocksdb():
 
 def Job_QuizupMutantSlaAdmin():
   params = {
-      # TODO
-      #"region": "us-east-1"
-      "region": "us-west-2"
+      #"region": "us-west-2"
+      "region": "us-east-1"
       , "inst_type": "c3.2xlarge"
       , "spot_req_max_price": 1.0
       , "init_script": "mutant-rocksdb"
@@ -443,8 +442,7 @@ def Job_QuizupMutantSlaAdmin():
       # For now, it doesn't do much other than checking out the code and building.
       , "rocksdb": { }
       , "rocksdb-quizup-runs": []
-      # TODO
-      , "terminate_inst_when_done": "true"
+      , "terminate_inst_when_done": "false"
       }
 
   qz_run = {
@@ -544,10 +542,10 @@ def Job_QuizupMutantSlaAdmin():
   qz_run["xr_iops"] = 100000
   qz_run["xr_gets_per_key"] = 10
 
-  qz_run["sla_admin"] = "false"
+  qz_run["sla_admin"] = "true"
 
-  for sst_ott in [200, 300, 600, 700, 800, 900, 1000]:
-    qz_run["sst_ott"] = sst_ott
+  for l in [30, 40, 50, 60, 70]:
+    qz_run["pid_params"] = "%d,1.0,0.0,0.02" % l
     params["rocksdb-quizup-runs"] = [dict(qz_run)]
     LaunchJob(params)
 
