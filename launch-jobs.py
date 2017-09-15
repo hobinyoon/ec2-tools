@@ -428,7 +428,9 @@ def Job_Ycsb_B_Rocksdb():
 
 def Job_QuizupMutantSlaAdmin():
   params = {
-      "region": "us-east-1"
+      # TODO
+      #"region": "us-east-1"
+      "region": "us-west-2"
       , "inst_type": "c3.2xlarge"
       , "spot_req_max_price": 1.0
       , "init_script": "mutant-rocksdb"
@@ -441,7 +443,8 @@ def Job_QuizupMutantSlaAdmin():
       # For now, it doesn't do much other than checking out the code and building.
       , "rocksdb": { }
       , "rocksdb-quizup-runs": []
-      , "terminate_inst_when_done": "false"
+      # TODO
+      , "terminate_inst_when_done": "true"
       }
 
   qz_run = {
@@ -518,22 +521,18 @@ def Job_QuizupMutantSlaAdmin():
       #, "lat_hist_q_size": 30
       #, "sla_admin": "false"
 
-      , "sla_admin": "true"
+      #, "sla_admin": "true"
       , "lat_hist_q_size": 10
 
       , "sst_ott_adj_ranges": "-0.11,-0.035"
       , "xr_queue_size": 10000
-
-      # ms each thread sleeps for
-      #   / 1500: Read IOPS (reads / sec). Now sure if it's too big. Might be ok. Big for st1 for sure.
-      #   * 2   : for the upper range of rand()
-      #   * 1000: there are 1000 threads
-      , "xr_thread_sleep_ms": (1000.0 / 25) * 2 * 1000
       , "xr_gets_per_key": 10
-      #, "pid_params": "0.00001,1.0,0.0,0.02"
 
-      # Make everything to go to EBS st1
-      , "pid_params": "10000.0,1.0,0.0,0.02"
+      # Make all SSTables go to EBS st1
+      #, "pid_params": "10000.0,1.0,0.0,0.02"
+
+      # Make all SSTables go to LS
+      , "pid_params": "0.000001.0,1.0,0.0,0.02"
       }
 
   # Run for 2 hours
@@ -541,6 +540,17 @@ def Job_QuizupMutantSlaAdmin():
   workload_stop_at = 0.00026218181818181818 * (std_in_min - 30) + 0.21348
   qz_run["simulation_time_dur_in_sec"] = std_in_min * 60
   qz_run["workload_stop_at"] = workload_stop_at
+
+  qz_run["xr_iops"] = 100000
+  qz_run["xr_gets_per_key"] = 10
+
+  qz_run["sla_admin"] = "false"
+
+  for sst_ott in [200, 300, 600, 700, 800, 900, 1000]:
+    qz_run["sst_ott"] = sst_ott
+    params["rocksdb-quizup-runs"] = [dict(qz_run)]
+    LaunchJob(params)
+
 
   # For local SSD, the latency keeps decreasing. Might be from the IO batching.
   # iops_range = [1000.0, 1500.0, 2000.0, 2500.0, 3000.0]:
@@ -560,34 +570,24 @@ def Job_QuizupMutantSlaAdmin():
   #    ]
   #random.shuffle(iops_range)
 
-  xr_iops = 6000
-  xr_gets_per_key = 10
-  qz_run["xr_iops"] = xr_iops
-  qz_run["xr_gets_per_key"] = xr_gets_per_key
-  params["rocksdb-quizup-runs"].append(dict(qz_run))
-  LaunchJob(params)
-  sys.exit(0)
-
   # For a mix of LS and EBS st1. Do LS first and see how much load makes sense.
-  iops_range = [ \
-           6000.0 \
-      ,   12000.0 \
-      ,   25000.0 \
-      ,   50000.0 \
-      ,  100000.0 \
-      ,  200000.0 \
-      ,  400000.0 \
-      ,  800000.0 \
-      , 1600000.0 \
-      ]
+  #   6000, 12000, ..., 1600000
+  #iops_range = [ \
+  #        25000 \
+  #    ,   50000 \
+  #    ,  100000 \
+  #    ,  200000 \
+  #    ,  400000 \
+  #    ,  800000 \
+  #    , 1600000 \
+  #    ]
 
-  for xr_iops in iops_range:
-    xr_gets_per_key = 10
-    qz_run["xr_iops"] = xr_iops
-    qz_run["xr_gets_per_key"] = xr_gets_per_key
-    params["rocksdb-quizup-runs"].append(dict(qz_run))
-
-  LaunchJob(params)
+  #for xr_iops in iops_range:
+  #  xr_gets_per_key = 10
+  #  qz_run["xr_iops"] = xr_iops
+  #  qz_run["xr_gets_per_key"] = xr_gets_per_key
+  #  params["rocksdb-quizup-runs"] = [dict(qz_run)]
+  #  LaunchJob(params)
 
 
 def Job_Quizup2LevelMutantStorageUsageBySstMigTempThresholds():
