@@ -34,14 +34,17 @@ def main(argv):
     Ec2InitUtil.SetParams(argv[1])
     Ec2InitUtil.SetEc2Tags(argv[2])
 
-    SetHostname()
-    Ec2InitUtil.SyncTime()
-    PrepareBlockDevs()
-    Ec2InitUtil.ChangeLogOutput()
-    CloneSrcAndBuild()
+    if not AlreadyInitialized():
+      SetHostname()
+      Ec2InitUtil.SyncTime()
+      PrepareBlockDevs()
+      Ec2InitUtil.ChangeLogOutput()
+      CloneSrcAndBuild()
 
-    if Ec2InitUtil.GetParam(["unzip_quizup_data"]) == "true":
-      UnzipQuizupData()
+      if Ec2InitUtil.GetParam(["unzip_quizup_data"]) == "true":
+        UnzipQuizupData()
+    else:
+      Cons.P("Already initialized. Skipping initialization ...")
     RunRocksDBQuizup()
     RunYcsb()
 
@@ -51,6 +54,15 @@ def main(argv):
   except Exception as e:
     msg = "Exception: %s\n%s" % (e, traceback.format_exc())
     Cons.P(msg)
+
+
+def AlreadyInitialized():
+  fn = "/var/log/cloud-init-output.log"
+  with open(fn) as fo:
+    for line in fo:
+      if line.strip() == "Preparing block storage devices ...":
+        return True
+  return False
 
 
 def SetHostname():
