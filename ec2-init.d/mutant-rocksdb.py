@@ -426,6 +426,8 @@ def RunRocksDBQuizup():
         params1.append("--slow_dev=%s" % params["slow_dev"])
       if "slow_dev_target_r_iops" in params:
         params1.append("--slow_dev_target_r_iops=%s" % params["slow_dev_target_r_iops"])
+      if "sst_ott_adj_cooldown_ms" in params:
+        params1.append("--sst_ott_adj_cooldown_ms=%s" % params["sst_ott_adj_cooldown_ms"])
 
       if "extra_reads" in params:
         params1.append("--extra_reads=%s" % params["extra_reads"])
