@@ -442,7 +442,7 @@ def Job_QuizupMutantSlaAdmin():
       # For now, it doesn't do much other than checking out the code and building.
       , "rocksdb": { }
       , "rocksdb-quizup-runs": []
-      , "terminate_inst_when_done": "false"
+      , "terminate_inst_when_done": "true"
       }
 
   qz_run = {
@@ -516,7 +516,7 @@ def Job_QuizupMutantSlaAdmin():
 
       , "sla_observed_value_hist_q_size": 10
 
-      , "sst_ott_adj_ranges": "-0.11,-0.035"
+      #, "error_adj_ranges": "-0.11,-0.035"
       , "xr_queue_size": 10000
       , "xr_gets_per_key": 10
 
@@ -524,14 +524,22 @@ def Job_QuizupMutantSlaAdmin():
       #, "pid_params": "10000.0,1.0,0.0,0.02"
 
       # Make all SSTables go to LS
-      , "pid_params": "0.000001.0,1.0,0.0,0.02"
+      #, "pid_params": "0.000001.0,1.0,0.0,0.02"
 
       # none, latency, or slow_dev_r_iops
       , "sla_admin_type": "slow_dev_r_iops"
       , "slow_dev": "xvde"
-      , "slow_dev_target_r_iops": 250
+      #, "slow_dev_target_r_iops": 250
 
-      , "sst_ott_adj_cooldown_ms": 5000
+      #, "sst_ott_adj_cooldown_ms": 5000
+
+      # Bigger cooldown time. 20 sec.
+      , "sst_ott_adj_cooldown_ms": 20000
+      # Wider error margin. +-20%
+      , "error_adj_ranges": "-0.2,0.2"
+      # "slow_dev_target_r_iops" is not used any more. The first parameter of pid_params is the target_value
+      # We don't use I for now. There is already an oscillation without I.
+      , "pid_params": "300:1:0:0"
       }
 
   # Run for 2 hours
@@ -543,15 +551,12 @@ def Job_QuizupMutantSlaAdmin():
   qz_run["xr_iops"] = 100000
   qz_run["xr_gets_per_key"] = 10
 
-  # When you adjust sst_ott with slow_dev_r_iops, target latency doesn't matter.
-  qz_run["pid_params"] = "10,1.0,0.0,0.02"
-
-  qz_run["slow_dev_target_r_iops"] = 200
+  qz_run["pid_params"] = "300:1:0:10"
   params["rocksdb-quizup-runs"] = [dict(qz_run)]
   LaunchJob(params)
 
-  # By slow_dev_target_r_iops. Already running 25 and 50
-  #for sdtri in [75, 100, 150, 200, 300, 400]:
+  # By slow_dev_target_r_iops.
+  #for sdtri in [25, 50, 75, 100, 150, 400, 450]:
   #  qz_run["slow_dev_target_r_iops"] = sdtri
   #  params["rocksdb-quizup-runs"] = [dict(qz_run)]
   #  LaunchJob(params)
