@@ -420,8 +420,8 @@ def RunRocksDBQuizup():
         params1.append("--sla_admin_type=%s" % params["sla_admin_type"])
       if "sla_observed_value_hist_q_size" in params:
         params1.append("--sla_observed_value_hist_q_size=%s" % params["sla_observed_value_hist_q_size"])
-      if "sst_ott_adj_ranges" in params:
-        params1.append("--sst_ott_adj_ranges=%s" % params["sst_ott_adj_ranges"])
+      if "error_adj_ranges" in params:
+        params1.append("--error_adj_ranges=%s" % params["error_adj_ranges"])
       if "slow_dev" in params:
         params1.append("--slow_dev=%s" % params["slow_dev"])
       if "slow_dev_target_r_iops" in params:
