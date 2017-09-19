@@ -426,6 +426,8 @@ def RunRocksDBQuizup():
         params1.append("--slow_dev=%s" % params["slow_dev"])
       if "sst_ott_adj_cooldown_ms" in params:
         params1.append("--sst_ott_adj_cooldown_ms=%s" % params["sst_ott_adj_cooldown_ms"])
+      if "pid_i_exp_decay_factor" in params:
+        params1.append("--pid_i_exp_decay_factor=%s" % params["pid_i_exp_decay_factor"])
 
       if "extra_reads" in params:
         params1.append("--extra_reads=%s" % params["extra_reads"])

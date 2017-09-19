@@ -442,7 +442,7 @@ def Job_QuizupMutantSlaAdmin():
       # For now, it doesn't do much other than checking out the code and building.
       , "rocksdb": { }
       , "rocksdb-quizup-runs": []
-      , "terminate_inst_when_done": "true"
+      , "terminate_inst_when_done": "false"
       }
 
   qz_run = {
@@ -533,13 +533,14 @@ def Job_QuizupMutantSlaAdmin():
 
       #, "sst_ott_adj_cooldown_ms": 5000
 
-      # Bigger cooldown time. 20 sec.
-      , "sst_ott_adj_cooldown_ms": 20000
+      # Bigger cooldown time. 5 sec.
+      , "sst_ott_adj_cooldown_ms": 5000
       # Wider error margin. +-20%
       , "error_adj_ranges": "-0.2,0.2"
       # "slow_dev_target_r_iops" is not used any more. The first parameter of pid_params is the target_value
       # We don't use I for now. There is already an oscillation without I.
       , "pid_params": "300:1:0:0"
+      , "pid_i_exp_decay_factor": 0.89
       }
 
   # Run for 2 hours
@@ -548,12 +549,31 @@ def Job_QuizupMutantSlaAdmin():
   qz_run["simulation_time_dur_in_sec"] = std_in_min * 60
   qz_run["workload_stop_at"] = workload_stop_at
 
-  qz_run["xr_iops"] = 100000
   qz_run["xr_gets_per_key"] = 10
+  qz_run["xr_iops"] = 100000
 
-  qz_run["pid_params"] = "300:1:0:10"
+  qz_run["pid_params"] = "300:0.5:0.0125:0"
   params["rocksdb-quizup-runs"] = [dict(qz_run)]
   LaunchJob(params)
+
+  # Explore I
+  #for i in [0.00625, 0.0125, 0.025, 0.05, 0.1, 0.2]:
+  #  qz_run["pid_params"] = "300:0.5:%f:0" % i
+  #  params["rocksdb-quizup-runs"] = [dict(qz_run)]
+  #  LaunchJob(params)
+
+  #for i in [25000, 37000, 50000, 62500, 75000, 87500, 100000, 150000, 200000]:
+  #  qz_run["xr_iops"] = i
+  #  params["rocksdb-quizup-runs"] = [dict(qz_run)]
+  #  LaunchJob(params)
+
+  # Explore D to see if you can get the oscillation.
+  #   Anything beyond 0.125 doesn't make much sense. Maybe 0 is what you needed.
+  #for d in [1, 2, 4, 8, 16, 32, 64, 128]:
+  #for d in [0.25, 0.125]:
+  #  qz_run["pid_params"] = "300:1:0:%f" % d
+  #  params["rocksdb-quizup-runs"] = [dict(qz_run)]
+  #  LaunchJob(params)
 
   # By slow_dev_target_r_iops.
   #for sdtri in [25, 50, 75, 100, 150, 400, 450]:
