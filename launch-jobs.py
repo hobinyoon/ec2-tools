@@ -442,7 +442,7 @@ def Job_QuizupMutantSlaAdmin():
       # For now, it doesn't do much other than checking out the code and building.
       , "rocksdb": { }
       , "rocksdb-quizup-runs": []
-      , "terminate_inst_when_done": "true"
+      , "terminate_inst_when_done": "false"
       }
 
   qz_run = {
@@ -550,16 +550,19 @@ def Job_QuizupMutantSlaAdmin():
   qz_run["workload_stop_at"] = workload_stop_at
 
   qz_run["xr_gets_per_key"] = 10
-  qz_run["xr_iops"] = 100000
+  qz_run["xr_iops"] = "50000:100000:200000"
 
-  #qz_run["pid_params"] = "300:0.5:0.0125:0"
+  qz_run["sla_admin_type"] = "slow_dev_r_iops"
+  qz_run["pid_params"] = "300:0.5:0.0125:0"
+  params["rocksdb-quizup-runs"] = [dict(qz_run)]
+  LaunchJob(params)
 
   # Exploring latency-control
-  qz_run["sla_admin_type"] = "latency"
-  for l in [25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75]:
-    qz_run["pid_params"] = "%d:0.5:0.0125:0" % l
-    params["rocksdb-quizup-runs"] = [dict(qz_run)]
-    LaunchJob(params)
+  #qz_run["sla_admin_type"] = "latency"
+  #for l in [25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75]:
+  #  qz_run["pid_params"] = "%d:0.5:0.0125:0" % l
+  #  params["rocksdb-quizup-runs"] = [dict(qz_run)]
+  #  LaunchJob(params)
 
   # Explore I: 0.003125, 0.00625, and 0.0125 look good.
   #for i in [0.003125, 0.00625, 0.0125, 0.025, 0.05, 0.1, 0.2, 0.4]:
