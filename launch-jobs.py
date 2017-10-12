@@ -426,6 +426,28 @@ def Job_Ycsb_B_Rocksdb():
     LaunchJob(params)
 
 
+def Job_RocksBaselineYcsb():
+  params = {
+      "region": "us-east-1"
+      , "inst_type": "c3.2xlarge"
+      , "spot_req_max_price": 1.0
+      , "init_script": "mutant-rocksdb"
+      , "ami_name": "mutant-rocksdb"
+      , "block_storage_devs": [{"VolumeType": "gp2", "VolumeSize": 200, "DeviceName": "d"}]
+      #, "block_storage_devs": [{"VolumeType": "st1", "VolumeSize": 3000, "DeviceName": "e"}]
+      #, "block_storage_devs": [{"VolumeType": "sc1", "VolumeSize": 3000, "DeviceName": "f"}]
+      , "ec2_tag_Name": inspect.currentframe().f_code.co_name[4:]
+      , "erase_local_ssd": "true"
+      , "unzip_quizup_data": "false"
+      , "run_cassandra_server": "false"
+      # For now, it doesn't do much other than checking out the code and building.
+      , "rocksdb": { }
+      , "rocksdb-quizup-runs": []
+      , "terminate_inst_when_done": "false"
+      }
+  LaunchJob(params)
+
+
 def Job_QuizupMutantSlaAdmin():
   params = {
       #"region": "us-west-2"
