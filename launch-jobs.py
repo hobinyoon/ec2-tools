@@ -60,7 +60,7 @@ def Job_LocalSsdPerf():
       , "unzip_quizup_data": "false"
       , "run_cassandra_server": "false"
       # For now, it doesn't do much other than checking out the code and building.
-      , "rocksdb": { }
+      #, "rocksdb": { }
       , "rocksdb-quizup-runs": []
       , "terminate_inst_when_done": "false"
       }
