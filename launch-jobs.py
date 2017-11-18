@@ -44,6 +44,29 @@ def main(argv):
   globals()[job]()
 
 
+def Job_LocalSsdPerf():
+  params = {
+      "region": "us-east-1"
+      , "inst_type": "r3.2xlarge"
+      , "spot_req_max_price": 1.0
+      , "init_script": "mutant-rocksdb"
+      , "ami_name": "mutant-rocksdb"
+      , "block_storage_devs": []
+      #, "block_storage_devs": [{"VolumeType": "gp2", "VolumeSize": 200, "DeviceName": "d"}]
+      #, "block_storage_devs": [{"VolumeType": "st1", "VolumeSize": 3000, "DeviceName": "e"}]
+      #, "block_storage_devs": [{"VolumeType": "sc1", "VolumeSize": 3000, "DeviceName": "f"}]
+      , "ec2_tag_Name": inspect.currentframe().f_code.co_name[4:]
+      #, "erase_local_ssd": "true"
+      , "unzip_quizup_data": "false"
+      , "run_cassandra_server": "false"
+      # For now, it doesn't do much other than checking out the code and building.
+      , "rocksdb": { }
+      , "rocksdb-quizup-runs": []
+      , "terminate_inst_when_done": "false"
+      }
+  LaunchJob(params)
+
+
 # A workload type per an EC2 instance for now, but nothing's stopping you running different types of workloads in an instance.
 def Job_Ycsb_D_Mutant():
   # Job conf per EC2 inst
