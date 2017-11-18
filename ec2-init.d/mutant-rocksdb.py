@@ -96,16 +96,18 @@ def PrepareBlockDevs():
     inst_type = Util.RunSubp("curl -s http://169.254.169.254/latest/meta-data/instance-type", print_cmd = False, print_output = False)
 
     # {dev_name: directory_name}
-    # ext4 label is the same as the directory_name
-    blk_devs = {"xvdb": "local-ssd0"}
+    #   ext4 label is the same as the directory_name
+    blk_devs = {}
+
     # All c3 types have 2 SSDs
     if inst_type.startswith("c3."):
+      blk_devs["xvdb"] = "local-ssd0"
       blk_devs["xvdc"] = "local-ssd1"
-    elif inst_type in ["r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge"
-        , "i2.xlarge"]:
-      pass
+    elif inst_type in ["r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "i2.xlarge"]:
+      blk_devs["xvdc"] = "local-ssd0"
     else:
       raise RuntimeError("Unexpected instance type %s" % inst_type)
+
     if os.path.exists("/dev/xvdd"):
       blk_devs["xvdd"] = "ebs-gp2"
     if os.path.exists("/dev/xvde"):
