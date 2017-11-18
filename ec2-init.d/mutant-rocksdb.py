@@ -339,6 +339,9 @@ def _CloneMisc():
 
 
 def _CloneAndBuildYcsb():
+  if Ec2InitUtil.GetParam(["ycsb-runs"]) is None:
+    return
+
   with Cons.MT("Cloning YCSB and build ..."):
     # Git clone
     Util.RunSubp("rm -rf /mnt/local-ssd0/mutant/YCSB")
