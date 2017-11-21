@@ -25,6 +25,9 @@ sys.path.insert(0, "%s" % os.path.dirname(__file__))
 import Ec2InitUtil
 
 
+_inst_type = None
+
+
 # This is run under the user 'ubuntu'.
 def main(argv):
   try:
@@ -33,6 +36,9 @@ def main(argv):
 
     Ec2InitUtil.SetParams(argv[1])
     Ec2InitUtil.SetEc2Tags(argv[2])
+
+    global _inst_type
+    _inst_type = Util.RunSubp("curl -s http://169.254.169.254/latest/meta-data/instance-type", print_cmd = False, print_output = False)
 
     if not AlreadyInitialized():
       SetHostname()
@@ -45,6 +51,7 @@ def main(argv):
         UnzipQuizupData()
     else:
       Cons.P("Already initialized. Skipping initialization ...")
+
     RunRocksDBQuizup()
     RunYcsb()
 
@@ -92,21 +99,20 @@ def SetHostname():
 
 def PrepareBlockDevs():
   with Cons.MT("Preparing block storage devices ..."):
-    # Make sure we are using the known machine types
-    inst_type = Util.RunSubp("curl -s http://169.254.169.254/latest/meta-data/instance-type", print_cmd = False, print_output = False)
 
     # {dev_name: directory_name}
     #   ext4 label is the same as the directory_name
     blk_devs = {}
 
+    # Make sure we are using the known machine types
     # All c3 types have 2 SSDs
-    if inst_type.startswith("c3."):
+    if _inst_type.startswith("c3."):
       blk_devs["xvdb"] = "local-ssd0"
       blk_devs["xvdc"] = "local-ssd1"
-    elif inst_type in ["r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "i2.xlarge"]:
+    elif _inst_type in ["r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "i2.xlarge"]:
       blk_devs["xvdc"] = "local-ssd0"
     else:
-      raise RuntimeError("Unexpected instance type %s" % inst_type)
+      raise RuntimeError("Unexpected instance type %s" % _inst_type)
 
     if os.path.exists("/dev/xvdd"):
       blk_devs["xvdd"] = "ebs-gp2"
@@ -117,7 +123,7 @@ def PrepareBlockDevs():
 
     # Init local SSDs
     # - https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/disk-performance.html
-    if inst_type.startswith("c3."):
+    if _inst_type.startswith("c3."):
       Util.RunSubp("sudo umount /dev/xvdb || true")
       Util.RunSubp("sudo umount /dev/xvdc || true")
 
@@ -298,7 +304,12 @@ def _CloneAndBuildRocksDb():
         , measure_time=True)
 
     # Create data directory
-    dn = "/mnt/local-ssd1/rocksdb-data"
+    dn = None
+    if _inst_type.startswith("c3."):
+      dn = "/mnt/local-ssd1/rocksdb-data"
+    elif _inst_type in ["r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "i2.xlarge"]:
+      dn = "/mnt/local-ssd0/rocksdb-data"
+
     Util.RunSubp("sudo mkdir -p %s && sudo chown ubuntu %s" % (dn, dn))
     Util.RunSubp("rm -rf ~/work/rocksdb-data")
     Util.RunSubp("ln -s %s ~/work/rocksdb-data" % dn)
