@@ -44,6 +44,117 @@ def main(argv):
   globals()[job]()
 
 
+def Job_Rocksdb_Ycsb_D_EbsSt1():
+  params = {
+      "region": "us-east-1"
+      , "inst_type": "r3.2xlarge"
+      , "spot_req_max_price": 1.0
+      , "init_script": "mutant-rocksdb"
+      , "ami_name": "mutant-rocksdb"
+      #, "block_storage_devs": []
+      , "block_storage_devs": [{"VolumeType": "st1", "VolumeSize": 3000, "DeviceName": "e"}]
+      , "ec2_tag_Name": inspect.currentframe().f_code.co_name[4:]
+      #, "erase_local_ssd": "true"
+      , "unzip_quizup_data": "false"
+      , "run_cassandra_server": "false"
+      # For now, it doesn't do much other than checking out the code and building.
+      , "rocksdb": {}
+      , "ycsb-runs": {}
+      , "rocksdb-quizup-runs": []
+      , "terminate_inst_when_done": "true"
+      }
+
+  workload_type = "d"
+
+  ycsb_runs = {
+    "exp_desc": inspect.currentframe().f_code.co_name[4:]
+    , "workload_type": workload_type
+    , "db_path": "/mnt/ebs-st1/rocksdb-data/ycsb"
+    , "db_stg_dev_paths": [
+        "/mnt/ebs-st1/rocksdb-data/ycsb/t0"
+        ]
+    , "runs": []
+    }
+
+  # Figure out the max throughput
+  if False:
+    ycsb_runs["runs"].append({
+      "load": {
+        #"use_preloaded_db": ""
+        # This saves time. 1m 35sec instead of like 5m + pending SSTable compaction time, which can take like 5 mins.
+        "use_preloaded_db": "ycsb/%s-ebsst1" % workload_type
+        , "ycsb_params": " -p recordcount=10000000"
+        # 10 M records. 1 K each. Expect 10 GB of data.
+        }
+
+      # Catch up with pending compactions
+      #, "run": {
+      #  "ycsb_params": " -p recordcount=10000000 -p operationcount=20000 -p readproportion=1.0 -p insertproportion=0.0 -target 50"
+      #  }
+
+      # Measure max throughput. It's super slow in the beginning. Need to wait until the file system cache is full.
+      #   TODO: Check dstat and figure out the range to get the experiment results.
+      #     Check when the cache size become stabilized.
+      #     You might have to redo some of the local SSD experiments too.
+      #     With the full speed (with no target iops specified), it took 1000 sec for cache to fill up. 2.3 M operations.
+      #       Okay. Now you can do the math. Some of them definitely needs to be redone.
+      #     Max 3600 ops / sec
+      , "run": {
+        "evict_cached_data": "true"
+        , "memory_limit_in_mb": 5.0 * 1024
+        , "ycsb_params": " -p recordcount=10000000 -p operationcount=15000000 -p readproportion=0.95 -p insertproportion=0.05"
+        }
+
+      # Mutant doesn't trigger any of these by default: it behaves like unmodified RocksDB.
+      , "mutant_options": {
+        "monitor_temp": "false"
+        , "migrate_sstables": "false"
+        # TODO: should be removed
+        , "sst_ott": 0
+        , "cache_filter_index_at_all_levels": "false"
+        , "db_stg_dev_paths": ycsb_runs["db_stg_dev_paths"]
+        }
+      })
+    params["ycsb-runs"] = dict(ycsb_runs)
+    LaunchJob(params)
+    return
+
+  max_target_iops = 4000
+  op_cnt0 = 2300000
+  op_cnt1 = 2300000
+
+  for target_iops in range(400, 4000 + 400, 400):
+    op_cnt = op_cnt0 + op_cnt1 * target_iops / max_target_iops
+    ycsb_runs["runs"] = []
+    ycsb_runs["runs"].append({
+      "load": {
+        #"use_preloaded_db": ""
+        # This saves time. 1m 35sec instead of like 5m + pending SSTable compaction time, which can take like 5 mins.
+        "use_preloaded_db": "ycsb/%s-ebsst1" % workload_type
+        , "ycsb_params": " -p recordcount=10000000"
+        # 10 M records. 1 K each. Expect 10 GB of data.
+        }
+
+      , "run": {
+        "evict_cached_data": "true"
+        , "memory_limit_in_mb": 5.0 * 1024
+        , "ycsb_params": " -p recordcount=10000000 -p operationcount=%d -p readproportion=0.95 -p insertproportion=0.05 -target %d" % (op_cnt, target_iops)
+        }
+
+      # Mutant doesn't trigger any of these by default: it behaves like unmodified RocksDB.
+      , "mutant_options": {
+        "monitor_temp": "false"
+        , "migrate_sstables": "false"
+        # TODO: should be removed
+        , "sst_ott": 0
+        , "cache_filter_index_at_all_levels": "false"
+        , "db_stg_dev_paths": ycsb_runs["db_stg_dev_paths"]
+        }
+      })
+    params["ycsb-runs"] = dict(ycsb_runs)
+    LaunchJob(params)
+
+
 def Job_Rocksdb_Ycsb_D():
   params = {
       "region": "us-east-1"
@@ -61,11 +172,10 @@ def Job_Rocksdb_Ycsb_D():
       , "rocksdb": {}
       , "ycsb-runs": {}
       , "rocksdb-quizup-runs": []
-      , "terminate_inst_when_done": "false"
+      , "terminate_inst_when_done": "true"
       }
 
   workload_type = "d"
-  #slow_stg_dev = "ebs-st1"
 
   ycsb_runs = {
     "exp_desc": inspect.currentframe().f_code.co_name[4:]
@@ -73,38 +183,63 @@ def Job_Rocksdb_Ycsb_D():
     , "db_path": "/mnt/local-ssd0/rocksdb-data/ycsb"
     , "db_stg_dev_paths": [
         "/mnt/local-ssd0/rocksdb-data/ycsb/t0"
-        #, "/mnt/%s/rocksdb-data-t1" % slow_stg_dev
         ]
     , "runs": []
     }
 
-  op_cnt0 = 15000000
-  max_target_iops = 110000
-
-  for target_iops in range(10000, 120000, 10000):
-    op_cnt = op_cnt0 * target_iops / max_target_iops
+  # Figure out the max throughput
+  if False:
     ycsb_runs["runs"].append({
       "load": {
         #"use_preloaded_db": ""
-        # This saves time. 1m 35sec instead of like 5m + pending SSTable compaction time, which can take like 10 mins.
+        # This saves time. 1m 35sec instead of like 5m + pending SSTable compaction time, which can take like 5 mins.
         "use_preloaded_db": "ycsb/%s" % workload_type
-        #, "ycsb_params": " -p recordcount=10000000 -target 10000"
         , "ycsb_params": " -p recordcount=10000000"
         # 10 M records. 1 K each. Expect 10 GB of data.
         }
 
-      # Catch up pending compactions
+      # Catch up with pending compactions
       #, "run": {
       #  "ycsb_params": " -p recordcount=10000000 -p operationcount=10000 -p readproportion=1.0 -p insertproportion=0.0 -target 50"
       #  }
 
-      # Max throughput: 102745.35590991288
-      #, "run": {
-      #  "evict_cached_data": "true"
-      #  , "memory_limit_in_mb": 5.0 * 1024
-      #  , "ycsb_params": " -p recordcount=10000000 -p operationcount=%d -p readproportion=0.95 -p insertproportion=0.05" % (op_cnt0)
-      #  #, "ycsb_params": " -p recordcount=10000000 -p operationcount=%d -p readproportion=0.95 -p insertproportion=0.05 -target %d" % (op_cnt0, target_iops)
-      #  }
+      # Measure max throughput: 102745.35590991288
+      , "run": {
+        "evict_cached_data": "true"
+        , "memory_limit_in_mb": 5.0 * 1024
+        , "ycsb_params": " -p recordcount=10000000 -p operationcount=15000000 -p readproportion=0.95 -p insertproportion=0.05"
+        }
+
+      # Mutant doesn't trigger any of these by default: it behaves like unmodified RocksDB.
+      , "mutant_options": {
+        "monitor_temp": "false"
+        , "migrate_sstables": "false"
+        # TODO: should be removed
+        , "sst_ott": 0
+        , "cache_filter_index_at_all_levels": "false"
+        , "db_stg_dev_paths": ycsb_runs["db_stg_dev_paths"]
+        }
+      })
+    params["ycsb-runs"] = dict(ycsb_runs)
+    LaunchJob(params)
+
+  op_cnt0 = 2300000
+  op_cnt1 = 2300000
+
+  max_target_iops = 110000
+
+  # Interesting 110000 stopped in the middle. Tried 3 times. 110001 worked.
+  #   120000 worked.
+  for target_iops in range(10000, 120000, 10000):
+    op_cnt = op_cnt0 + op_cnt1 * target_iops / max_target_iops
+    ycsb_runs["runs"].append({
+      "load": {
+        #"use_preloaded_db": ""
+        # This saves time. 1m 35sec instead of like 5m + pending SSTable compaction time, which can take like 5 mins.
+        "use_preloaded_db": "ycsb/%s" % workload_type
+        , "ycsb_params": " -p recordcount=10000000"
+        # 10 M records. 1 K each. Expect 10 GB of data.
+        }
 
       , "run": {
         "evict_cached_data": "true"
