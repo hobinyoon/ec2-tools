@@ -76,7 +76,7 @@ def Job_Rocksdb_Ycsb_D_EbsSt1():
     , "runs": []
     }
 
-  # Figure out the max throughput
+  # Measure the max throughput
   if False:
     ycsb_runs["runs"].append({
       "load": {
@@ -92,13 +92,9 @@ def Job_Rocksdb_Ycsb_D_EbsSt1():
       #  "ycsb_params": " -p recordcount=10000000 -p operationcount=20000 -p readproportion=1.0 -p insertproportion=0.0 -target 50"
       #  }
 
-      # Measure max throughput. It's super slow in the beginning. Need to wait until the file system cache is full.
-      #   TODO: Check dstat and figure out the range to get the experiment results.
-      #     Check when the cache size become stabilized.
-      #     You might have to redo some of the local SSD experiments too.
-      #     With the full speed (with no target iops specified), it took 1000 sec for cache to fill up. 2.3 M operations.
-      #       Okay. Now you can do the math. Some of them definitely needs to be redone.
-      #     Max 3600 ops / sec
+      # Measure max throughput. It's super slow in the beginning and stabilized when the filesystem cache is full.
+      #   Check the cache size from dstat log
+      #   Around 8000 IOPS. A lot higher than what YCSB reports since it includes the initial slow period.
       , "run": {
         "evict_cached_data": "true"
         , "memory_limit_in_mb": 5.0 * 1024
@@ -109,7 +105,6 @@ def Job_Rocksdb_Ycsb_D_EbsSt1():
       , "mutant_options": {
         "monitor_temp": "false"
         , "migrate_sstables": "false"
-        # TODO: should be removed
         , "sst_ott": 0
         , "cache_filter_index_at_all_levels": "false"
         , "db_stg_dev_paths": ycsb_runs["db_stg_dev_paths"]
@@ -121,7 +116,8 @@ def Job_Rocksdb_Ycsb_D_EbsSt1():
 
   op_cnt = 10000000
 
-  for target_iops in range(500, 7000 + 500, 500):
+  for target_iops in range(1000, 9000 + 1000, 1000):
+  #for target_iops in [8000, 9000]:
     ycsb_runs["runs"] = []
     ycsb_runs["runs"].append({
       "load": {
@@ -183,7 +179,7 @@ def Job_Rocksdb_Ycsb_D():
     , "runs": []
     }
 
-  # Figure out the max throughput
+  # Measure the max throughput
   if False:
     ycsb_runs["runs"].append({
       "load": {
@@ -199,7 +195,7 @@ def Job_Rocksdb_Ycsb_D():
       #  "ycsb_params": " -p recordcount=10000000 -p operationcount=10000 -p readproportion=1.0 -p insertproportion=0.0 -target 50"
       #  }
 
-      # Measure max throughput: 102745.35590991288
+      # Measure max throughput: 130000
       , "run": {
         "evict_cached_data": "true"
         , "memory_limit_in_mb": 5.0 * 1024
@@ -217,12 +213,13 @@ def Job_Rocksdb_Ycsb_D():
       })
     params["ycsb-runs"] = dict(ycsb_runs)
     LaunchJob(params)
+    return
 
   op_cnt = 10000000
 
   # Interesting 110000 stopped in the middle. Tried 3 times. 110001 worked.
   #   120000 worked.
-  for target_iops in range(10000, 160000, 10000):
+  for target_iops in range(10000, 130000 + 10000, 10000):
     ycsb_runs["runs"] = []
     ycsb_runs["runs"].append({
       "load": {
