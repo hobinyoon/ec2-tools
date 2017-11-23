@@ -119,10 +119,9 @@ def Job_Rocksdb_Ycsb_D_EbsSt1():
     LaunchJob(params)
     return
 
-  max_target_iops = 4000
-  op_cnt = 7000000
+  op_cnt = 10000000
 
-  for target_iops in range(400, 4800 + 400, 400):
+  for target_iops in range(500, 7000 + 500, 500):
     ycsb_runs["runs"] = []
     ycsb_runs["runs"].append({
       "load": {
@@ -223,7 +222,7 @@ def Job_Rocksdb_Ycsb_D():
 
   # Interesting 110000 stopped in the middle. Tried 3 times. 110001 worked.
   #   120000 worked.
-  for target_iops in range(10000, 140000, 10000):
+  for target_iops in range(10000, 160000, 10000):
     ycsb_runs["runs"] = []
     ycsb_runs["runs"].append({
       "load": {
