@@ -120,11 +120,9 @@ def Job_Rocksdb_Ycsb_D_EbsSt1():
     return
 
   max_target_iops = 4000
-  op_cnt0 = 2300000
-  op_cnt1 = 2300000
+  op_cnt = 7000000
 
-  for target_iops in range(400, 4000 + 400, 400):
-    op_cnt = op_cnt0 + op_cnt1 * target_iops / max_target_iops
+  for target_iops in range(400, 4800 + 400, 400):
     ycsb_runs["runs"] = []
     ycsb_runs["runs"].append({
       "load": {
@@ -145,7 +143,6 @@ def Job_Rocksdb_Ycsb_D_EbsSt1():
       , "mutant_options": {
         "monitor_temp": "false"
         , "migrate_sstables": "false"
-        # TODO: should be removed
         , "sst_ott": 0
         , "cache_filter_index_at_all_levels": "false"
         , "db_stg_dev_paths": ycsb_runs["db_stg_dev_paths"]
@@ -214,7 +211,6 @@ def Job_Rocksdb_Ycsb_D():
       , "mutant_options": {
         "monitor_temp": "false"
         , "migrate_sstables": "false"
-        # TODO: should be removed
         , "sst_ott": 0
         , "cache_filter_index_at_all_levels": "false"
         , "db_stg_dev_paths": ycsb_runs["db_stg_dev_paths"]
@@ -223,15 +219,12 @@ def Job_Rocksdb_Ycsb_D():
     params["ycsb-runs"] = dict(ycsb_runs)
     LaunchJob(params)
 
-  op_cnt0 = 2300000
-  op_cnt1 = 2300000
-
-  max_target_iops = 110000
+  op_cnt = 7000000
 
   # Interesting 110000 stopped in the middle. Tried 3 times. 110001 worked.
   #   120000 worked.
-  for target_iops in range(10000, 120000, 10000):
-    op_cnt = op_cnt0 + op_cnt1 * target_iops / max_target_iops
+  for target_iops in range(10000, 140000, 10000):
+    ycsb_runs["runs"] = []
     ycsb_runs["runs"].append({
       "load": {
         #"use_preloaded_db": ""
@@ -251,15 +244,13 @@ def Job_Rocksdb_Ycsb_D():
       , "mutant_options": {
         "monitor_temp": "false"
         , "migrate_sstables": "false"
-        # TODO: should be removed
         , "sst_ott": 0
         , "cache_filter_index_at_all_levels": "false"
         , "db_stg_dev_paths": ycsb_runs["db_stg_dev_paths"]
         }
       })
-
-  params["ycsb-runs"] = dict(ycsb_runs)
-  LaunchJob(params)
+    params["ycsb-runs"] = dict(ycsb_runs)
+    LaunchJob(params)
 
 
 def Job_StgDevPerf():
