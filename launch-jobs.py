@@ -219,7 +219,7 @@ def Job_Rocksdb_Ycsb_D():
     params["ycsb-runs"] = dict(ycsb_runs)
     LaunchJob(params)
 
-  op_cnt = 7000000
+  op_cnt = 10000000
 
   # Interesting 110000 stopped in the middle. Tried 3 times. 110001 worked.
   #   120000 worked.
