@@ -114,10 +114,11 @@ def Job_Rocksdb_Ycsb_D_EbsSt1():
     LaunchJob(params)
     return
 
-  op_cnt = 10000000
+  op_cnt = 15000000
+  # With 5% writes, 750,000 * 1K = 750 M. So like 11 or 12 new L0 SSTables are flushed, triggering some compactions.
 
-  for target_iops in range(1000, 9000 + 1000, 1000):
-  #for target_iops in [8000, 9000]:
+  #for target_iops in range(1000, 9000 + 1000, 1000):
+  for target_iops in range(500, 5000 + 500, 500):
     ycsb_runs["runs"] = []
     ycsb_runs["runs"].append({
       "load": {
@@ -215,7 +216,8 @@ def Job_Rocksdb_Ycsb_D():
     LaunchJob(params)
     return
 
-  op_cnt = 10000000
+  op_cnt = 15000000
+  # With 5% writes, 750,000 * 1K = 750 M. So like 11 or 12 new L0 SSTables are flushed, triggering some compactions.
 
   # Interesting 110000 stopped in the middle. Tried 3 times. 110001 worked.
   #   120000 worked.
