@@ -117,8 +117,15 @@ def Job_Rocksdb_Ycsb_D_EbsSt1():
   op_cnt = 15000000
   # With 5% writes, 750,000 * 1K = 750 M. So like 11 or 12 new L0 SSTables are flushed, triggering some compactions.
 
-  #for target_iops in range(1000, 9000 + 1000, 1000):
-  for target_iops in range(500, 5000 + 500, 500):
+  for target_iops in [
+      1000
+      , 1500
+      , 2000
+      , 2500
+      , 3000
+      , 3500
+      , 4000
+      , 4500]:
     ycsb_runs["runs"] = []
     ycsb_runs["runs"].append({
       "load": {
@@ -141,6 +148,8 @@ def Job_Rocksdb_Ycsb_D_EbsSt1():
         , "migrate_sstables": "false"
         , "sst_ott": 0
         , "cache_filter_index_at_all_levels": "false"
+        # Evaluate the metadata organization
+        #, "cache_filter_index_at_all_levels": "true"
         , "db_stg_dev_paths": ycsb_runs["db_stg_dev_paths"]
         }
       })
@@ -221,7 +230,24 @@ def Job_Rocksdb_Ycsb_D():
 
   # Interesting 110000 stopped in the middle. Tried 3 times. 110001 worked.
   #   120000 worked.
-  for target_iops in range(10000, 130000 + 10000, 10000):
+  #for target_iops in range(10000, 130000 + 10000, 10000):
+  #for target_iops in [5000]:
+  for target_iops in [
+          1000
+      ,   5000
+      ,  10000
+      ,  20000
+      ,  30000
+      ,  40000
+      ,  50000
+      ,  60000
+      ,  70000
+      ,  80000
+      ,  90000
+      , 100000
+      , 110000
+      , 120000
+      , 130000]:
     ycsb_runs["runs"] = []
     ycsb_runs["runs"].append({
       "load": {
@@ -244,6 +270,8 @@ def Job_Rocksdb_Ycsb_D():
         , "migrate_sstables": "false"
         , "sst_ott": 0
         , "cache_filter_index_at_all_levels": "false"
+        # Evaluating the metadata organization
+        #, "cache_filter_index_at_all_levels": "true"
         , "db_stg_dev_paths": ycsb_runs["db_stg_dev_paths"]
         }
       })
