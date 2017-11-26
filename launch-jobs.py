@@ -105,7 +105,6 @@ def Job_Rocksdb_Ycsb_D_EbsSt1():
       , "mutant_options": {
         "monitor_temp": "false"
         , "migrate_sstables": "false"
-        , "sst_ott": 0
         , "cache_filter_index_at_all_levels": "false"
         , "db_stg_dev_paths": ycsb_runs["db_stg_dev_paths"]
         }
@@ -146,7 +145,6 @@ def Job_Rocksdb_Ycsb_D_EbsSt1():
       , "mutant_options": {
         "monitor_temp": "false"
         , "migrate_sstables": "false"
-        , "sst_ott": 0
         , "cache_filter_index_at_all_levels": "false"
         # Evaluate the metadata organization
         #, "cache_filter_index_at_all_levels": "true"
@@ -216,7 +214,6 @@ def Job_Rocksdb_Ycsb_D():
       , "mutant_options": {
         "monitor_temp": "false"
         , "migrate_sstables": "false"
-        , "sst_ott": 0
         , "cache_filter_index_at_all_levels": "false"
         , "db_stg_dev_paths": ycsb_runs["db_stg_dev_paths"]
         }
@@ -228,10 +225,6 @@ def Job_Rocksdb_Ycsb_D():
   op_cnt = 15000000
   # With 5% writes, 750,000 * 1K = 750 M. So like 11 or 12 new L0 SSTables are flushed, triggering some compactions.
 
-  # Interesting 110000 stopped in the middle. Tried 3 times. 110001 worked.
-  #   120000 worked.
-  #for target_iops in range(10000, 130000 + 10000, 10000):
-  #for target_iops in [5000]:
   for target_iops in [
           1000
       ,   5000
@@ -273,6 +266,118 @@ def Job_Rocksdb_Ycsb_D():
         # Evaluating the metadata organization
         #, "cache_filter_index_at_all_levels": "true"
         , "db_stg_dev_paths": ycsb_runs["db_stg_dev_paths"]
+        }
+      })
+    params["ycsb-runs"] = dict(ycsb_runs)
+    LaunchJob(params)
+
+
+# Working on the cost SLO enforcement
+def Job_Mutant_Ycsb_D():
+  params = {
+      "region": "us-east-1"
+      , "inst_type": "r3.2xlarge"
+      , "spot_req_max_price": 1.0
+      , "init_script": "mutant-rocksdb"
+      , "ami_name": "mutant-rocksdb"
+      #, "block_storage_devs": []
+      , "block_storage_devs": [{"VolumeType": "st1", "VolumeSize": 3000, "DeviceName": "e"}]
+      , "ec2_tag_Name": inspect.currentframe().f_code.co_name[4:]
+      #, "erase_local_ssd": "true"
+      , "unzip_quizup_data": "false"
+      , "run_cassandra_server": "false"
+      # For now, it doesn't do much other than checking out the code and building.
+      , "rocksdb": {}
+      , "ycsb-runs": {}
+      , "rocksdb-quizup-runs": []
+      # TODO: change back
+      , "terminate_inst_when_done": "false"
+      }
+
+  workload_type = "d"
+
+  ycsb_runs = {
+    "exp_desc": inspect.currentframe().f_code.co_name[4:]
+    , "workload_type": workload_type
+    , "db_path": "/mnt/local-ssd0/rocksdb-data/ycsb"
+    , "db_stg_devs": [
+        ["/mnt/local-ssd0/rocksdb-data/ycsb/t0", 0.528]
+        , ["/mnt/ebs-st1/rocksdb-data-t1", 0.045]
+        ]
+    , "runs": []
+    }
+
+  # Measure the max throughput
+  if False:
+    ycsb_runs["runs"].append({
+      "load": {
+        #"use_preloaded_db": ""
+        # This saves time. 1m 35sec instead of like 5m + pending SSTable compaction time, which can take like 5 mins.
+        "use_preloaded_db": "ycsb/%s" % workload_type
+        , "ycsb_params": " -p recordcount=10000000"
+        # 10 M records. 1 K each. Expect 10 GB of data.
+        }
+
+      # Catch up with pending compactions
+      #, "run": {
+      #  "ycsb_params": " -p recordcount=10000000 -p operationcount=10000 -p readproportion=1.0 -p insertproportion=0.0 -target 50"
+      #  }
+
+      # Measure max throughput: 130000
+      , "run": {
+        "evict_cached_data": "true"
+        , "memory_limit_in_mb": 5.0 * 1024
+        , "ycsb_params": " -p recordcount=10000000 -p operationcount=15000000 -p readproportion=0.95 -p insertproportion=0.05"
+        }
+
+      # Mutant doesn't trigger any of these by default: it behaves like unmodified RocksDB.
+      , "mutant_options": {
+        "monitor_temp": "false"
+        , "migrate_sstables": "false"
+        , "cache_filter_index_at_all_levels": "false"
+        , "db_stg_devs": ycsb_runs["db_stg_devs"]
+        }
+      })
+    params["ycsb-runs"] = dict(ycsb_runs)
+    LaunchJob(params)
+    return
+
+  #op_cnt = 15000000
+  # With 5% writes, 750,000 * 1K = 750 M. So like 11 or 12 new L0 SSTables are flushed, triggering some compactions.
+  # For dev
+  op_cnt = 15000
+
+  # Wait. With Mutant, you can't load and run, cause when you run all SSTables will be hot at first.
+
+  for target_iops in [50000]:
+    ycsb_runs["runs"] = []
+    ycsb_runs["runs"].append({
+      "load": {
+        #"use_preloaded_db": ""
+        # This saves time. 1m 35sec instead of like 5m + pending SSTable compaction time, which can take like 5 mins.
+        "use_preloaded_db": "ycsb/%s" % workload_type
+        , "ycsb_params": " -p recordcount=10000000"
+        # 10 M records. 1 K each. Expect 10 GB of data.
+        }
+
+      , "run": {
+        "evict_cached_data": "true"
+        , "memory_limit_in_mb": 5.0 * 1024
+        , "ycsb_params": " -p recordcount=10000000 -p operationcount=%d -p readproportion=0.95 -p insertproportion=0.05 -target %d" % (op_cnt, target_iops)
+        }
+
+      # Mutant doesn't trigger any of these by default: it behaves like unmodified RocksDB.
+      , "mutant_options": {
+        # TODO: Let Mutant monitor existing SSTables too. This will take some time. I've tried this with no luck. Hope it's not the case this time.
+        "monitor_temp": "true"
+        , "migrate_sstables": "false"
+        # Storage cost SLO. [0.045, 0.528] $/GB/month
+        , "stg_cost_slo": 0.3
+        , "cache_filter_index_at_all_levels": "false"
+        # Evaluating the metadata organization
+        #, "cache_filter_index_at_all_levels": "true"
+
+        , "db_stg_devs": ycsb_runs["db_stg_devs"]
         }
       })
     params["ycsb-runs"] = dict(ycsb_runs)
