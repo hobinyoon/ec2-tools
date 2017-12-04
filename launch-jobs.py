@@ -189,33 +189,43 @@ def Job_Mutant_Ycsb_D():
     }
 
   # Measure the max throughput
-  if False:
+  #   TODO: With the cost SLO of 0.4
+  #   TODO: Get the other DB snapshots ready too: [0.045, 0.528]
+  if True:
     ycsb_runs["runs"].append({
       "load": {
         #"use_preloaded_db": None
         # This saves time. 1m 35sec instead of like 5m + pending SSTable compaction time, which can take like 5 mins.
-        "use_preloaded_db": "ycsb/%s" % workload_type
+        "use_preloaded_db": [
+          "ycsb/%s-0.4/ls" % workload_type,
+          "ycsb/%s-0.4/est1" % workload_type]
         , "ycsb_params": " -p recordcount=10000000"
         # 10 M records. 1 K each. Expect 10 GB of data.
         }
 
       # Catch up with pending compactions
-      , "run": {
-        "ycsb_params": " -p recordcount=10000000 -p operationcount=10000 -p readproportion=1.0 -p insertproportion=0.0 -target 50"
-        }
-
-      # Measure max throughput: 130000 with workload d.
       #, "run": {
-      #  "evict_cached_data": "true"
-      #  , "memory_limit_in_mb": 5.0 * 1024
-      #  , "ycsb_params": " -p recordcount=10000000 -p operationcount=15000000 -p readproportion=0.95 -p insertproportion=0.05"
+      #  "ycsb_params": " -p recordcount=10000000 -p operationcount=10000 -p readproportion=1.0 -p insertproportion=0.0 -target 50"
       #  }
+
+      # Measure max throughput: TODO
+      , "run": {
+        "evict_cached_data": "true"
+        , "memory_limit_in_mb": 5.0 * 1024
+        , "ycsb_params": " -p recordcount=10000000 -p operationcount=15000000 -p readproportion=0.95 -p insertproportion=0.05"
+        }
 
       # Mutant doesn't trigger any of these by default: it behaves like unmodified RocksDB.
       , "mutant_options": {
-        "monitor_temp": "false"
-        , "migrate_sstables": "false"
+        "monitor_temp": "true"
+        , "migrate_sstables": "true"
+        # Storage cost SLO. [0.045, 0.528] $/GB/month
+        , "stg_cost_slo": 0.4
+        # Hysteresis range. 0.1 of the SSTables near the sst_ott don't get migrated.
+        , "stg_cost_slo_epsilon": 0.05
         , "cache_filter_index_at_all_levels": "false"
+        # Evaluating the metadata organization
+        #, "cache_filter_index_at_all_levels": "true"
         , "db_stg_devs": ycsb_runs["db_stg_devs"]
         }
       })
@@ -247,7 +257,6 @@ def Job_Mutant_Ycsb_D():
         , "ycsb_params": " -p recordcount=10000000 -p operationcount=%d -p readproportion=0.95 -p insertproportion=0.05 -target %d" % (op_cnt, target_iops)
         }
 
-      # Mutant doesn't trigger any of these by default: it behaves like unmodified RocksDB.
       , "mutant_options": {
         "monitor_temp": "true"
         , "migrate_sstables": "true"
