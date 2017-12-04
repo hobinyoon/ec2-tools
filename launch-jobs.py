@@ -256,6 +256,8 @@ def Job_Mutant_Ycsb_D_1():
   op_cnt = 15000000
   # With 5% writes, 750,000 * 1K = 750 M. So like 11 or 12 new L0 SSTables are flushed, triggering some compactions.
 
+  cost_slo_epsilon=0.1
+
   for target_iops in target_iopses:
     ycsb_runs["runs"] = []
     ycsb_runs["runs"].append({
@@ -281,7 +283,7 @@ def Job_Mutant_Ycsb_D_1():
         # Storage cost SLO. [0.045, 0.528] $/GB/month
         , "stg_cost_slo": float(cost_slo)
         # Hysteresis range. 0.1 of the SSTables near the sst_ott don't get migrated.
-        , "stg_cost_slo_epsilon": 0.1
+        , "stg_cost_slo_epsilon": cost_slo_epsilon
         , "cache_filter_index_at_all_levels": "false"
         # Evaluating the metadata organization
         #, "cache_filter_index_at_all_levels": "true"
