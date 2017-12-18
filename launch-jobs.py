@@ -61,8 +61,7 @@ def Job_Mutant_Ycsb_B():
       , "rocksdb": {}
       , "ycsb-runs": {}
       , "rocksdb-quizup-runs": []
-      # TODO: change back
-      , "terminate_inst_when_done": "false"
+      , "terminate_inst_when_done": "true"
       }
 
   workload_type = "b"
@@ -154,8 +153,7 @@ def Job_Mutant_Ycsb_B():
     LaunchJob(params)
 
 
-# TODO: restart from launching 0.1
-def Job_Mutant_Ycsb_D_1():
+def Job_Mutant_Ycsb_D():
   params = {
       "region": "us-east-1"
       , "inst_type": "r3.2xlarge"
@@ -172,7 +170,6 @@ def Job_Mutant_Ycsb_D_1():
       , "rocksdb": {}
       , "ycsb-runs": {}
       , "rocksdb-quizup-runs": []
-      # TODO
       , "terminate_inst_when_done": "true"
       }
 
@@ -190,7 +187,9 @@ def Job_Mutant_Ycsb_D_1():
     }
 
   cost_slo = "0.1"
-  target_iopses = [1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000]
+  #target_iopses = [1000, 1500, 2000, 2500, 3000, 3100, 3200, 3300, 3400, 3500]
+  target_iopses = [1000, 1500, 2000, 2500, 3000, 3100, 3200, 3300, 3400, 3500]
+
   #cost_slo = "0.2"
   #target_iopses = [1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000]
   #cost_slo = "0.3"
@@ -321,8 +320,8 @@ def Job_Rocksdb_Ycsb_D_EbsSt1():
     "exp_desc": inspect.currentframe().f_code.co_name[4:]
     , "workload_type": workload_type
     , "db_path": "/mnt/ebs-st1/rocksdb-data/ycsb"
-    , "db_stg_dev_paths": [
-        "/mnt/ebs-st1/rocksdb-data/ycsb/t0"
+    , "db_stg_devs": [
+        ["/mnt/ebs-st1/rocksdb-data/ycsb/t0", 0.045]
         ]
     , "runs": []
     }
@@ -331,9 +330,9 @@ def Job_Rocksdb_Ycsb_D_EbsSt1():
   if False:
     ycsb_runs["runs"].append({
       "load": {
-        #"use_preloaded_db": ""
+        #"use_preloaded_db": None
         # This saves time. 1m 35sec instead of like 5m + pending SSTable compaction time, which can take like 5 mins.
-        "use_preloaded_db": "ycsb/%s-ebsst1" % workload_type
+        "use_preloaded_db": ["ycsb/%s-ebsst1" % workload_type]
         , "ycsb_params": " -p recordcount=10000000"
         # 10 M records. 1 K each. Expect 10 GB of data.
         }
@@ -364,24 +363,21 @@ def Job_Rocksdb_Ycsb_D_EbsSt1():
     LaunchJob(params)
     return
 
+  #target_iopses = [1000, 1500, 2000, 2500, 3000, 3100, 3200, 3300, 3400, 3500]
+  #target_iopses = [1500, 2000, 2500, 3000, 3100, 3200, 3300, 3400, 3500]
+  # TODO: Restart from these
+  target_iopses = [3300, 3400, 3500]
+
   op_cnt = 15000000
   # With 5% writes, 750,000 * 1K = 750 M. So like 11 or 12 new L0 SSTables are flushed, triggering some compactions.
 
-  for target_iops in [
-      1000
-      , 1500
-      , 2000
-      , 2500
-      , 3000
-      , 3500
-      , 4000
-      , 4500]:
+  for target_iops in target_iopses:
     ycsb_runs["runs"] = []
     ycsb_runs["runs"].append({
       "load": {
-        #"use_preloaded_db": ""
+        #"use_preloaded_db": None
         # This saves time. 1m 35sec instead of like 5m + pending SSTable compaction time, which can take like 5 mins.
-        "use_preloaded_db": "ycsb/%s-ebsst1" % workload_type
+        "use_preloaded_db": ["ycsb/%s-ebsst1" % workload_type]
         , "ycsb_params": " -p recordcount=10000000"
         # 10 M records. 1 K each. Expect 10 GB of data.
         }
@@ -399,7 +395,7 @@ def Job_Rocksdb_Ycsb_D_EbsSt1():
         , "cache_filter_index_at_all_levels": "false"
         # Evaluate the metadata organization
         #, "cache_filter_index_at_all_levels": "true"
-        , "db_stg_dev_paths": ycsb_runs["db_stg_dev_paths"]
+        , "db_stg_devs": ycsb_runs["db_stg_devs"]
         }
       })
     params["ycsb-runs"] = dict(ycsb_runs)
