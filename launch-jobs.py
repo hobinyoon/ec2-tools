@@ -188,7 +188,8 @@ def Job_Mutant_Ycsb_D():
 
   cost_slo = "0.1"
   #target_iopses = [1000, 1500, 2000, 2500, 3000, 3100, 3200, 3300, 3400, 3500]
-  target_iopses = [1000, 1500, 2000, 2500, 3000, 3100, 3200, 3300, 3400, 3500]
+  # Trying to see when the system saturates
+  target_iopses = [3600, 3700, 3800, 3900, 4000, 5000, 6000, 7000, 8000]
 
   #cost_slo = "0.2"
   #target_iopses = [1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000]
@@ -252,8 +253,10 @@ def Job_Mutant_Ycsb_D():
     LaunchJob(params)
     return
 
-  op_cnt = 15000000
+  #op_cnt = 15000000
   # With 5% writes, 750,000 * 1K = 750 M. So like 11 or 12 new L0 SSTables are flushed, triggering some compactions.
+
+  op_cnt = 30000000
 
   cost_slo_epsilon=0.1
 
@@ -363,13 +366,13 @@ def Job_Rocksdb_Ycsb_D_EbsSt1():
     LaunchJob(params)
     return
 
-  #target_iopses = [1000, 1500, 2000, 2500, 3000, 3100, 3200, 3300, 3400, 3500]
-  #target_iopses = [1500, 2000, 2500, 3000, 3100, 3200, 3300, 3400, 3500]
-  # TODO: Restart from these
-  target_iopses = [3300, 3400, 3500]
-
   op_cnt = 15000000
   # With 5% writes, 750,000 * 1K = 750 M. So like 11 or 12 new L0 SSTables are flushed, triggering some compactions.
+
+  #target_iopses = [1000, 1500, 2000, 2500, 3000, 3100, 3200, 3300, 3400, 3500]
+  #target_iopses = [1500, 2000, 2500, 3000, 3100, 3200, 3300, 3400, 3500]
+  target_iopses = [3300, 3400, 3500, 3600, 3700, 3800, 3900, 4000]
+  op_cnt = 30000000
 
   for target_iops in target_iopses:
     ycsb_runs["runs"] = []
