@@ -186,19 +186,41 @@ def Job_Mutant_Ycsb_D():
     , "runs": []
     }
 
-  cost_slo = "0.1"
+  #op_cnt = 15000000
+  # With 5% writes, 750,000 * 1K = 750 M. So like 11 or 12 new L0 SSTables are flushed, triggering some compactions.
+
+  #cost_slo = "0.1"
   #target_iopses = [1000, 1500, 2000, 2500, 3000, 3100, 3200, 3300, 3400, 3500]
   # Trying to see when the system saturates
-  target_iopses = [3600, 3700, 3800, 3900, 4000, 5000, 6000, 7000, 8000]
+  #target_iopses = [3600, 3700, 3800, 3900, 4000, 5000]
+  #target_iopses = [4100, 4200, 4300, 4400]
+  #target_iopses = [4500, 4600]
+  # Saturated from 4700
 
   #cost_slo = "0.2"
   #target_iopses = [1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000]
-  #cost_slo = "0.3"
-  #target_iopses = [1000, 2000, 3000, 4000, 5000, 6000]
+  #target_iopses = [6000, 7000, 8000, 9000]
+  # Saturated from 10000
+
+  cost_slo = "0.3"
+  opcnt_tioses = {
+      #  15000000: [1000, 2000, 3000]
+      #, 30000000: [4000, 5000, 6000]
+      40000000: [7000, 8000, 9000, 10000, 11000]
+      }
+
   #cost_slo = "0.4"
-  #target_iopses = [1000, 5000, 10000, 15000, 20000, 25000]
+  #opcnt_tioses = {
+  #      15000000: [1000]
+  #    , 40000000: [5000, 10000, 17000]
+  #    }
+  # Saturated from 18000
+
   #cost_slo = "0.5"
   #target_iopses = [1000, 5000, 10000, 15000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]
+  #target_iopses = [60000]
+  #target_iopses = [62000, 64000, 66000, 68000]
+  # Saturated from 70000
 
   # Measure the max throughput
   #   With the cost SLO of 0.4: 23 K. Should try up to 25 K
@@ -253,15 +275,128 @@ def Job_Mutant_Ycsb_D():
     LaunchJob(params)
     return
 
+  cost_slo_epsilon=0.1
+
+  for op_cnt, v in sorted(opcnt_tioses.iteritems()):
+    for target_iops in v:
+      ycsb_runs["runs"] = []
+      ycsb_runs["runs"].append({
+        "load": {
+          #"use_preloaded_db": None
+          # This saves time. 1m 35sec instead of like 5m + pending SSTable compaction time, which can take like 5 mins.
+          "use_preloaded_db": [
+            "ycsb/%s-%s/ls" % (workload_type, cost_slo),
+            "ycsb/%s-%s/est1" % (workload_type, cost_slo)]
+          , "ycsb_params": " -p recordcount=10000000"
+          # 10 M records. 1 K each. Expect 10 GB of data.
+          }
+
+        , "run": {
+          "evict_cached_data": "true"
+          , "memory_limit_in_mb": 5.0 * 1024
+          , "ycsb_params": " -p recordcount=10000000 -p operationcount=%d -p readproportion=0.95 -p insertproportion=0.05 -target %d" % (op_cnt, target_iops)
+          }
+
+        , "mutant_options": {
+          "monitor_temp": "true"
+          , "migrate_sstables": "true"
+          # Storage cost SLO. [0.045, 0.528] $/GB/month
+          , "stg_cost_slo": float(cost_slo)
+          # Hysteresis range. 0.1 of the SSTables near the sst_ott don't get migrated.
+          , "stg_cost_slo_epsilon": cost_slo_epsilon
+          , "cache_filter_index_at_all_levels": "false"
+          # Evaluating the metadata organization
+          #, "cache_filter_index_at_all_levels": "true"
+
+          , "db_stg_devs": ycsb_runs["db_stg_devs"]
+          }
+        })
+      params["ycsb-runs"] = dict(ycsb_runs)
+      LaunchJob(params)
+
+
+def Job_Mutant_MetaDataOrg_Ycsb_D():
+  params = {
+      "region": "us-east-1"
+      , "inst_type": "r3.2xlarge"
+      , "spot_req_max_price": 1.0
+      , "init_script": "mutant-rocksdb"
+      , "ami_name": "mutant-rocksdb"
+      #, "block_storage_devs": []
+      , "block_storage_devs": [{"VolumeType": "st1", "VolumeSize": 3000, "DeviceName": "e"}]
+      , "ec2_tag_Name": inspect.currentframe().f_code.co_name[4:]
+      #, "erase_local_ssd": "true"
+      , "unzip_quizup_data": "false"
+      , "run_cassandra_server": "false"
+      # For now, it doesn't do much other than checking out the code and building.
+      , "rocksdb": {}
+      , "ycsb-runs": {}
+      , "rocksdb-quizup-runs": []
+      , "terminate_inst_when_done": "true"
+      }
+
+  workload_type = "d"
+
+  ycsb_runs = {
+    "exp_desc": inspect.currentframe().f_code.co_name[4:]
+    , "workload_type": workload_type
+    , "db_path": "/mnt/local-ssd0/rocksdb-data/ycsb"
+    , "db_stg_devs": [
+        ["/mnt/local-ssd0/rocksdb-data/ycsb/t0", 0.528]
+        , ["/mnt/ebs-st1/rocksdb-data-t1", 0.045]
+        ]
+    , "runs": []
+    }
+
   #op_cnt = 15000000
   # With 5% writes, 750,000 * 1K = 750 M. So like 11 or 12 new L0 SSTables are flushed, triggering some compactions.
 
-  op_cnt = 30000000
+  #cost_slo = "0.1"
+  # Without metadata caching, saturated from 4700
+  #opcnt_tioses = {
+  #      15000000: [1000, 2000]
+  #    , 30000000: [3500, 4000, 4500, 4600, 4700, 4800, 4900, 5000]
+  #    }
 
-  cost_slo_epsilon=0.1
+  #cost_slo = "0.2"
+  #opcnt_tioses = {
+  #      15000000: [1000, 2000]
+  #    , 30000000: [3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000]
+  #    }
+  # Without metadata caching, saturated from 10000
 
-  for target_iops in target_iopses:
-    ycsb_runs["runs"] = []
+  #cost_slo = "0.3"
+  #opcnt_tioses = {
+  #    #  15000000: [1000, 2000]
+  #    #, 30000000: [3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000]
+  #    30000000: [7000, 8000, 9000, 10000, 11000, 12000]
+  #    }
+  # Without metadata caching, saturated from 10000
+
+  cost_slo = "0.4"
+  opcnt_tioses = {
+      #  15000000: [1000]
+      #, 30000000: [5000, 10000]
+      #, 40000000: [20000, 30000]
+      # Restart from here!!
+      , 40000000: [40000]
+      }
+
+  #cost_slo = "0.5"
+  #target_iopses = [1000, 5000, 10000, 15000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]
+  #target_iopses = [60000]
+  #target_iopses = [62000, 64000, 66000, 68000]
+  # Saturated from 70000
+
+  # Measure the max throughput
+  #   With the cost SLO of 0.4: 23 K. Should try up to 25 K
+  #   Get the other DB snapshots ready too: [0.045, 0.528]
+  #     0.1 done
+  #     0.2 done. well. a lot of shuffling. let's just go. Do the same target IOPSes as 0.3
+  #     0.3 done
+  #     0.4 done
+  #     0.5 done
+  if False:
     ycsb_runs["runs"].append({
       "load": {
         #"use_preloaded_db": None
@@ -273,28 +408,74 @@ def Job_Mutant_Ycsb_D():
         # 10 M records. 1 K each. Expect 10 GB of data.
         }
 
+      # Catch up with pending compactions
       , "run": {
-        "evict_cached_data": "true"
-        , "memory_limit_in_mb": 5.0 * 1024
-        , "ycsb_params": " -p recordcount=10000000 -p operationcount=%d -p readproportion=0.95 -p insertproportion=0.05 -target %d" % (op_cnt, target_iops)
+        "ycsb_params": " -p recordcount=10000000 -p operationcount=200000 -p readproportion=1.0 -p insertproportion=0.0 -target 1000"
         }
 
+      # Measure max throughput
+      #, "run": {
+      #  "evict_cached_data": "true"
+      #  , "memory_limit_in_mb": 5.0 * 1024
+      #  # Need to specify the target. Without it EBS st1 saturates and migrations don't happen.
+      #  , "ycsb_params": " -p recordcount=10000000 -p operationcount=15000000 -p readproportion=0.95 -p insertproportion=0.05 "
+      #  }
+
+      # Mutant doesn't trigger any of these by default: it behaves like unmodified RocksDB.
       , "mutant_options": {
         "monitor_temp": "true"
         , "migrate_sstables": "true"
         # Storage cost SLO. [0.045, 0.528] $/GB/month
         , "stg_cost_slo": float(cost_slo)
-        # Hysteresis range. 0.1 of the SSTables near the sst_ott don't get migrated.
-        , "stg_cost_slo_epsilon": cost_slo_epsilon
+        # Hysteresis range.
+        #   It has to be 0.0 when catching up the pending copactions. Otherwise too wide movement with the target 50
+        #   It can be 0.1 when measuring the max throughput.
+        , "stg_cost_slo_epsilon": 0.0
         , "cache_filter_index_at_all_levels": "false"
         # Evaluating the metadata organization
         #, "cache_filter_index_at_all_levels": "true"
-
         , "db_stg_devs": ycsb_runs["db_stg_devs"]
         }
       })
     params["ycsb-runs"] = dict(ycsb_runs)
     LaunchJob(params)
+    return
+
+  cost_slo_epsilon=0.1
+
+  for op_cnt, v in sorted(opcnt_tioses.iteritems()):
+    for target_iops in v:
+      ycsb_runs["runs"] = []
+      ycsb_runs["runs"].append({
+        "load": {
+          #"use_preloaded_db": None
+          # This saves time. 1m 35sec instead of like 5m + pending SSTable compaction time, which can take like 5 mins.
+          "use_preloaded_db": [
+            "ycsb/%s-%s/ls" % (workload_type, cost_slo),
+            "ycsb/%s-%s/est1" % (workload_type, cost_slo)]
+          , "ycsb_params": " -p recordcount=10000000"
+          # 10 M records. 1 K each. Expect 10 GB of data.
+          }
+
+        , "run": {
+          "evict_cached_data": "true"
+          , "memory_limit_in_mb": 5.0 * 1024
+          , "ycsb_params": " -p recordcount=10000000 -p operationcount=%d -p readproportion=0.95 -p insertproportion=0.05 -target %d" % (op_cnt, target_iops)
+          }
+
+        , "mutant_options": {
+          "monitor_temp": "true"
+          , "migrate_sstables": "true"
+          # Storage cost SLO. [0.045, 0.528] $/GB/month
+          , "stg_cost_slo": float(cost_slo)
+          # Hysteresis range. 0.1 of the SSTables near the sst_ott don't get migrated.
+          , "stg_cost_slo_epsilon": cost_slo_epsilon
+          , "cache_filter_index_at_all_levels": "true"
+          , "db_stg_devs": ycsb_runs["db_stg_devs"]
+          }
+        })
+      params["ycsb-runs"] = dict(ycsb_runs)
+      LaunchJob(params)
 
 
 def Job_Rocksdb_Ycsb_D_EbsSt1():
@@ -371,7 +552,8 @@ def Job_Rocksdb_Ycsb_D_EbsSt1():
 
   #target_iopses = [1000, 1500, 2000, 2500, 3000, 3100, 3200, 3300, 3400, 3500]
   #target_iopses = [1500, 2000, 2500, 3000, 3100, 3200, 3300, 3400, 3500]
-  target_iopses = [3300, 3400, 3500, 3600, 3700, 3800, 3900, 4000]
+  #target_iopses = [3300, 3400, 3500, 3600, 3700, 3800, 3900, 4000]
+  target_iopses = [3400]
   op_cnt = 30000000
 
   for target_iops in target_iopses:
