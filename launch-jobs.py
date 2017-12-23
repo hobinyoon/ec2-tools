@@ -198,23 +198,28 @@ def Job_Mutant_Ycsb_D():
   # Saturated from 4700
 
   #cost_slo = "0.2"
-  #target_iopses = [1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000]
-  #target_iopses = [6000, 7000, 8000, 9000]
-  # Saturated from 10000
+  #opcnt_tioses = {
+  #    #  15000000: [1000, 1500, 2000]
+  #    #, 30000000: [3000, 4000, 5000, 6000, 6200, 6400, 6600, 6800]
+  #    }
+  # Saturated from 7000
 
-  cost_slo = "0.3"
-  opcnt_tioses = {
+  #cost_slo = "0.3"
+  #opcnt_tioses = {
       #  15000000: [1000, 2000, 3000]
       #, 30000000: [4000, 5000, 6000]
-      40000000: [7000, 8000, 9000, 10000, 11000]
-      }
+      #, 40000000: [7000, 8000, 9000, 10000, 11000]
+      #40000000: [9100]
+      #40000000: [9100, 9200, 9300, 9400, 9500, 9600, 9700, 9800, 9900]
+  #    }
 
   #cost_slo = "0.4"
   #opcnt_tioses = {
-  #      15000000: [1000]
-  #    , 40000000: [5000, 10000, 17000]
+      #  15000000: [1000]
+      #, 40000000: [5000, 10000, 17000]
+  #    40000000: [17200, 17400, 17600, 17800]
   #    }
-  # Saturated from 18000
+  #Saturated from 18000
 
   #cost_slo = "0.5"
   #target_iopses = [1000, 5000, 10000, 15000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]
@@ -305,9 +310,6 @@ def Job_Mutant_Ycsb_D():
           # Hysteresis range. 0.1 of the SSTables near the sst_ott don't get migrated.
           , "stg_cost_slo_epsilon": cost_slo_epsilon
           , "cache_filter_index_at_all_levels": "false"
-          # Evaluating the metadata organization
-          #, "cache_filter_index_at_all_levels": "true"
-
           , "db_stg_devs": ycsb_runs["db_stg_devs"]
           }
         })
@@ -352,9 +354,8 @@ def Job_Mutant_MetaDataOrg_Ycsb_D():
   # With 5% writes, 750,000 * 1K = 750 M. So like 11 or 12 new L0 SSTables are flushed, triggering some compactions.
 
   #cost_slo = "0.1"
-  # Without metadata caching, saturated from 4700
   #opcnt_tioses = {
-  #      15000000: [1000, 2000]
+  #      15000000: [1000, 1500, 2000, 2500, 3000]
   #    , 30000000: [3500, 4000, 4500, 4600, 4700, 4800, 4900, 5000]
   #    }
 
@@ -373,20 +374,21 @@ def Job_Mutant_MetaDataOrg_Ycsb_D():
   #    }
   # Without metadata caching, saturated from 10000
 
-  cost_slo = "0.4"
+  #cost_slo = "0.4"
+  #opcnt_tioses = {
+  #      15000000: [1000]
+  #    , 30000000: [5000, 10000]
+  #    , 40000000: [20000, 30000, 40000]
+  #    }
+
+  cost_slo = "0.5"
   opcnt_tioses = {
       #  15000000: [1000]
       #, 30000000: [5000, 10000]
-      #, 40000000: [20000, 30000]
-      # Restart from here!!
-      , 40000000: [40000]
+      #, 40000000: [20000, 30000, 40000, 50000, 60000, 70000]
+      #, 40000000: [72000, 74000, 76000, 78000, 80000, 85000, 90000]
+      40000000: [95000, 100000, 105000, 110000]
       }
-
-  #cost_slo = "0.5"
-  #target_iopses = [1000, 5000, 10000, 15000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000]
-  #target_iopses = [60000]
-  #target_iopses = [62000, 64000, 66000, 68000]
-  # Saturated from 70000
 
   # Measure the max throughput
   #   With the cost SLO of 0.4: 23 K. Should try up to 25 K
