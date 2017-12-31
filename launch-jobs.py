@@ -170,7 +170,7 @@ def Job_Mutant_Ycsb_D_MeasureOverhead():
       , "rocksdb": {}
       , "ycsb-runs": {}
       , "rocksdb-quizup-runs": []
-      , "terminate_inst_when_done": "false"
+      , "terminate_inst_when_done": "true"
       }
 
   workload_type = "d"
@@ -202,15 +202,19 @@ def Job_Mutant_Ycsb_D_MeasureOverhead():
     for target_iops in v:
       ycsb_runs["runs"] = []
       ycsb_runs["runs"].append({
-        # No load phase. We start from the beginning.
-        "run": {
+        "load": {
+          "use_preloaded_db": None
+          # 100. When you specify 10, YCSB doesn't stop.
+          , "ycsb_params": " -p recordcount=100"
+          }
+        , "run": {
           "evict_cached_data": "true"
           , "memory_limit_in_mb": 5.0 * 1024
           , "ycsb_params": " -p recordcount=10000000 -p operationcount=%d -p readproportion=0.95 -p insertproportion=0.05 -target %d" % (op_cnt, target_iops)
           }
 
         , "mutant_options": {
-          "monitor_temp": "true"
+          "monitor_temp": "false"
           , "calc_sst_placement": "false"
           , "migrate_sstables": "false"
           # Storage cost SLO. [0.045, 0.528] $/GB/month
