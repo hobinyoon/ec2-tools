@@ -242,7 +242,7 @@ def Job_Mutant_Ycsb_D_MeasureIoOverhead():
       , "rocksdb": {}
       , "ycsb-runs": {}
       , "rocksdb-quizup-runs": []
-      , "terminate_inst_when_done": "false"
+      , "terminate_inst_when_done": "true"
       }
 
   workload_type = "d"
