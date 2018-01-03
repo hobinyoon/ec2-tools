@@ -170,7 +170,7 @@ def Job_Mutant_Ycsb_D_MeasureCpuOverhead():
       , "rocksdb": {}
       , "ycsb-runs": {}
       , "rocksdb-quizup-runs": []
-      , "terminate_inst_when_done": "false"
+      , "terminate_inst_when_done": "true"
       }
 
   workload_type = "d"
@@ -188,11 +188,13 @@ def Job_Mutant_Ycsb_D_MeasureCpuOverhead():
 
   cost_slo = "0.5"
   opcnt_tioses = {
-      1000000000: [30000]
+      333333333: [10000]
       }
+  # 1000000000: [30000]
   # 1,000,000,000
-  # Expects
-  #   50 GB = 1 B (ops) * 0.05 (inserts) * 1KB (record size)
+  #   Expects  50 GB = 1 B (ops) * 0.05 (inserts) * 1KB (record size)
+  #   Total size was 172 GB
+  #   This saturated CPU as well. Go a lot slower and fewer number of records.
 
   cost_slo_epsilon=0.1
 
@@ -212,8 +214,8 @@ def Job_Mutant_Ycsb_D_MeasureCpuOverhead():
           }
 
         , "mutant_options": {
-          "monitor_temp": "true"
-          , "calc_sst_placement": "true"
+          "monitor_temp": "false"
+          , "calc_sst_placement": "false"
           , "migrate_sstables": "false"
           # Storage cost SLO. [0.045, 0.528] $/GB/month
           , "stg_cost_slo": float(cost_slo)
