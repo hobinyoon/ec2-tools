@@ -163,7 +163,6 @@ def Job_Mutant_Ycsb_D_MeasureCpuOverhead():
       #, "block_storage_devs": []
       , "block_storage_devs": [{"VolumeType": "st1", "VolumeSize": 3000, "DeviceName": "e"}]
       , "ec2_tag_Name": inspect.currentframe().f_code.co_name[4:]
-      #, "erase_local_ssd": "true"
       , "unzip_quizup_data": "false"
       , "run_cassandra_server": "false"
       # For now, it doesn't do much other than checking out the code and building.
@@ -190,6 +189,7 @@ def Job_Mutant_Ycsb_D_MeasureCpuOverhead():
   opcnt_tioses = {
       333333333: [10000]
       }
+
   # 1000000000: [30000]
   # 1,000,000,000
   #   Expects  50 GB = 1 B (ops) * 0.05 (inserts) * 1KB (record size)
@@ -214,8 +214,8 @@ def Job_Mutant_Ycsb_D_MeasureCpuOverhead():
           }
 
         , "mutant_options": {
-          "monitor_temp": "true"
-          , "calc_sst_placement": "true"
+          "monitor_temp": "false"
+          , "calc_sst_placement": "false"
           , "migrate_sstables": "false"
           # Storage cost SLO. [0.045, 0.528] $/GB/month
           , "stg_cost_slo": float(cost_slo)
@@ -296,6 +296,73 @@ def Job_Mutant_Ycsb_D_MeasureIoOverhead():
         })
       params["ycsb-runs"] = dict(ycsb_runs)
       LaunchJob(params)
+
+
+def Job_Mutant_Ycsb_D_MeasureIoOverheadByCostSloEpsilon():
+  params = {
+      "region": "us-east-1"
+      , "inst_type": "r3.2xlarge"
+      , "spot_req_max_price": 1.0
+      , "init_script": "mutant-rocksdb"
+      , "ami_name": "mutant-rocksdb"
+      , "block_storage_devs": []
+      , "ec2_tag_Name": inspect.currentframe().f_code.co_name[4:]
+      , "unzip_quizup_data": "false"
+      , "run_cassandra_server": "false"
+      , "rocksdb": {}
+      , "ycsb-runs": {}
+      , "rocksdb-quizup-runs": []
+      , "terminate_inst_when_done": "true"
+      }
+
+  workload_type = "d"
+
+  ycsb_runs = {
+    "exp_desc": inspect.currentframe().f_code.co_name[4:]
+    , "workload_type": workload_type
+    , "db_path": "/mnt/local-ssd0/rocksdb-data/ycsb"
+    , "db_stg_devs": [
+        ["/mnt/local-ssd0/rocksdb-data/ycsb/t0", 0.528]
+        , ["/mnt/local-ssd0/rocksdb-data-t1", 0.045]
+        ]
+    , "runs": []
+    }
+
+  cost_slo = "0.3"
+  opcnt_tioses = {
+      333333333: [10000]
+      }
+
+  for cost_slo_epsilon in range(0.0, 1.1, 0.1):
+    for op_cnt, v in sorted(opcnt_tioses.iteritems()):
+      for target_iops in v:
+        ycsb_runs["runs"] = []
+        ycsb_runs["runs"].append({
+          "load": {
+            "use_preloaded_db": None
+            # 100. When you specify 10, YCSB doesn't stop.
+            , "ycsb_params": " -p recordcount=100"
+            }
+          , "run": {
+            "evict_cached_data": "true"
+            , "memory_limit_in_mb": 5.0 * 1024
+            , "ycsb_params": " -p recordcount=100 -p operationcount=%d -p readproportion=0.95 -p insertproportion=0.05 -target %d" % (op_cnt, target_iops)
+            }
+
+          , "mutant_options": {
+            "monitor_temp": "true"
+            , "calc_sst_placement": "true"
+            , "migrate_sstables": "true"
+            # Storage cost SLO. [0.045, 0.528] $/GB/month
+            , "stg_cost_slo": float(cost_slo)
+            # Hysteresis range. 0.1 of the SSTables near the sst_ott don't get migrated.
+            , "stg_cost_slo_epsilon": cost_slo_epsilon
+            , "cache_filter_index_at_all_levels": "false"
+            , "db_stg_devs": ycsb_runs["db_stg_devs"]
+            }
+          })
+        params["ycsb-runs"] = dict(ycsb_runs)
+        LaunchJob(params)
 
 
 def Job_Mutant_Ycsb_D():
