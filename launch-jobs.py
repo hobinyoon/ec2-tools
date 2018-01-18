@@ -298,7 +298,7 @@ def Job_Mutant_Ycsb_D_MeasureIoOverhead():
       LaunchJob(params)
 
 
-def Job_Mutant_Ycsb_D_MeasureIoOverheadByCostSloEpsilon():
+def Job_Mutant_Ycsb_D_MeasureIoOverheadByCostSloEpsilons():
   params = {
       "region": "us-east-1"
       , "inst_type": "r3.2xlarge"
@@ -333,7 +333,8 @@ def Job_Mutant_Ycsb_D_MeasureIoOverheadByCostSloEpsilon():
       333333333: [10000]
       }
 
-  for cost_slo_epsilon in range(0.0, 1.1, 0.1):
+  for i in range(0, 11, 1):
+    cost_slo_epsilon = 0.1 * i
     for op_cnt, v in sorted(opcnt_tioses.iteritems()):
       for target_iops in v:
         ycsb_runs["runs"] = []
