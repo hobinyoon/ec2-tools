@@ -237,7 +237,7 @@ def Job_Mutant_Ycsb_D_MeasureIoOverhead():
       , "spot_req_max_price": 1.0
       , "init_script": "mutant-rocksdb"
       , "ami_name": "mutant-rocksdb"
-      , "block_storage_devs": [{"VolumeType": "st1", "VolumeSize": 3000, "DeviceName": "e"}]
+      , "block_storage_devs": []
       , "ec2_tag_Name": inspect.currentframe().f_code.co_name[4:]
       , "unzip_quizup_data": "false"
       , "run_cassandra_server": "false"
@@ -260,9 +260,11 @@ def Job_Mutant_Ycsb_D_MeasureIoOverhead():
     , "runs": []
     }
 
-  cost_slo = "0.5"
+  cost_slo = "0.3"
   opcnt_tioses = {
-      333333333: [10000]
+       333333333: [10000]
+      # Run faster to verify if it's working
+      #333333333: [100000]
       }
 
   cost_slo_epsilon=0.1
