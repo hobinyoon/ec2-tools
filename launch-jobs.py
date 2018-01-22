@@ -262,42 +262,44 @@ def Job_Mutant_Ycsb_D_MeasureIoOverhead():
 
   cost_slo = "0.3"
   opcnt_tioses = {
-       333333333: [10000]
+      333333333: [10000]
       # Run faster to verify if it's working
-      #333333333: [100000]
+      #333333333: [40000]
       }
 
-  cost_slo_epsilon=0.1
+  #cost_slo_epsilon=0.1
+  cses = [0.0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09
+      , 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+  for cost_slo_epsilon in cses:
+    for op_cnt, v in sorted(opcnt_tioses.iteritems()):
+      for target_iops in v:
+        ycsb_runs["runs"] = []
+        ycsb_runs["runs"].append({
+          "load": {
+            "use_preloaded_db": None
+            # 100. When you specify 10, YCSB doesn't stop.
+            , "ycsb_params": " -p recordcount=100"
+            }
+          , "run": {
+            "evict_cached_data": "true"
+            , "memory_limit_in_mb": 5.0 * 1024
+            , "ycsb_params": " -p recordcount=100 -p operationcount=%d -p readproportion=0.95 -p insertproportion=0.05 -target %d" % (op_cnt, target_iops)
+            }
 
-  for op_cnt, v in sorted(opcnt_tioses.iteritems()):
-    for target_iops in v:
-      ycsb_runs["runs"] = []
-      ycsb_runs["runs"].append({
-        "load": {
-          "use_preloaded_db": None
-          # 100. When you specify 10, YCSB doesn't stop.
-          , "ycsb_params": " -p recordcount=100"
-          }
-        , "run": {
-          "evict_cached_data": "true"
-          , "memory_limit_in_mb": 5.0 * 1024
-          , "ycsb_params": " -p recordcount=100 -p operationcount=%d -p readproportion=0.95 -p insertproportion=0.05 -target %d" % (op_cnt, target_iops)
-          }
-
-        , "mutant_options": {
-          "monitor_temp": "true"
-          , "calc_sst_placement": "true"
-          , "migrate_sstables": "true"
-          # Storage cost SLO. [0.045, 0.528] $/GB/month
-          , "stg_cost_slo": float(cost_slo)
-          # Hysteresis range. 0.1 of the SSTables near the sst_ott don't get migrated.
-          , "stg_cost_slo_epsilon": cost_slo_epsilon
-          , "cache_filter_index_at_all_levels": "false"
-          , "db_stg_devs": ycsb_runs["db_stg_devs"]
-          }
-        })
-      params["ycsb-runs"] = dict(ycsb_runs)
-      LaunchJob(params)
+          , "mutant_options": {
+            "monitor_temp": "true"
+            , "calc_sst_placement": "true"
+            , "migrate_sstables": "true"
+            # Storage cost SLO. [0.045, 0.528] $/GB/month
+            , "stg_cost_slo": float(cost_slo)
+            # Hysteresis range. 0.1 of the SSTables near the sst_ott don't get migrated.
+            , "stg_cost_slo_epsilon": cost_slo_epsilon
+            , "cache_filter_index_at_all_levels": "false"
+            , "db_stg_devs": ycsb_runs["db_stg_devs"]
+            }
+          })
+        params["ycsb-runs"] = dict(ycsb_runs)
+        LaunchJob(params)
 
 
 def Job_Mutant_Ycsb_D_MeasureIoOverheadByCostSloEpsilons():
