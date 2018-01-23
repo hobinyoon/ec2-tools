@@ -260,16 +260,16 @@ def Job_Mutant_Ycsb_D_MeasureIoOverhead():
     , "runs": []
     }
 
-  cost_slo = "0.3"
+  #cost_slo = "0.3"
+  # Signifies the baseline experiment
+  cost_slo = "0.333333333"
   opcnt_tioses = {
       333333333: [10000]
       # Run faster to verify if it's working
       #333333333: [40000]
       }
 
-  #cses = [0.1]
-  cses = [0.0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09
-      , 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+  cses = [0.1]
   for cost_slo_epsilon in cses:
     for op_cnt, v in sorted(opcnt_tioses.iteritems()):
       for target_iops in v:
@@ -289,7 +289,7 @@ def Job_Mutant_Ycsb_D_MeasureIoOverhead():
           , "mutant_options": {
             "monitor_temp": "true"
             , "calc_sst_placement": "true"
-            , "migrate_sstables": "true"
+            , "migrate_sstables": "false"
             # Storage cost SLO. [0.045, 0.528] $/GB/month
             , "stg_cost_slo": float(cost_slo)
             # Hysteresis range. 0.1 of the SSTables near the sst_ott don't get migrated.
@@ -337,8 +337,9 @@ def Job_Mutant_Ycsb_D_MeasureIoOverheadByCostSloEpsilons():
       333333333: [10000]
       }
 
-  for i in range(0, 11, 1):
-    cost_slo_epsilon = 0.1 * i
+  cses = [0.0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09
+      , 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+  for cost_slo_epsilon in cses:
     for op_cnt, v in sorted(opcnt_tioses.iteritems()):
       for target_iops in v:
         ycsb_runs["runs"] = []
