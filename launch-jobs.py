@@ -185,7 +185,7 @@ def Job_Mutant_Ycsb_D_MeasureCpuOverhead():
     , "runs": []
     }
 
-  cost_slo = "0.5"
+  cost_slo = "0.333333"
   opcnt_tioses = {
       333333333: [10000]
       }
@@ -214,8 +214,8 @@ def Job_Mutant_Ycsb_D_MeasureCpuOverhead():
           }
 
         , "mutant_options": {
-          "monitor_temp": "false"
-          , "calc_sst_placement": "false"
+          "monitor_temp": "true"
+          , "calc_sst_placement": "true"
           , "migrate_sstables": "false"
           # Storage cost SLO. [0.045, 0.528] $/GB/month
           , "stg_cost_slo": float(cost_slo)
