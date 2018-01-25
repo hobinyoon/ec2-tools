@@ -180,7 +180,7 @@ def Job_Mutant_Ycsb_D_MeasureCpuOverhead():
     , "db_path": "/mnt/local-ssd0/rocksdb-data/ycsb"
     , "db_stg_devs": [
         ["/mnt/local-ssd0/rocksdb-data/ycsb/t0", 0.528]
-        , ["/mnt/ebs-st1/rocksdb-data-t1", 0.045]
+        , ["/mnt/local-ssd0/rocksdb-data-t1", 0.045]
         ]
     , "runs": []
     }
