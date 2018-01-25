@@ -160,8 +160,8 @@ def Job_Mutant_Ycsb_D_MeasureCpuOverhead():
       , "spot_req_max_price": 1.0
       , "init_script": "mutant-rocksdb"
       , "ami_name": "mutant-rocksdb"
-      #, "block_storage_devs": []
-      , "block_storage_devs": [{"VolumeType": "st1", "VolumeSize": 3000, "DeviceName": "e"}]
+      , "block_storage_devs": []
+      #, "block_storage_devs": [{"VolumeType": "st1", "VolumeSize": 3000, "DeviceName": "e"}]
       , "ec2_tag_Name": inspect.currentframe().f_code.co_name[4:]
       , "unzip_quizup_data": "false"
       , "run_cassandra_server": "false"
