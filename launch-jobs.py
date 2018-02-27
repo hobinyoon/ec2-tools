@@ -59,7 +59,7 @@ def Job_Mutant_Seamless_Cost_Perf_Ycsb_D():
       , "rocksdb": {}
       , "ycsb-runs": {}
       , "rocksdb-quizup-runs": []
-      , "terminate_inst_when_done": "false"
+      , "terminate_inst_when_done": "true"
       }
 
   workload_type = "d"
@@ -77,47 +77,52 @@ def Job_Mutant_Seamless_Cost_Perf_Ycsb_D():
 
   cost_slo = "0.4"
 
-  cost_slo_epsilon = 0.06
-  target_iops = 4000
+  cost_slo_epsilon = 0.05
+
   # It takes about an hour to fill the filesystem cache with target_iops 1000.
   #   Let's go with 4000. It will take 15 mins. Ok. Not too bad.
+  target_iops_set = [1000, 2000, 3000, 4000]
 
-  # Run for 45 mins
-  op_cnt = target_iops * 45 * 60
+  cost_changes_set = [
+      "15 0.2, 30 0.3"
+      , "15 0.3, 30 0.35"]
 
-  ycsb_runs["runs"] = []
-  ycsb_runs["runs"].append({
-    "load": {
-      "use_preloaded_db": [
-        "ycsb/%s-%s/ls" % (workload_type, cost_slo),
-        "ycsb/%s-%s/est1" % (workload_type, cost_slo)]
-      , "ycsb_params": " -p recordcount=10000000"
-      # 10 M records. 1 K each. Expect 10 GB of data.
-      # 100. When you specify 10, YCSB doesn't stop.
-      , "ycsb_params": " -p recordcount=100"
-      }
-    , "run": {
-      "evict_cached_data": "true"
-      , "memory_limit_in_mb": 5.0 * 1024
-      , "ycsb_params": " -p recordcount=100 -p operationcount=%d -p readproportion=0.95 -p insertproportion=0.05 -target %d" % (op_cnt, target_iops)
-      }
+  for target_iops in target_iops_set:
+    # Run for 45 mins
+    op_cnt = target_iops * 45 * 60
 
-    , "mutant_options": {
-      "monitor_temp": "true"
-      , "calc_sst_placement": "true"
-      , "migrate_sstables": "true"
-      # Storage cost SLO. [0.045, 0.528] $/GB/month
-      , "stg_cost_slo": float(cost_slo)
-      # Hysteresis range. 0.1 of the SSTables near the sst_ott don't get migrated.
-      , "stg_cost_slo_epsilon": cost_slo_epsilon
-      , "cache_filter_index_at_all_levels": "false"
-      , "db_stg_devs": ycsb_runs["db_stg_devs"]
-      , "cost_changes": "15 0.2, 30 0.3"
-      # TODO: when they work fine, modify the numbers so you can see more dramatic change.
-      }
-    })
-  params["ycsb-runs"] = dict(ycsb_runs)
-  LaunchJob(params)
+    for cost_changes in cost_changes_set:
+      ycsb_runs["runs"] = []
+      ycsb_runs["runs"].append({
+        "load": {
+          "use_preloaded_db": [
+            "ycsb/%s-%s/ls" % (workload_type, cost_slo),
+            "ycsb/%s-%s/est1" % (workload_type, cost_slo)]
+          , "ycsb_params": " -p recordcount=10000000"
+          # 10 M records. 1 K each. Expect 10 GB of data.
+          # 100. When you specify 10, YCSB doesn't stop.
+          }
+        , "run": {
+          "evict_cached_data": "true"
+          , "memory_limit_in_mb": 5.0 * 1024
+          , "ycsb_params": " -p recordcount=10000000 -p operationcount=%d -p readproportion=0.95 -p insertproportion=0.05 -target %d" % (op_cnt, target_iops)
+          }
+
+        , "mutant_options": {
+          "monitor_temp": "true"
+          , "calc_sst_placement": "true"
+          , "migrate_sstables": "true"
+          # Storage cost SLO. [0.045, 0.528] $/GB/month
+          , "stg_cost_slo": float(cost_slo)
+          # Hysteresis range. 0.1 of the SSTables near the sst_ott don't get migrated.
+          , "stg_cost_slo_epsilon": cost_slo_epsilon
+          , "cache_filter_index_at_all_levels": "false"
+          , "db_stg_devs": ycsb_runs["db_stg_devs"]
+          , "cost_changes": cost_changes
+          }
+        })
+      params["ycsb-runs"] = dict(ycsb_runs)
+      LaunchJob(params)
 
 
 def Job_Mutant_Ycsb_B():
