@@ -81,15 +81,18 @@ def Job_Mutant_Seamless_Cost_Perf_Ycsb_D():
 
   # It takes about an hour to fill the filesystem cache with target_iops 1000.
   #   Let's go with 4000. It will take 15 mins. Ok. Not too bad.
-  target_iops_set = [1000, 2000, 3000, 4000]
+  target_iops_set = [4000, 3000, 2000, 1000]
 
   cost_changes_set = [
       "15 0.2, 30 0.3"
       , "15 0.3, 30 0.35"]
 
+  op_cnt = 4000 * 45 * 60
+
   for target_iops in target_iops_set:
     # Run for 45 mins
-    op_cnt = target_iops * 45 * 60
+    #   Operation count shouldn't change to fill up the file system cache. Hmm.
+    #op_cnt = target_iops * 45 * 60
 
     for cost_changes in cost_changes_set:
       ycsb_runs["runs"] = []
