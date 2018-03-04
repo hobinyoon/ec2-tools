@@ -44,6 +44,60 @@ def main(argv):
   globals()[job]()
 
 
+def Job_Mutant_QuizUp():
+  params = {
+      "region": "us-east-1"
+      , "inst_type": "r3.2xlarge"
+      , "spot_req_max_price": 1.0
+      , "init_script": "mutant-rocksdb"
+      , "ami_name": "mutant-rocksdb"
+      #, "block_storage_devs": []
+      , "block_storage_devs": [{"VolumeType": "st1", "VolumeSize": 3000, "DeviceName": "e"}]
+      , "ec2_tag_Name": inspect.currentframe().f_code.co_name[4:]
+      , "unzip_quizup_data": "true"
+      , "run_cassandra_server": "false"
+      , "rocksdb": {}
+      , "ycsb-runs": {}
+      , "rocksdb-quizup-runs": []
+      , "terminate_inst_when_done": "false"
+      }
+
+  qz_run = {
+      # Use the current function name since you always forget to set this
+      "exp_desc": inspect.currentframe().f_code.co_name[4:]
+
+      , "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
+      , "db_stg_devs": [
+          ["/mnt/local-ssd0/rocksdb-data/ycsb/t0", 0.528]
+          , ["/mnt/ebs-st1/rocksdb-data-t1", 0.045]
+          ]
+
+      , "init_db_to_90p_loaded": "false"
+      , "evict_cached_data": "true"
+
+      # SSTable metadata organization
+      , "cache_filter_index_at_all_levels": "false"
+
+      , "monitor_temp": "true"
+      , "migrate_sstables": "true"
+
+      # [0.0, 1.0]
+      , "workload_start_from": 0.0
+      , "workload_stop_at":    0.9
+
+      , "simulation_time_dur_in_sec": 600
+
+      , "memory_limit_in_mb": 5.0 * 1024
+
+      , "record_size": 5000
+
+      , "target_cost": 0.4
+      , "migration_resistance": 0.05
+      }
+  params["rocksdb-quizup-runs"] = [dict(qz_run)]
+  LaunchJob(params)
+
+
 def Job_Mutant_Seamless_Cost_Perf_Ycsb_D():
   params = {
       "region": "us-east-1"
