@@ -382,81 +382,67 @@ def RunRocksDBQuizup():
   for params in Ec2InitUtil.GetParam(["rocksdb-quizup-runs"]):
     with Cons.MT("Running RocksDB Quizup ..."):
       Cons.P(pprint.pformat(params))
+      params_encoded = base64.b64encode(zlib.compress(json.dumps(params)))
 
-      params1 = []
-
-      # Parameters for run.sh
-      params1.append("--job_id=%s" % Ec2InitUtil.GetJobId())
-      if "fast_dev_path" in params:
-        params1.append("--fast_dev_path=%s" % params["fast_dev_path"])
-      if "slow_dev_paths" in params:
-        slow_dev_paths = params["slow_dev_paths"]
-        for k, v in slow_dev_paths.iteritems():
-          params1.append("--slow_dev%s_path=%s" % (k[-1:], v))
-      if "db_path" in params:
-        params1.append("--db_path=%s" % params["db_path"])
-      if "init_db_to_90p_loaded" in params:
-        params1.append("--init_db_to_90p_loaded=%s" % params["init_db_to_90p_loaded"])
-      if "evict_cached_data" in params:
-        params1.append("--evict_cached_data=%s" % params["evict_cached_data"])
-      if "memory_limit_in_mb" in params:
-        params1.append("--memory_limit_in_mb=%s" % params["memory_limit_in_mb"])
-      params1.append("--upload_result_to_s3")
-
-      # Parameters for the quizup binary
-      if "exp_desc" in params:
-        params1.append("--exp_desc=%s" % base64.b64encode(params["exp_desc"]))
-
-      if "cache_filter_index_at_all_levels" in params:
-        params1.append("--cache_filter_index_at_all_levels=%s" % params["cache_filter_index_at_all_levels"])
-
-      if "record_size" in params:
-        params1.append("--record_size=%s" % params["record_size"])
-
-      if "monitor_temp" in params:
-        params1.append("--monitor_temp=%s" % params["monitor_temp"])
-      if "migrate_sstables" in params:
-        params1.append("--migrate_sstables=%s" % params["migrate_sstables"])
-      if "sst_ott" in params:
-        params1.append("--sst_ott=%s" % params["sst_ott"])
-      if "organize_L0_sstables" in params:
-        params1.append("--organize_L0_sstables=%s" % params["organize_L0_sstables"])
-      if "workload_start_from" in params:
-        params1.append("--workload_start_from=%s" % params["workload_start_from"])
-      if "workload_stop_at" in params:
-        params1.append("--workload_stop_at=%s" % params["workload_stop_at"])
-      if "simulation_time_dur_in_sec" in params:
-        params1.append("--simulation_time_dur_in_sec=%s" % params["simulation_time_dur_in_sec"])
-      if "121x_speed_replay" in params:
-        params1.append("--121x_speed_replay=%s" % params["121x_speed_replay"])
-      if "pid_params" in params:
-        params1.append("--pid_params=%s" % params["pid_params"])
-
-      if "sla_admin_type" in params:
-        params1.append("--sla_admin_type=%s" % params["sla_admin_type"])
-      if "sla_observed_value_hist_q_size" in params:
-        params1.append("--sla_observed_value_hist_q_size=%s" % params["sla_observed_value_hist_q_size"])
-      if "error_adj_ranges" in params:
-        params1.append("--error_adj_ranges=%s" % params["error_adj_ranges"])
-      if "slow_dev" in params:
-        params1.append("--slow_dev=%s" % params["slow_dev"])
-      if "sst_ott_adj_cooldown_ms" in params:
-        params1.append("--sst_ott_adj_cooldown_ms=%s" % params["sst_ott_adj_cooldown_ms"])
-      if "pid_i_exp_decay_factor" in params:
-        params1.append("--pid_i_exp_decay_factor=%s" % params["pid_i_exp_decay_factor"])
-
-      if "extra_reads" in params:
-        params1.append("--extra_reads=%s" % params["extra_reads"])
-      if "xr_queue_size" in params:
-        params1.append("--xr_queue_size=%s" % params["xr_queue_size"])
-      if "xr_iops" in params:
-        params1.append("--xr_iops=%s" % params["xr_iops"])
-      if "xr_gets_per_key" in params:
-        params1.append("--xr_gets_per_key=%s" % params["xr_gets_per_key"])
-
-      cmd = "cd %s/work/mutant/misc/rocksdb/quizup/quizup && stdbuf -i0 -o0 -e0 ./run.py %s" \
-          % (os.path.expanduser("~"), " ".join(params1))
+      cmd = "cd %s/work/mutant/misc/rocksdb/quizup/quizup && stdbuf -i0 -o0 -e0 ./run.py --encoded_params=%s" \
+          % (os.path.expanduser("~"), params_encoded)
       Util.RunSubp(cmd)
+
+      # Do you want to separate the params for run.sh and the quizup client binary?
+      # All in one for now.
+
+#      params1 = []
+#
+#      # Parameters for run.sh
+#      params1.append("--job_id=%s" % Ec2InitUtil.GetJobId())
+#      if "fast_dev_path" in params:
+#        params1.append("--fast_dev_path=%s" % params["fast_dev_path"])
+#      if "slow_dev_paths" in params:
+#        slow_dev_paths = params["slow_dev_paths"]
+#        for k, v in slow_dev_paths.iteritems():
+#          params1.append("--slow_dev%s_path=%s" % (k[-1:], v))
+#      if "db_path" in params:
+#        params1.append("--db_path=%s" % params["db_path"])
+#      if "init_db_to_90p_loaded" in params:
+#        params1.append("--init_db_to_90p_loaded=%s" % params["init_db_to_90p_loaded"])
+#      if "evict_cached_data" in params:
+#        params1.append("--evict_cached_data=%s" % params["evict_cached_data"])
+#      if "memory_limit_in_mb" in params:
+#        params1.append("--memory_limit_in_mb=%s" % params["memory_limit_in_mb"])
+#      params1.append("--upload_result_to_s3")
+#
+#      # Parameters for the quizup binary
+#      if "exp_desc" in params:
+#        params1.append("--exp_desc=%s" % base64.b64encode(params["exp_desc"]))
+#
+#      if "cache_filter_index_at_all_levels" in params:
+#        params1.append("--cache_filter_index_at_all_levels=%s" % params["cache_filter_index_at_all_levels"])
+#
+#      if "record_size" in params:
+#        params1.append("--record_size=%s" % params["record_size"])
+#
+#      if "monitor_temp" in params:
+#        params1.append("--monitor_temp=%s" % params["monitor_temp"])
+#      if "migrate_sstables" in params:
+#        params1.append("--migrate_sstables=%s" % params["migrate_sstables"])
+#      if "sst_ott" in params:
+#        params1.append("--sst_ott=%s" % params["sst_ott"])
+#      if "organize_L0_sstables" in params:
+#        params1.append("--organize_L0_sstables=%s" % params["organize_L0_sstables"])
+#      if "workload_start_from" in params:
+#        params1.append("--workload_start_from=%s" % params["workload_start_from"])
+#      if "workload_stop_at" in params:
+#        params1.append("--workload_stop_at=%s" % params["workload_stop_at"])
+#      if "simulation_time_dur_in_sec" in params:
+#        params1.append("--simulation_time_dur_in_sec=%s" % params["simulation_time_dur_in_sec"])
+#      if "121x_speed_replay" in params:
+#        params1.append("--121x_speed_replay=%s" % params["121x_speed_replay"])
+#      if "pid_params" in params:
+#        params1.append("--pid_params=%s" % params["pid_params"])
+#
+#      cmd = "cd %s/work/mutant/misc/rocksdb/quizup/quizup && stdbuf -i0 -o0 -e0 ./run.py --encoded_params=%s" \
+#          % (os.path.expanduser("~"), params_encoded)
+#      Util.RunSubp(cmd)
 
 
 def RunYcsb():
