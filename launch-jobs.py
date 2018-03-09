@@ -57,7 +57,7 @@ def Job_Mutant_QuizUp():
       , "unzip_quizup_data": "true"
       , "run_cassandra_server": "false"
       , "rocksdb": {}
-      , "ycsb-runs": {}
+      , "ycsb-runs": None
       , "rocksdb-quizup-runs": []
       , "terminate_inst_when_done": "false"
       }
@@ -68,12 +68,15 @@ def Job_Mutant_QuizUp():
 
       , "db_path": "/mnt/local-ssd1/rocksdb-data/quizup"
       , "db_stg_devs": [
-          ["/mnt/local-ssd0/rocksdb-data/ycsb/t0", 0.528]
+          ["/mnt/local-ssd0/rocksdb-data/quizup/t0", 0.528]
           , ["/mnt/ebs-st1/rocksdb-data-t1", 0.045]
           ]
 
-      , "init_db_to_90p_loaded": "false"
+      , "record_size": 5000
+      , "use_90p_loaded_db": "false"
+
       , "evict_cached_data": "true"
+      , "memory_limit_in_mb": 5.0 * 1024
 
       # SSTable metadata organization
       , "cache_filter_index_at_all_levels": "false"
@@ -81,18 +84,24 @@ def Job_Mutant_QuizUp():
       , "monitor_temp": "true"
       , "migrate_sstables": "true"
 
-      # [0.0, 1.0]
-      , "workload_start_from": 0.0
-      , "workload_stop_at":    0.9
+      # List of (simulation_time_in_sec, workload_end_relative_time)
+      #   This should be good for making a snapshot
+      #, "workload_time_range": [(0, 0.0), (600, 0.9), (100, 0.91)]
+      #
+      # To see if it's working
+      , "workload_time_range": [(0, 0.0), (30, 0.01), (10, 0.02)]
 
       , "simulation_time_dur_in_sec": 600
 
-      , "memory_limit_in_mb": 5.0 * 1024
-
-      , "record_size": 5000
-
       , "target_cost": 0.4
       , "migration_resistance": 0.05
+
+      # Run the workload super slow after 90% to 91% for taking a snapshot.
+
+      # For taking a snapshot. Wait... is this a good idea? I don't think so. Make it run super slow after 90%.
+      , "extra_time_after_playing_the_workload": 600
+
+      , "upload_result_to_s3": "false"
       }
   params["rocksdb-quizup-runs"] = [dict(qz_run)]
   LaunchJob(params)
